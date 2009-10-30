@@ -155,9 +155,6 @@ if(empty($noupdate)) {
 
 $db->close(); ob_end_clean();
 
-//dheader('Cache-control: max-age=31536000');
-//dheader('Expires: '.gmdate('D, d M Y H:i:s', $timestamp + 31536000).' GMT');
-
 if($attach['remote'] && !$ftp['hideurl']) {
 	dheader('location:'.$ftp['attachurl'].'/'.$attach['attachment']);
 }
@@ -165,17 +162,26 @@ if($attach['remote'] && !$ftp['hideurl']) {
 $filesize = !$attach['remote'] ? filesize($filename) : $attach['filesize'];
 $attach['filename'] = '"'.(strtolower($charset) == 'utf-8' && strexists($_SERVER['HTTP_USER_AGENT'], 'MSIE') ? urlencode($attach['filename']) : $attach['filename']).'"';
 
-dheader('Date: '.gmdate('D, d M Y H:i:s', $attach['dateline']).' GMT');
-dheader('Last-Modified: '.gmdate('D, d M Y H:i:s', $attach['dateline']).' GMT');
+$issgf = strstr(strtolower($attach['filename']), '.sgf') !== FALSE;
+$default_encoding = 'gb2312';
+$encoding = !empty($_GET['encoding']) ? $_GET['encoding'] : $default_encoding;
+if (!$issgf || $encoding == $default_encoding) {
+	dheader('Date: '.gmdate('D, d M Y H:i:s', $attach['dateline']).' GMT');
+	dheader('Last-Modified: '.gmdate('D, d M Y H:i:s', $attach['dateline']).' GMT');
+}
 dheader('Content-Encoding: none');
 
-if($isimage && !empty($noupdate)) {
+if(($isimage || $issgf) && !empty($noupdate)) {
 	dheader('Content-Disposition: inline; filename='.$attach['filename']);
 } else {
 	dheader('Content-Disposition: attachment; filename='.$attach['filename']);
 }
 
-dheader('Content-Type: '.$attach['filetype']);
+if ($issgf) {
+	dheader('Content-Type: text/plain; charset=' . $encoding);
+} else {
+	dheader('Content-Type: '.$attach['filetype']);
+}
 dheader('Content-Length: '.$filesize);
 
 if($readmod == 4) {

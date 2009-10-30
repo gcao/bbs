@@ -150,7 +150,11 @@ $attach['refcheck'] = (!$attach['remote'] && $attachrefcheck) || ($attach['remot
 $aidencode = aidencode($attach[aid]);
 }-->
 <!--{block return}-->
-	<!--{if !isset($attach['unpayed'])}-->
+
+  <!--{if strstr(strtolower($attach['filename']), '.sgf') !== FALSE}-->
+	<p><a href="/bbs/attachment.php?aid=$aidencode">下载棋谱</a></p>
+  	<script language='JavaScript'>new jsGameViewer.GameController().load('/bbs/attachment.php?aid=$aidencode');</script>
+	<!--{elseif !isset($attach['unpayed'])}-->
 		<!--{if $attach['attachimg']}-->
 			<!--{if !IS_ROBOT}-->
 				<span style="position: absolute; display: none" id="attach_$attach[aid]" onmouseover="showMenu({'ctrlid':this.id,'pos':'13'})"><img src="{IMGDIR}/attachimg.gif" border="0"></span>

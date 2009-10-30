@@ -494,6 +494,11 @@ if(empty($action) && $tid) {
 		task_newbie_complete();
 	}
 
+	$extrahead = '<link rel="stylesheet" href="/jsgameviewer/build/compressed.css"/>'.
+  	'<script language="JavaScript" type="text/javascript" src="/jsgameviewer/js/zh_cn.js">'.
+  	'</script><script language="JavaScript" type="text/javascript" src="/jsgameviewer/js/jquery-1.3.2.min.js">'.
+  	'</script><script language="JavaScript" type="text/javascript" src="/jsgameviewer/build/compressed.js"></script>';
+	
 	if(empty($viewpid)) {
 		include template('viewthread');
 	} else {
