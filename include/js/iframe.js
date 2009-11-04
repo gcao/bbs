@@ -15,7 +15,6 @@ function refreshmain(e) {
 			e.returnValue = false;
 		} else {
 			e.cancelBubble = true;
-			//e.calcelable = true;
 			e.preventDefault();
 		}
 	}
