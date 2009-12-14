@@ -22,9 +22,9 @@ if($action == 'logout' && !empty($formhash)) {
 		$extrahead .= '<script>if(top != self) {parent.leftmenu.location.reload();}</script>';
 	}
 
-	if($formhash != FORMHASH) {
-		showmessage('logout_succeed', dreferer());
-	}
+	//if($formhash != FORMHASH) {
+	//	showmessage('logout_succeed', dreferer());
+	//}
 
 	$ucsynlogout = $allowsynlogin ? uc_user_synlogout() : '';
 
