@@ -1,3 +1,38 @@
+h2. Changes
+
+* Remove key event handler in view thread because it conflicts with jsgameviewer.
+
+* Include jsgameviewer css & javascripts in viewthread.php before if(empty($viewpid)) {
+  
+  $extrahead = '<link rel="stylesheet" href="/jsgameviewer/build/compressed.css"/>'.
+  	'<script language="JavaScript" type="text/javascript" src="/jsgameviewer/js/zh_cn.js">'.
+  	'</script><script language="JavaScript" type="text/javascript" src="/jsgameviewer/js/jquery-1.3.2.min.js">'.
+  	'</script><script language="JavaScript" type="text/javascript" src="/jsgameviewer/build/compressed.js"></script>';
+
+* Fix confliction with jquery. See http://hi.baidu.com/mimimo/blog/item/2840768dd7048915b31bbadb.html
+  
+  Modify /include/javascript/common.js - NOT APPLICABLE IN DISCUZ 7.1
+  
+      Array.prototype.push = function(value) {
+        this[this.length] = value;
+        return this.length;
+      }
+
+      ======>
+  
+      if(typeof Array.prototype.push === 'undefined') {
+        Array.prototype.push = function(value) {
+          this[this.length] = value;
+          return this.length;
+        }
+      }
+  
+  Enable jQuery no conflict mode - call jQuery.noConflict() after jQuery is included
+
+* Include my turn check in templates/default/header.htm before <cite><a href="space.php?uid=$discuz_uid" class="noborder">
+  
+  {eval include("XXX/gocool/public/shared/my_turn.html")}
+
 h2. TODO
 
 h3. Move code from discuzcode.htm to some php file - this will make it not necessary to modify templates to support showing games in different themes.

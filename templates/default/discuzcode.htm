@@ -153,7 +153,11 @@ $aidencode = aidencode($attach[aid]);
 
   <!--{if strstr(strtolower($attach['filename']), '.sgf') !== FALSE}-->
 	<p><a href="/bbs/attachment.php?aid=$aidencode">下载棋谱</a></p>
-  	<script language='JavaScript'>new jsGameViewer.GameController().load('/bbs/attachment.php?aid=$aidencode');</script>
+    <!--{if strstr(strtolower($attach['filename']), 'utf') !== FALSE}-->
+    	<script language='JavaScript'>new jsGameViewer.GameController().load('/bbs/attachment.php?aid=$aidencode&encoding=utf-8');</script>
+		<!--{else}-->
+    	<script language='JavaScript'>new jsGameViewer.GameController().load('/bbs/attachment.php?aid=$aidencode');</script>
+  	<!--{/if}-->
 	<!--{elseif !isset($attach['unpayed'])}-->
 		<!--{if $attach['attachimg']}-->
 			<!--{if !IS_ROBOT}-->

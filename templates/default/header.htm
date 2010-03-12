@@ -29,6 +29,7 @@ $extrahead
 			<h2><a href="$indexname" title="$bbname">{BOARDLOGO}</a></h2>
 			<div id="umenu">
 			<!--{if $discuz_uid}-->
+				{eval include("XXX/gocool/public/shared/my_turn.html")}
 				<cite><a href="space.php?uid=$discuz_uid" class="noborder">$discuz_userss</a><!--{if $allowinvisible}--><span id="loginstatus"><!--{if !empty($invisible)}--><a href="member.php?action=switchstatus" onclick="ajaxget(this.href, 'loginstatus');doane(event);">{lang login_invisible_mode}</a><!--{else}--><a href="member.php?action=switchstatus" title="{lang login_switch_invisible_mode}" onclick="ajaxget(this.href, 'loginstatus');doane(event);">{lang login_normal_mode}</a><!--{/if}--></span><!--{/if}--></cite>
 				<span class="pipe">|</span>
 				<!--{if $ucappopen['UCHOME']}-->
