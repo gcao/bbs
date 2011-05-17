@@ -1166,7 +1166,7 @@ function ajaxpost(formid, showid, waitid, showidclass, submitbtn, recall) {
 			if(BROWSER.ie) {
 				s = $(ajaxframeid).contentWindow.document.XMLDocument.text;
 			} else {
-				s = $(ajaxframeid).contentWindow.document.documentElement.firstChild.nodeValue;
+				s = $(ajaxframeid).contentWindow.document.documentElement.firstChild.wholeText;
 			}
 		} catch(e) {
 			if(AJAX['debug']) {
