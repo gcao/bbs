@@ -4,10 +4,10 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: forumdisplay.php 20718 2009-10-16 04:38:53Z monkey $
+	$Id: forumdisplay.php 21337 2010-01-06 08:09:58Z tiger $
 */
 
-define('CURSCRIPT', 'forumdisplay');
+define('BINDDOMAIN', 'forumdisplay');
 
 require_once './include/common.inc.php';
 require_once DISCUZ_ROOT.'./include/forum.func.php';
@@ -19,6 +19,7 @@ if($forum['redirect']) {
 } elseif($forum['type'] == 'group') {
 	dheader("Location: {$indexname}?gid=$fid");
 } elseif(empty($forum['fid'])) {
+	header("HTTP/1.0 404 Not Found");
 	showmessage('forum_nonexistence', NULL, 'HALTED');
 }
 
@@ -29,6 +30,10 @@ switch($showoldetails) {
 }
 
 $forum['name'] = strip_tags($forum['name']) ? strip_tags($forum['name']) : $forum['name'];
+$forum['extra'] = unserialize($forum['extra']);
+if(!is_array($forum['extra'])) {
+	$forum['extra'] = array();
+}
 
 if($forum['type'] == 'forum') {
 	$navigation = '&raquo; '.$forum['name'];
@@ -46,7 +51,7 @@ $metadescription = !$forum['description'] ? $forum['name'] : strip_tags($forum['
 
 if($forum['viewperm'] && !forumperm($forum['viewperm']) && !$forum['allowview']) {
 	showmessagenoperm('viewperm', $fid);
-} elseif ($forum['formulaperm']) {
+} elseif ($forum['formulaperm'] && $adminid != 1) {
 	formulaperm($forum['formulaperm']);
 }
 
@@ -81,7 +86,10 @@ if($forum['modrecommend'] && $forum['modrecommend']['open']) {
 }
 
 if($forum['modworks']) {
-	$reportnum = $db->result_first("SELECT COUNT(*) FROM {$tablepre}reportlog WHERE fid='$fid' AND status='1'");
+	$reportnum = $allowviewreport ? $db->result_first("SELECT COUNT(*) FROM {$tablepre}reportlog WHERE fid='$fid' AND status='1'") : 0;
+	$modnum = $allowmodpost ? ($db->result_first("SELECT COUNT(*) FROM {$tablepre}posts WHERE invisible='-2' AND first='0' and fid='$fid'") +
+		$db->result_first("SELECT COUNT(*) FROM {$tablepre}threads WHERE fid='$fid' AND displayorder='-2'")) : 0;
+	$modusernum = $allowmoduser ? $db->result_first("SELECT COUNT(*) FROM {$tablepre}validating WHERE status='0'") : 0;
 }
 
 $toptablewidth = $forum['rules'] && $forum['recommendlist'] ? '50%' : '100%';
@@ -89,6 +97,21 @@ $infosidestatus[0] = !empty($infosidestatus['f'.$fid][0]) ? $infosidestatus['f'.
 $infosidestatus['allow'] = $infosidestatus['allow'] && $infosidestatus[0] && $infosidestatus[0] != -1 ? (!$collapse['sidebar'] ? 2 : 1) : 0;
 
 $forum['typemodels'] = $forum['typemodels'] ? unserialize($forum['typemodels']) : array();
+
+$optionadd = $filterurladd = '';
+$threadids = array();
+if($forum['threadsorts']['defaultshow'] && $forum['threadsorts']['types'] && empty($sortid)) {
+	$sortid = $forum['threadsorts']['defaultshow'];
+	$filterurladd = '&amp;filter=sort';
+}
+
+if($sortid && $forum['threadsorts']['types'][$sortid]) {
+	$sortid = intval($sortid);
+	include_once DISCUZ_ROOT.'./forumdata/cache/threadsort_'.$sortid.'.php';
+	require_once DISCUZ_ROOT.'./include/forumsort.func.php';
+
+	$quicksearchlist = quicksearch();
+}
 
 $moderatedby = moddisplay($forum['moderators'], 'forumdisplay');
 $highlight = empty($highlight) ? '' : htmlspecialchars($highlight);
@@ -100,17 +123,24 @@ if($forum['autoclose']) {
 $subexists = 0;
 foreach($_DCACHE['forums'] as $sub) {
 	if($sub['type'] == 'sub' && $sub['fup'] == $fid && (!$hideprivate || !$sub['viewperm'] || forumperm($sub['viewperm']) || strstr($sub['users'], "\t$discuz_uid\t"))) {
+		if(!$sub['status']) {
+			continue;
+		}
 		$subexists = 1;
 		$sublist = array();
-		$sql = $accessmasks ? "SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, ff.description, ff.moderators, ff.icon, ff.viewperm, a.allowview FROM {$tablepre}forums f
+		$sql = $accessmasks ? "SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, ff.description, ff.moderators, ff.icon, ff.viewperm, ff.extra, a.allowview FROM {$tablepre}forums f
 						LEFT JOIN {$tablepre}forumfields ff ON ff.fid=f.fid
 						LEFT JOIN {$tablepre}access a ON a.uid='$discuz_uid' AND a.fid=f.fid
-						WHERE fup='$fid' AND status='1' AND type='sub' ORDER BY f.displayorder"
-					: "SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, ff.description, ff.moderators, ff.icon, ff.viewperm FROM {$tablepre}forums f
+						WHERE fup='$fid' AND status>'0' AND type='sub' ORDER BY f.displayorder"
+					: "SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, ff.description, ff.moderators, ff.icon, ff.viewperm, ff.extra FROM {$tablepre}forums f
 						LEFT JOIN {$tablepre}forumfields ff USING(fid)
-						WHERE f.fup='$fid' AND f.status='1' AND f.type='sub' ORDER BY f.displayorder";
+						WHERE f.fup='$fid' AND f.status>'0' AND f.type='sub' ORDER BY f.displayorder";
 		$query = $sdb->query($sql);
 		while($sub = $sdb->fetch_array($query)) {
+			$sub['extra'] = unserialize($sub['extra']);
+			if(!is_array($sub['extra'])) {
+				$sub['extra'] = array();
+			}
 			if(forum($sub)) {
 				$sub['orderid'] = count($sublist);
 				$sublist[] = $sub;
@@ -164,7 +194,8 @@ if($page == 1) {
 	}
 }
 
-$forumdisplayadd = $filteradd = $sortadd = $typeadd = '';
+$forumdisplayadd = $filteradd = $sortadd = $typeadd = $sorturladd = '';
+$sorturladd = $selectadd = array();
 $specialtype = array('poll' => 1, 'trade' => 2, 'reward' => 3, 'activity' => 4, 'debate' => 5);
 isset($orderby) && in_array($orderby, array('lastpost', 'dateline', 'replies', 'views', 'recommends', 'heats')) ? $forumdisplayadd .= "&amp;orderby=$orderby" : $orderby = $_DCACHE['forums'][$fid]['orderby'] ? $_DCACHE['forums'][$fid]['orderby'] : 'lastpost';
 isset($ascdesc) && in_array($ascdesc, array('ASC', 'DESC')) ? $forumdisplayadd .= "&amp;ascdesc=$ascdesc" : $ascdesc = $_DCACHE['forums'][$fid]['ascdesc'] ? $_DCACHE['forums'][$fid]['ascdesc'] : 'DESC';
@@ -184,13 +215,28 @@ if(isset($filter)) {
 			$filteradd .= "AND sortid='$sortid'";
 			$forumdisplayadd .= $sortadd = "&amp;sortid=$sortid";
 		}
-	} elseif($filter == 'sort' && $forum['threadsorts']['listable'] && $sortid && isset($forum['threadsorts']['types'][$sortid])) {
+	} elseif($filter == 'sort' && $sortid && isset($forum['threadsorts']['types'][$sortid])) {
 		$forumdisplayadd .= "&amp;filter=sort&amp;sortid=$sortid";
 		$sortadd = "&amp;sortid=$sortid";
 		$filteradd = "AND sortid='$sortid'";
 		if($typeid) {
 			$filteradd .= "AND typeid='$typeid'";
 			$forumdisplayadd .= $typeadd = "&amp;typeid=$typeid";
+		}
+		$query_string = daddslashes($_SERVER['QUERY_STRING'], 1);
+		if($query_string && $quicksearchlist['option']) {
+			$query_string = substr($query_string, (strpos($query_string, "&") + 1));
+			parse_str($query_string, $selectadd);
+			if($selectadd && is_array($selectadd)) {
+				$and = '';
+				foreach($quicksearchlist['option'] as $option) {
+					$identifier = $option['identifier'];
+					foreach($selectadd as $option => $value) {
+						$sorturladd[$identifier] .= !in_array($option, array('filter', 'sortid', $identifier)) ? "$and$option=$value" : '';
+						$and = '&';
+					}
+				}
+			}
 		}
 	} elseif($filter == 'special' && array_key_exists($extraid, $threadplugins)) {
 		$forumdisplayadd .= "&amp;filter=special&amp;extraid=$extraid";
@@ -249,7 +295,7 @@ if($whosonlinestatus == 2 || $whosonlinestatus == 3) {
 	$whosonlinestatus = 0;
 }
 
-if(empty($filter)) {
+if(empty($filter) && empty($sortid)) {
 	$threadcount = $forum['threads'];
 } else {
 	$threadcount = $sdb->result_first("SELECT COUNT(*) FROM {$tablepre}threads WHERE fid='$fid' $filteradd AND displayorder>='0'");
@@ -257,10 +303,25 @@ if(empty($filter)) {
 $thisgid = $forum['type'] == 'forum' ? $forum['fup'] : $_DCACHE['forums'][$forum['fup']]['fup'];
 if($globalstick && $forum['allowglobalstick']) {
 	$stickytids = $_DCACHE['globalstick']['global']['tids'].(empty($_DCACHE['globalstick']['categories'][$thisgid]['count']) ? '' : ','.$_DCACHE['globalstick']['categories'][$thisgid]['tids']);
+	$forumstickytids = array();
+	$_DCACHE['forumstick'][$fid] = is_array($_DCACHE['forumstick'][$fid]) ? $_DCACHE['forumstick'][$fid] : array();
+	$forumstickycount = count($_DCACHE['forumstick'][$fid]);
+	foreach($_DCACHE['forumstick'][$fid] as $forumstickthread) {
+		$forumstickytids[] = $forumstickthread['tid'];
+	}
+	if(!empty($forumstickytids)) {
+		$forumstickytids = implodeids($forumstickytids);
+		$stickytids .= ", $forumstickytids";
+	}
+	
+	$stickytids = trim($stickytids, ', ');
+	if ($stickytids === ''){
+		$stickytids = '0';
+	}
 
-	$stickycount = $_DCACHE['globalstick']['global']['count'] + $_DCACHE['globalstick']['categories'][$thisgid]['count'];
+	$stickycount = $_DCACHE['globalstick']['global']['count'] + $_DCACHE['globalstick']['categories'][$thisgid]['count'] + $forumstickycount;
 } else {
-	$stickycount = $stickytids = 0;
+	$forumstickycount = $stickycount = $stickytids = 0;
 }
 
 $filterbool = !empty($filter) && in_array($filter, array('digest', 'recommend', 'type', 'activity', 'poll', 'trade', 'reward', 'debate'));
@@ -269,10 +330,10 @@ $multipage = multi($threadcount, $tpp, $page, "forumdisplay.php?fid=$fid$forumdi
 $extra = rawurlencode("page=$page$forumdisplayadd");
 
 $separatepos = 0;
-$threadlist = array();
+$threadlist = $threadids = array();
 $colorarray = array('', '#EE1B2E', '#EE5023', '#996600', '#3C9D40', '#2897C5', '#2B65B7', '#8F2A90', '#EC1282');
 
-$displayorderadd = !$filterbool && $stickycount ? 't.displayorder IN (0, 1)' : 't.displayorder IN (0, 1, 2, 3)';
+$displayorderadd = !$filterbool && $stickycount ? 't.displayorder IN (0, 1)' : 't.displayorder IN (0, 1, 2, 3, 4)';
 
 if(($start_limit && $start_limit > $stickycount) || !$stickycount || $filterbool) {
 
@@ -285,7 +346,7 @@ if(($start_limit && $start_limit > $stickycount) || !$stickycount || $filterbool
 } else {
 
 	$querysticky = $sdb->query("SELECT t.* FROM {$tablepre}threads t
-		WHERE t.tid IN ($stickytids) AND t.displayorder IN (2, 3)
+		WHERE t.tid IN ($stickytids) AND t.displayorder IN (2, 3, 4)
 		ORDER BY displayorder DESC, $orderby $ascdesc
 		LIMIT $start_limit, ".($stickycount - $start_limit < $tpp ? $stickycount - $start_limit : $tpp));
 
@@ -389,17 +450,25 @@ while(($querysticky && $thread = $sdb->fetch_array($querysticky)) || ($query && 
 	$thread['dateline'] = gmdate($dateformat, $thread['dateline'] + $timeoffset * 3600);
 	$thread['lastpost'] = dgmdate("$dateformat $timeformat", $thread['lastpost'] + $timeoffset * 3600);
 
-	if(in_array($thread['displayorder'], array(1, 2, 3))) {
+	if(in_array($thread['displayorder'], array(1, 2, 3, 4))) {
 		$thread['id'] = 'stickthread_'.$thread['tid'];
 		$separatepos++;
-	} elseif(in_array($thread['displayorder'], array(4, 5))) {
-		$thread['id'] = 'floatthread_'.$thread['tid'];
 	} else {
 		$thread['id'] = 'normalthread_'.$thread['tid'];
 	}
 
+	$threadids[] = $thread['tid'];
 	$threadlist[] = $thread;
 
+}
+
+if($sortid && $forum['threadsorts']['types'][$sortid]) {
+	$sortlistarray = sortshowlist($searchoid, $searchvid, $threadids, $searchoption, $selectadd);
+	$stemplate = $sortlistarray['stemplate'] ? $sortlistarray['stemplate'] : '';
+	$threadlist = $sortlistarray['thread']['list'] ? $sortlistarray['thread']['list'] : $threadlist;
+	$threadcount = !empty($sortlistarray['thread']['count']) ? $sortlistarray['thread']['count'] : $threadcount;
+	$multipage = $sortlistarray['thread']['multipage'] ? $sortlistarray['thread']['multipage'] : $multipage;
+	$sortthreadlist = $sortlistarray['sortthreadlist'] ? $sortlistarray['sortthreadlist'] : array();
 }
 
 $separatepos = $separatepos ? $separatepos + 1 : ($announcement ? 1 : 0);
@@ -436,6 +505,8 @@ if($forumjump) {
 	$forummenu = forumselect(FALSE, 1);
 }
 
-include template('forumdisplay');
+$template = $sortid ? 'forumdisplay_sort' : 'forumdisplay';
+
+include template($template);
 
 ?>

@@ -12,7 +12,7 @@
 			<!--{if !empty($infloat)}--><a href="javascript:;" class="float_close" onclick="hideWindow('$handlekey')" title="{lang close}">{lang close}</a><!--{/if}-->
 		</span>
 	</h3>
-	<form id="payform" method="post" action="misc.php?action=pay&paysubmit=yes&infloat=yes" onsubmit="ajaxpost('payform', 'return_$handlekey', 'return_$handlekey', 'onerror');return false;">
+	<form id="payform" method="post" action="misc.php?action=pay&paysubmit=yes&infloat=yes"{if !empty($infloat)} onsubmit="ajaxpost('payform', 'return_$handlekey', 'return_$handlekey', 'onerror');return false;"{/if}>
 	<input type="hidden" name="formhash" value="{FORMHASH}" />
 	<input type="hidden" name="referer" value="$referer" />
 	<input type="hidden" name="tid" value="$tid" />

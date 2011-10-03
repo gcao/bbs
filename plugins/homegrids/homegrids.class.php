@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: homegrids.class.php 20543 2009-10-09 00:39:16Z monkey $
+	$Id: homegrids.class.php 20541 2009-10-09 00:34:37Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {

@@ -44,7 +44,7 @@
 				</table>
 				<div class="pages_btns">
 					<div class="right">
-						<input class="checkbox" type="checkbox" id="chkall" name="chkall" onclick="checkall(this.form)" /> <label for="chkall">{lang checkall}</label> <span class="lightlink">|</span> <a href="javascript:;" class="lightlink" onclick="$('operation').value='delete';$('reportform').submit();">{lang reportpost_delete}</a>
+						<input class="checkbox" type="checkbox" id="chkall" name="chkall" onclick="checkall(this.form)" /> <label for="chkall">{lang checkall}</label> <span class="lightlink">|</span> <a href="javascript:;" class="lightlink" onclick="$('operation').value='delete';$('reportform').submit();return false;">{lang reportpost_delete}</a>
 					</div>
 					<!--{if !empty($reportlist[pagelink])}-->$reportlist[pagelink]<!--{/if}-->
 				</div>

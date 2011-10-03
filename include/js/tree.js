@@ -2,7 +2,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: tree.js 19839 2009-09-11 06:37:01Z monkey $
+	$Id: tree.js 19838 2009-09-11 06:36:37Z monkey $
 */
 
 var icon = new Object();

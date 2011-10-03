@@ -1,0 +1,3 @@
+<? if(!defined('IN_DISCUZ')) exit('Access Denied'); hookscriptoutput('ajax_magiclist');?><? include template('header', '0', ''); ?><ul class="headermenu_popup inlinelist" style="width: 180px;"><? if(is_array($mymagiclist)) { foreach($mymagiclist as $magic) { ?><li class="wide">
+<a href="magic.php?action=mybox&amp;operation=use&amp;typeid=1&amp;pid=<?=$pid?>&amp;fid=<?=$fid?>&amp;magicid=<?=$magic['magicid']?>&amp;from=viewthread" onclick="showWindow('magics', this.href);doane(event);"><?=$magic['name']?></a>(<?=$magic['num']?>)
+</li><? } } ?></ul><? include template('footer', '0', ''); ?>

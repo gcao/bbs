@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: project.inc.php 20693 2009-10-15 02:30:16Z monkey $
+	$Id: project.inc.php 21337 2010-01-06 08:09:58Z tiger $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -359,7 +359,7 @@ if(!$operation) {
 
 		if($project['type'] == 'forum') {
 
-			$table_forum_columns = array('styleid', 'allowsmilies', 'allowhtml', 'allowbbcode', 'allowimgcode', 'allowanonymous', 'allowshare', 'allowpostspecial', 'alloweditrules', 'alloweditpost', 'allowspecialonly', 'modnewposts', 'recyclebin', 'jammer', 'forumcolumns', 'threadcaches', 'disablewatermark', 'autoclose', 'simple');
+			$table_forum_columns = array('styleid', 'allowsmilies', 'allowhtml', 'allowbbcode', 'allowimgcode', 'allowmediacodenew', 'allowanonymous', 'allowshare', 'allowpostspecial', 'alloweditrules', 'alloweditpost', 'allowspecialonly', 'modnewposts', 'recyclebin', 'jammer', 'forumcolumns', 'threadcaches', 'disablewatermark', 'autoclose', 'simple');
 			$table_forumfield_columns = array('attachextensions', 'postcredits', 'replycredits', 'digestcredits', 'postattachcredits', 'getattachcredits', 'viewperm', 'postperm', 'replyperm', 'getattachperm', 'postattachperm', 'modrecommend', 'formulaperm');
 
 			$updatesql = $comma = '';

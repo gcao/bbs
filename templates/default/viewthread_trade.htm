@@ -1,14 +1,16 @@
 
-		<!--{if count($trades) > 1 || $discuz_uid == $thread['authorid']}-->
+		<!--{if count($trades) > 1 || ($discuz_uid == $thread['authorid'] || $allowedittrade)}-->
 			<div class="tradectrl">
 				<em>{lang post_trade_totalnumber}: $tradenum</em>
-				<!--{if $discuz_uid == $thread['authorid']}-->
+				<!--{if $discuz_uid == $thread['authorid'] || $allowedittrade}-->
 					<a href="javascript:;" onclick="showWindow('tradeorder', 'misc.php?action=tradeorder&tid=$tid');return false;">{lang trade_displayorder}</a>
-					<!--{if $allowposttrade}-->
-						<a href="post.php?action=reply&fid=$fid&tid=$tid&firstpid=$post[pid]&addtrade=yes">+ {lang trade_add_post}</a>
+					<!--{if $discuz_uid == $thread['authorid']}-->
+						<!--{if $allowposttrade}-->
+							<a href="post.php?action=reply&fid=$fid&tid=$tid&firstpid=$post[pid]&addtrade=yes">+ {lang trade_add_post}</a>
+						<!--{/if}-->
+						<span class="pipe">|</span>
+						<a href="javascript:;" onclick="window.open('my.php?item=selltrades&tid=$tid','','');return false;">{lang my_trade_stat}</a>
 					<!--{/if}-->
-					<span class="pipe">|</span>
-					<a href="javascript:;" onclick="window.open('my.php?item=selltrades&tid=$tid','','');return false;">{lang my_trade_stat}</a>
 				<!--{/if}-->
 			</div>
 		<!--{/if}-->
@@ -72,5 +74,3 @@
 				<br /><button type="button" onclick="showWindow('reply', 'post.php?infloat=yes&action=reply&fid=$fid&tid=$tid&addtrade=yes');return false;">{lang trade_add_post}</button>
 			<!--{/if}-->
 		<!--{/if}-->
-		</div>
-

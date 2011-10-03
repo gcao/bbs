@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: logging.php 20593 2009-10-10 06:38:59Z monkey $
+	$Id: logging.php 20592 2009-10-10 06:37:56Z monkey $
 */
 
 define('NOROBOT', TRUE);
@@ -22,9 +22,9 @@ if($action == 'logout' && !empty($formhash)) {
 		$extrahead .= '<script>if(top != self) {parent.leftmenu.location.reload();}</script>';
 	}
 
-	//if($formhash != FORMHASH) {
-	//	showmessage('logout_succeed', dreferer());
-	//}
+	if($formhash != FORMHASH) {
+		showmessage('logout_succeed', dreferer());
+	}
 
 	$ucsynlogout = $allowsynlogin ? uc_user_synlogout() : '';
 

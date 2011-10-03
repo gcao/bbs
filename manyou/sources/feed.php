@@ -3,7 +3,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: feed.php 20443 2009-09-28 01:19:56Z monkey $
+	$Id: feed.php 20442 2009-09-28 01:17:13Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {

@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: sitemap.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: sitemap.php 16688 2008-11-14 06:41:07Z cnteacher $
 */
 
 error_reporting(0);

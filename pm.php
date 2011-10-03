@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: pm.php 20689 2009-10-14 09:42:41Z monkey $
+	$Id: pm.php 20686 2009-10-14 09:29:20Z liuqiang $
 */
 
 define('CURSCRIPT', 'pm');

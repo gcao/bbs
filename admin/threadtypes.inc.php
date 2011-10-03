@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: threadtypes.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: threadtypes.inc.php 21237 2009-11-23 03:02:28Z liulanbo $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -110,6 +110,12 @@ echo $special ? '<td>&nbsp;</td>' : '<td></td>';
 				$db->query("DELETE FROM {$tablepre}tradeoptionvars WHERE sortid IN ($deleteids)");
 				$db->query("DELETE FROM {$tablepre}typevars WHERE sortid IN ($deleteids)");
 				$db->query("DELETE FROM {$tablepre}threadtypes WHERE typeid IN ($deleteids) AND special='$special'");
+			}
+
+			if($special == 1) {
+				foreach($delete as $sortid) {
+					$db->query("DROP TABLE IF EXISTS {$tablepre}optionvalue$sortid");
+				}
 			}
 
 			if($deleteids && $db->affected_rows()) {
@@ -314,6 +320,7 @@ EOT;
 		showsetting('threadtype_variable', 'identifiernew', $option['identifier'], 'text');
 		showsetting('type', '', '', $typeselect);
 		showsetting('threadtype_edit_desc', 'descriptionnew', $option['description'], 'textarea');
+		showsetting('threadtype_unit', 'unitnew', $option['unit'], 'text');
 
 		showtagheader('tbody', "style_number", $option['type'] == 'number');
 		showtitle('threadtype_edit_vars_type_number');
@@ -368,17 +375,17 @@ EOT;
 			cpmsg('threadtype_infotypes_optionvariable_invalid', '', 'error');
 		}
 
-		$db->query("UPDATE {$tablepre}typeoptions SET title='$titlenew', description='$descriptionnew', identifier='$identifiernew', type='$typenew', rules='".addslashes(serialize($rules[$typenew]))."' WHERE optionid='$optionid'");
+		$db->query("UPDATE {$tablepre}typeoptions SET title='$titlenew', description='$descriptionnew', identifier='$identifiernew', type='$typenew', unit='$unitnew', rules='".addslashes(serialize($rules[$typenew]))."' WHERE optionid='$optionid'");
 
 		updatecache('threadsorts');
-		cpmsg('threadtype_infotypes_option_succeed', $BASESCRIPT.'?action=threadtypes&operation=optiondetail&optionid='.$optionid, 'succeed');
+		cpmsg('threadtype_infotypes_option_succeed', $BASESCRIPT.'?action=threadtypes&operation=typeoption', 'succeed');
 	}
 
 } elseif($operation == 'sortdetail') {
 
 	if(!submitcheck('sortdetailsubmit') && !submitcheck('sortpreviewsubmit')) {
 
-		$threadtype = $db->fetch_first("SELECT name, template, modelid, expiration FROM {$tablepre}threadtypes WHERE typeid='$sortid'");
+		$threadtype = $db->fetch_first("SELECT name, template, stemplate, modelid, expiration FROM {$tablepre}threadtypes WHERE typeid='$sortid'");
 		$threadtype['modelid'] = isset($modelid) ? intval($modelid) : $threadtype['modelid'];
 
 		$typemodelopt = '';
@@ -398,7 +405,7 @@ EOT;
 		}
 
 		$sortoptions = $jsoptionids = '';
-		$query = $db->query("SELECT t.optionid, t.displayorder, t.available, t.required, t.unchangeable, t.search, tt.title, tt.type, tt.identifier
+		$query = $db->query("SELECT t.optionid, t.displayorder, t.available, t.required, t.unchangeable, t.search, t.subjectshow, tt.title, tt.type, tt.identifier
 			FROM {$tablepre}typevars t, {$tablepre}typeoptions tt
 			WHERE t.sortid='$sortid' AND t.optionid=tt.optionid ORDER BY t.displayorder");
 		while($option = $db->fetch_array($query)) {
@@ -413,6 +420,7 @@ EOT;
 			$showoption[$option['optionid']]['required'] = $option['required'];
 			$showoption[$option['optionid']]['unchangeable'] = $option['unchangeable'];
 			$showoption[$option['optionid']]['search'] = $option['search'];
+			$showoption[$option['optionid']]['subjectshow'] = $option['subjectshow'];
 		}
 
 		if($existoption && is_array($existoption)) {
@@ -434,7 +442,7 @@ EOT;
 			}
 		}
 
-		$searchtitle = $searchvalue = array();
+		$searchtitle = $searchvalue = $searchunit = array();
 		foreach($showoption as $optionid => $option) {
 			$sortoptions .= showtablerow('id="optionid'.$optionid.'"', array('class="td25"', 'class="td28 td23"'), array(
 				"<input class=\"checkbox\" type=\"checkbox\" name=\"delete[]\" value=\"$option[optionid]\" ".($option['model'] ? 'disabled' : '').">",
@@ -445,20 +453,32 @@ EOT;
 				"<input class=\"checkbox\" type=\"checkbox\" name=\"required[$option[optionid]]\" value=\"1\" ".($option['required'] ? 'checked' : '')." ".($option['model'] ? 'disabled' : '').">",
 				"<input class=\"checkbox\" type=\"checkbox\" name=\"unchangeable[$option[optionid]]\" value=\"1\" ".($option['unchangeable'] ? 'checked' : '').">",
 				"<input class=\"checkbox\" type=\"checkbox\" name=\"search[$option[optionid]]\" value=\"1\" ".($option['search'] ? 'checked' : '').">",
-				"<a href=\"###\" onclick=\"insertvar('$option[identifier]');doane(event);return false;\" class=\"act\">".$lang['threadtype_infotypes_add_template']."</a>",
+				"<input class=\"checkbox\" type=\"checkbox\" name=\"subjectshow[$option[optionid]]\" value=\"1\" ".($option['subjectshow'] ? 'checked' : '').">",
+				"<a href=\"###\" onclick=\"insertvar('$option[identifier]', 'typetemplate', 'message');doane(event);return false;\" class=\"act\">".$lang['threadtype_infotypes_add_template']."</a>",
+				"<a href=\"###\" onclick=\"insertvar('$option[identifier]', 'stypetemplate', 'subject');doane(event);return false;\" class=\"act\">".$lang['threadtype_infotypes_add_stemplate']."</a>",
 				"<a href=\"$BASESCRIPT?action=threadtypes&operation=optiondetail&optionid=$option[optionid]\" class=\"act\">".$lang['edit']."</a>"
 			), TRUE);
 			$searchtitle[] = '/{('.$option['identifier'].')}/e';
 			$searchvalue[] = '/\[('.$option['identifier'].')value\]/e';
+			$searchunit[] = '/\[('.$option['identifier'].')unit\]/e';
 		}
 
 		if($threadtype['template']) {
 			$previewtemplate = preg_replace($searchtitle, "showoption('\\1', 'title')", $threadtype['template']);
 			$previewtemplate = preg_replace($searchvalue, "showoption('\\1', 'value')", $previewtemplate);
+			$previewtemplate = preg_replace($searchunit, "showoption('\\1', 'unit')", $previewtemplate);
+		}
+
+		if($threadtype['stemplate']) {
+			$previewstemplate = preg_replace($searchtitle, "showoption('\\1', 'title')", $threadtype['stemplate']);
+			$previewstemplate = preg_replace($searchvalue, "showoption('\\1', 'value')", $previewstemplate);
+			$previewstemplate = preg_replace($searchunit, "showoption('\\1', 'unit')", $previewstemplate);
 		}
 
 		shownav('forum', 'forums_edit_threadsorts');
 		showsubmenu('forums_edit_threadsorts');
+		showtips('forums_edit_threadsorts_tips');
+
 		showformheader("threadtypes&operation=sortdetail&sortid=$sortid");
 		showtableheader('threadtype_models', 'nobottom');
 		showsetting('threadtype_models_select', '', '', '<select name="modelid" onchange="window.location=\''.$BASESCRIPT.'?action=threadtypes&operation=sortdetail&sortid='.$sortid.'&amp;modelid=\'+this.options[this.selectedIndex].value"><option value="0">'.$lang['none'].'</option>'.$typemodelopt.'</select>');
@@ -471,7 +491,7 @@ EOT;
 		showtablefooter();
 
 		showtableheader("$threadtype[name] - $lang[threadtype_infotypes_exist_option]", 'noborder fixpadding', 'id="sortlist"');
-		showsubtitle(array('<input type="checkbox" name="chkall" id="chkall" class="checkbox" onclick="checkAll(\'prefix\', this.form,\'delete\')" /><label for="chkall">'.lang('del').'</label>', 'display_order', 'available', 'name', 'type', 'required', 'unchangeable', 'threadtype_infotypes_search', '', ''));
+		showsubtitle(array('<input type="checkbox" name="chkall" id="chkall" class="checkbox" onclick="checkAll(\'prefix\', this.form,\'delete\')" /><label for="chkall">'.lang('del').'</label>', 'display_order', 'available', 'name', 'type', 'required', 'unchangeable', 'threadtype_infotypes_search', 'threadtype_infotypes_show', '', '', ''));
 		echo $sortoptions;
 		showtablefooter();
 
@@ -482,12 +502,21 @@ EOT;
 <h4 style="margin-bottom:15px;"><?=$threadtype['name']?> - <?=$lang['threadtype_infotypes_template']?></h4>
 <textarea cols="100" rows="5" id="typetemplate" name="typetemplate" style="width: 95%;" onkeyup="textareasize(this)"><?=$threadtype['template']?></textarea>
 <br /><br />
+<h4 style="margin-bottom:15px;"><?=$threadtype['name']?> - <?=$lang['threadtype_infotypes_stemplate']?></h4>
+<textarea cols="100" rows="5" id="stypetemplate" name="stypetemplate" style="width: 95%;" onkeyup="textareasize(this)"><?=$threadtype['stemplate']?></textarea>
+<br /><br />
 <b><?=$lang['threadtype_infotypes_template']?>:</b>
 <ul class="tpllist"><?=$lang['threadtype_infotypes_template_tips']?></ul>
 <?php
 	if($previewtemplate) {
 		echo '<fieldset style="margin:1em 0; padding:1em 1.5em;"><legend><b>'.$lang['threadtype_infotypes_template_preview'].':</b></legend>';
 		echo $previewtemplate;
+		echo '</fieldset>';
+	}
+
+	if($previewstemplate) {
+		echo '<fieldset style="margin:1em 0; padding:1em 1.5em;"><legend><b>'.$lang['threadtype_infotypes_stemplate_preview'].':</b></legend>';
+		echo $previewstemplate;
 		echo '</fieldset>';
 	}
 ?>
@@ -499,17 +528,18 @@ EOT;
 <script type="text/JavaScript">
 	var optionids = new Array();
 	<?=$jsoptionids?>
-	function insertvar(text) {
-		$('typetemplate').focus();
+	function insertvar(text, focusarea, location) {
+		$(focusarea).focus();
 		selection = document.selection;
 		if(selection && selection.createRange) {
 			var sel = selection.createRange();
-			sel.text = '<li><b>{' + text + '}</b>: [' + text + "value]</li>\r\n";
+			sel.text = location == 'message' ? '<li><b>{' + text + '}</b>: [' + text + 'value] [' + text + "unit]</li>\r\n" : '{' + text + '}: [' + text + 'value] [' + text + 'unit]';
 			sel.moveStart('character', -strlen(text));
 		} else {
-			$('typetemplate').value += '<li><b>{' + text + '}<b>: [' + text + "value]</li>\r\n";
+			$(focusarea).value += location == 'message' ? '<li><b>{' + text + '}</b>: [' + text + 'value] [' + text + "unit]</li>\r\n" : '{' + text + '}: [' + text + 'value] [' + text + 'unit]';
 		}
 	}
+
 	function checkedbox() {
 		var tags = $('optionlist').getElementsByTagName('input');
 		for(var i=0; i<tags.length; i++) {
@@ -550,7 +580,7 @@ EOT;
 
 	} else {
 
-		$db->query("UPDATE {$tablepre}threadtypes SET special='1', modelid='".intval($modelid)."', template='$typetemplate', expiration='$typeexpiration' WHERE typeid='$sortid'");
+		$db->query("UPDATE {$tablepre}threadtypes SET special='1', modelid='".intval($modelid)."', template='$typetemplate', stemplate='$stypetemplate', expiration='$typeexpiration' WHERE typeid='$sortid'");
 
 		if(submitcheck('sortdetailsubmit')) {
 
@@ -595,14 +625,83 @@ EOT;
 				}
 			}
 
+			$insertoptionid = $indexoption = array();
+			$create_table_sql = $separator = $create_tableoption_sql = '';
+
 			if(is_array($addoption)) {
+				$query = $db->query("SELECT optionid, type, identifier FROM {$tablepre}typeoptions WHERE optionid IN (".implodeids(array_keys($addoption)).")");
+				while($option = $db->fetch_array($query)) {
+					$insertoptionid[$option['optionid']]['type'] = $option['type'];
+					$insertoptionid[$option['optionid']]['identifier'] = $option['identifier'];
+				}
 
+				$query = $db->query("SHOW TABLES LIKE '{$tablepre}optionvalue$sortid'");
+				if($db->num_rows($query) != 1) {
+					$create_table_sql = "CREATE TABLE {$tablepre}optionvalue$sortid (";
+					foreach($addoption as $optionid => $option) {
+						$identifier = $insertoptionid[$optionid]['identifier'];
+						if(in_array($insertoptionid[$optionid]['type'], array('radio', 'select', 'number')) || $search[$optionid]) {
+							if(in_array($insertoptionid[$optionid]['type'], array('radio', 'select'))) {
+								$create_tableoption_sql .= "$separator$identifier smallint(6) UNSIGNED NOT NULL DEFAULT '0'\r\n";
+							} elseif($insertoptionid[$optionid]['type'] == 'number') {
+								$create_tableoption_sql .= "$separator$identifier int(10) UNSIGNED NOT NULL DEFAULT '0'\r\n";
+							} else {
+								$create_tableoption_sql .= "$separator$identifier mediumtext NOT NULL\r\n";
+							}
+							$separator = ' ,';
 
+							if(in_array($insertoptionid[$optionid]['type'], array('radio', 'select', 'number'))) {
+								$indexoption[] = $identifier;
+							}
+						}
+					}
+					$create_table_sql .= ($create_tableoption_sql ? $create_tableoption_sql.',' : '')."tid mediumint(8) UNSIGNED NOT NULL DEFAULT '0',fid smallint(6) UNSIGNED NOT NULL DEFAULT '0',";
+					$create_table_sql .= "KEY (fid)";
+					if($indexoption) {
+						foreach($indexoption as $index) {
+							$create_table_sql .= "$separator KEY $index ($index)\r\n";
+							$separator = ' ,';
+						}
+					}
+					$create_table_sql .= ") TYPE=MyISAM;";
+					$dbcharset = empty($dbcharset) ? str_replace('-','',$charset) : $dbcharset;
+					$create_table_sql = syntablestruct($create_table_sql, $db->version() > '4.1', $dbcharset);
+					$db->query($create_table_sql);
+				} else {
+					$tables = array();
+					if($db->version() > '4.1') {
+						$query = $db->query("SHOW FULL COLUMNS FROM {$tablepre}optionvalue$sortid", 'SILENT');
+					} else {
+						$query = $db->query("SHOW COLUMNS FROM {$tablepre}optionvalue$sortid", 'SILENT');
+					}
+					while($field = @$db->fetch_array($query)) {
+						$tables[$field['Field']] = 1;
+					}
+
+					foreach($addoption as $optionid => $option) {
+						$identifier = $insertoptionid[$optionid]['identifier'];
+						if(!$tables[$identifier] && (in_array($insertoptionid[$optionid]['type'], array('radio', 'select', 'number')) || $search[$optionid])) {
+							$fieldname = $identifier;
+							if(in_array($insertoptionid[$optionid]['type'], array('radio', 'select'))) {
+								$fieldtype = 'smallint(6) UNSIGNED NOT NULL DEFAULT \'0\'';
+							} elseif($insertoptionid[$optionid]['type'] == 'number') {
+								$fieldtype = 'int(10) UNSIGNED NOT NULL DEFAULT \'0\'';
+							} else {
+								$fieldtype = 'mediumtext NOT NULL';
+							}
+							$db->query("ALTER TABLE {$tablepre}optionvalue$sortid ADD $fieldname $fieldtype");
+
+							if(in_array($insertoptionid[$optionid]['type'], array('radio', 'select', 'number'))) {
+								$db->query("ALTER TABLE {$tablepre}optionvalue$sortid ADD INDEX ($fieldname)");
+							}
+						}
+					}
+				}
 				foreach($addoption as $id => $val) {
 					$optionid = $db->fetch_first("SELECT optionid FROM {$tablepre}typeoptions WHERE optionid='$id'");
 					if($optionid) {
 						$db->query("INSERT INTO {$tablepre}typevars (sortid, optionid, available, required) VALUES ('$sortid', '$id', '1', '".intval($val)."')", 'SILENT');
-						$db->query("UPDATE {$tablepre}typevars SET displayorder='$displayorder[$id]', available='$available[$id]', required='$required[$id]', unchangeable='$unchangeable[$id]', search='$search[$id]' WHERE sortid='$sortid' AND optionid='$id'");
+						$db->query("UPDATE {$tablepre}typevars SET displayorder='$displayorder[$id]', available='$available[$id]', required='$required[$id]', unchangeable='$unchangeable[$id]', search='$search[$id]', subjectshow='$subjectshow[$id]' WHERE sortid='$sortid' AND optionid='$id'");
 					} else {
 						$db->query("DELETE FROM {$tablepre}typevars WHERE sortid='$sortid' AND optionid IN ($id)");
 					}
@@ -610,7 +709,7 @@ EOT;
 			}
 
 			updatecache('threadsorts');
-			cpmsg('threadtype_infotypes_succeed', $BASESCRIPT.'?action=threadtypes&operation=sortdetail&sortid='.$sortid, 'succeed');
+			cpmsg('threadtype_infotypes_succeed', $BASESCRIPT.'?action=threadtypes&special=1', 'succeed');
 
 		} elseif(submitcheck('sortpreviewsubmit')) {
 			header("Location: $boardurl$BASESCRIPT?action=threadtypes&operation=sortdetail&sortid=$sortid#template");
@@ -776,7 +875,7 @@ EOT;
 		$customoptionsnew = $customoptions && is_array($customoptions) ? implode("\t", $customoptions) : '';
 		$db->query("UPDATE {$tablepre}typemodels SET name='$namenew', customoptions='$customoptionsnew' WHERE id='$modelid'");
 
-		cpmsg('threadtype_infotypes_model_succeed', $BASESCRIPT.'?action=threadtypes&operation=modeldetail&modelid='.$modelid, 'succeed');
+		cpmsg('threadtype_infotypes_model_succeed', $BASESCRIPT.'?action=threadtypes&operation=typemodel', 'succeed');
 	}
 
 } elseif($operation == 'classlist') {
@@ -831,7 +930,9 @@ EOT;
 		"<input class=\"checkbox\" type=\"checkbox\" name=\"required[$option[optionid]]\" value=\"1\" ".($option['required'] ? 'checked' : '')." ".($option['model'] ? 'disabled' : '').">",
 		"<input class=\"checkbox\" type=\"checkbox\" name=\"unchangeable[$option[optionid]]\" value=\"1\" ".($option['unchangeable'] ? 'checked' : '').">",
 		"<input class=\"checkbox\" type=\"checkbox\" name=\"search[$option[optionid]]\" value=\"1\" ".($option['search'] ? 'checked' : '').">",
-		"<a href=\"###\" onclick=\"insertvar('$option[identifier]');doane(event);return false;\" class=\"act\">".$lang['threadtype_infotypes_add_template']."</a>",
+		"<input class=\"checkbox\" type=\"checkbox\" name=\"subjectshow[$option[optionid]]\" value=\"1\" ".($option['subjectshow'] ? 'checked' : '').">",
+		"<a href=\"###\" onclick=\"insertvar('$option[identifier]', 'typetemplate', 'message');doane(event);return false;\" class=\"act\">".$lang['threadtype_infotypes_add_template']."</a>",
+		"<a href=\"###\" onclick=\"insertvar('$option[identifier]', 'stypetemplate', 'subject');doane(event);return false;\" class=\"act\">".$lang['threadtype_infotypes_add_stemplate']."</a>",
 		"<a href=\"$BASESCRIPT?action=threadtypes&operation=optiondetail&optionid=$option[optionid]\" class=\"act\">".$lang['edit']."</a>"
 	));
 	include template('footer');
@@ -841,11 +942,31 @@ EOT;
 function showoption($var, $type) {
 	global $optiontitle, $lang;
 	if($optiontitle[$var]) {
-		$optiontitle[$var] = $type == 'title' ? $optiontitle[$var] : $optiontitle[$var].$lang['value'];
+		$optiontitle[$var] = $type == 'title' ? $optiontitle[$var] : $optiontitle[$var].($type == 'value' ? $lang['value'] : $lang['unit']);
 		return $optiontitle[$var];
 	} else {
 		return "!$var!";
 	}
 }
 
+function syntablestruct($sql, $version, $dbcharset) {
+
+	if(strpos(trim(substr($sql, 0, 18)), 'CREATE TABLE') === FALSE) {
+		return $sql;
+	}
+
+	$sqlversion = strpos($sql, 'ENGINE=') === FALSE ? FALSE : TRUE;
+
+	if($sqlversion === $version) {
+
+		return $sqlversion && $dbcharset ? preg_replace(array('/ character set \w+/i', '/ collate \w+/i', "/DEFAULT CHARSET=\w+/is"), array('', '', "DEFAULT CHARSET=$dbcharset"), $sql) : $sql;
+	}
+
+	if($version) {
+		return preg_replace(array('/TYPE=HEAP/i', '/TYPE=(\w+)/is'), array("ENGINE=MEMORY DEFAULT CHARSET=$dbcharset", "ENGINE=\\1 DEFAULT CHARSET=$dbcharset"), $sql);
+
+	} else {
+		return preg_replace(array('/character set \w+/i', '/collate \w+/i', '/ENGINE=MEMORY/i', '/\s*DEFAULT CHARSET=\w+/is', '/\s*COLLATE=\w+/is', '/ENGINE=(\w+)(.*)/is'), array('', '', 'ENGINE=HEAP', '', '', 'TYPE=\\1\\2'), $sql);
+	}
+}
 ?>

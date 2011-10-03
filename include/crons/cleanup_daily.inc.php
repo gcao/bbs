@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: cleanup_daily.inc.php 19961 2009-09-15 23:35:27Z wangjinbo $
+	$Id: cleanup_daily.inc.php 20902 2009-10-29 02:54:19Z liulanbo $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -46,7 +46,38 @@ while($attach = $db->fetch_array($query)) {
 }
 if($delaids) {
 	$db->query("DELETE FROM {$tablepre}attachments WHERE aid IN (".implodeids($delaids).")", 'UNBUFFERED');
-	$db->query("DELETE FROM {$tablepre}attachmentfields WHERE aid IN (" . implode($delaids) . ")", 'UNBUFFERED');
+	$db->query("DELETE FROM {$tablepre}attachmentfields WHERE aid IN (".implodeids($delaids).")", 'UNBUFFERED');
+}
+
+$uids = $members = array();
+$query = $db->query("SELECT uid, groupid, credits FROM {$tablepre}members WHERE groupid IN ('4', '5') AND groupexpiry>'0' AND groupexpiry<'$timestamp'");
+while($row = $db->fetch_array($query)) {
+	$uids[] = $row['uid'];
+	$members[$row[uid]] = $row;
+}
+if($uids) {
+	$query = $db->query("SELECT uid, groupterms FROM {$tablepre}memberfields WHERE uid IN (".implodeids($uids).")");
+	while($member = $db->fetch_array($query)) {
+		$sql = 'uid=uid';
+		$member['groupterms'] = unserialize($member['groupterms']);
+		$member['groupid'] = $members[$member[uid]]['groupid'];
+		$member['credits'] = $members[$member[uid]]['credits'];
+		
+		if(!empty($member['groupterms']['main']['groupid'])) {
+			$groupidnew = $member['groupterms']['main']['groupid'];
+			$adminidnew = $member['groupterms']['main']['adminid'];
+			unset($member['groupterms']['main']);
+			unset($member['groupterms']['ext'][$member['groupid']]);
+			$sql .= ', groupexpiry=\''.groupexpiry($member['groupterms']).'\'';
+		} else {
+			$query = $db->query("SELECT groupid FROM {$tablepre}usergroups WHERE type='member' AND creditshigher<='$member[credits]' AND creditslower>'$member[credits]'");
+			$groupidnew = $db->result($query, 0);
+			$adminidnew = 0;
+		}
+		$sql .= ", adminid='$adminidnew', groupid='$groupidnew'";
+		$db->query("UPDATE {$tablepre}members SET $sql WHERE uid='$member[uid]'");
+		$db->query("UPDATE {$tablepre}memberfields SET groupterms='".($member['groupterms'] ? addslashes(serialize($member['groupterms'])) : '')."' WHERE uid='$member[uid]'");
+	}
 }
 
 function removedir($dirname, $keepdir = FALSE) {

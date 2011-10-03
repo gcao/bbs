@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: magic_sofa.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: magic_top.inc.php 19071 2009-08-12 03:22:17Z tiger $
 */
 
 if(!defined('IN_DISCUZ')) {

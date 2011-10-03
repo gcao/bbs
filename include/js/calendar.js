@@ -2,7 +2,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: calendar.js 19605 2009-09-07 06:18:45Z monkey $
+	$Id: calendar.js 19565 2009-09-06 02:28:41Z liuqiang $
 */
 
 var controlid = null;

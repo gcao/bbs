@@ -100,7 +100,13 @@
 							$thread['icon']
 						<!--{/if}-->
 					</td>
-					<td><input onclick="tmodclick(this)" class="checkbox" type="checkbox" name="moderate[]" value="$thread[tid]" /></td>
+					<td>
+						<!--{if $thread['displayorder'] <= 3 || $adminid == 1}-->
+							<input onclick="tmodclick(this)" class="checkbox" type="checkbox" name="moderate[]" value="$thread[tid]" />
+						<!--{else}-->
+							<input class="checkbox" type="checkbox" disabled="disabled" />
+						<!--{/if}-->
+					</td>
 					<th class="subject $thread[folder]">
 						<label>
 						<!--{if $thread['rate'] > 0}-->

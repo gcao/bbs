@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: post.php 20623 2009-10-13 01:27:22Z monkey $
+	$Id: post.php 21337 2010-01-06 08:09:58Z tiger $
 */
 
 define('CURSCRIPT', 'post');
@@ -96,7 +96,9 @@ if(empty($forum['allowview'])) {
 	showmessage('forum_access_view_disallow');
 }
 
-formulaperm($forum['formulaperm']);
+if($adminid != 1) {
+	formulaperm($forum['formulaperm']);
+}
 
 if(!$adminid && $newbiespan && (!$lastpost || $timestamp - $lastpost < $newbiespan * 3600)) {
 	if($timestamp - ($db->result_first("SELECT regdate FROM {$tablepre}members WHERE uid='$discuz_uid'")) < $newbiespan * 3600) {
@@ -115,11 +117,11 @@ if($attachextensions) {
 } else {
 	$imgexts = 'jpg, jpeg, gif, png, bmp';
 }
+$allowuploadnum = TRUE;
 if($allowpostattach) {
 	if($maxattachnum) {
 		$allowuploadnum = $maxattachnum - $db->result_first("SELECT count(*) FROM {$tablepre}attachments WHERE uid='$discuz_uid' AND dateline>'$timestamp'-86400");
 		$allowuploadnum = $allowuploadnum < 0 ? 0 : $allowuploadnum;
-		$allowpostattach = $allowuploadnum ? $allowuploadnum : 0;
 	}
 	if($maxsizeperday) {
 		$allowuploadsize = $maxsizeperday - intval($db->result_first("SELECT SUM(filesize) FROM {$tablepre}attachments WHERE uid='$discuz_uid' AND dateline>'$timestamp'-86400"));
@@ -127,6 +129,7 @@ if($allowpostattach) {
 		$allowuploadsize = $allowuploadsize / 1048576 >= 1 ? round(($allowuploadsize / 1048576), 1).'MB' : round(($allowuploadsize / 1024)).'KB';
 	}
 }
+
 $allowpostimg = $allowpostattach && $imgexts;
 $enctype = $allowpostattach ? 'enctype="multipart/form-data"' : '';
 $maxattachsize_mb = $maxattachsize / 1048576 >= 1 ? round(($maxattachsize / 1048576), 1).'MB' : round(($maxattachsize / 1024)).'KB';
@@ -174,7 +177,8 @@ if($allowposturl < 3 && $message) {
 				$modnewthreads = $modnewreplies = 1;
 				break;
 			} elseif($allowposturl == 2) {
-				$message = str_replace(array('[url='.$urllist[0][$key].']', '[url]'.$urllist[0][$key].'[/url]'), $urllist[0][$key], $message);
+				$message = str_replace('[url]'.$urllist[0][$key].'[/url]', $urllist[0][$key], $message);
+				$message = preg_replace("@\[url={$urllist[0][$key]}\](.*?)\[/url\]@i", '\\1', $message);
 			}
 		}
 	}
@@ -196,6 +200,7 @@ $allowpostreward = $allowpost && $allowpostreward && ($forum['allowpostspecial']
 $allowpostactivity = $allowpost && $allowpostactivity && ($forum['allowpostspecial'] & 8);
 $allowpostdebate = $allowpost && $allowpostdebate && ($forum['allowpostspecial'] & 16);
 $usesigcheck = $discuz_uid && $sigstatus ? 'checked="checked"' : '';
+$ordertypecheck = getstatus($thread['status'], 4) ? 'checked="checked"' : '';
 
 if($specialextra && $allowpost && $threadplugins && (!array_key_exists($specialextra, $threadplugins) || !@in_array($specialextra, unserialize($forum['threadplugin'])) || !@in_array($specialextra, $allowthreadplugin))) {
 	$specialextra = '';
@@ -235,7 +240,6 @@ if($specialextra) {
 	}
 }
 
-$postcredits = array();
 if($action == 'newthread') {
 	$policykey = 'post';
 } elseif($action == 'reply') {

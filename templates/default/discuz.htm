@@ -37,7 +37,7 @@ $pluginhooks[index_top]
 				<!--{if $cat['moderators']}-->{lang forum_category_modedby}: $cat[moderators]<!--{/if}-->
 				<img id="category_$cat[fid]_img" src="{IMGDIR}/$cat[collapseimg]" title="{lang spread}" alt="{lang spread}" onclick="toggle_collapse('category_$cat[fid]');" />
 			</span>
-			<h3><a href="$indexname?gid=$cat[fid]">$cat[name]</a></h3>
+			<h3><a href="$indexname?gid=$cat[fid]" style="{if $cat[extra][namecolor]}color: {$cat[extra][namecolor]};{/if}">$cat[name]</a></h3>
 			<table id="category_$cat[fid]" summary="category$cat[fid]" cellspacing="0" cellpadding="0" style="$collapse['category_'.$cat[fid]]">
 			<!--{if !$cat['forumcolumns']}-->
 				<!--{loop $cat[forums] $forumid}-->
@@ -47,7 +47,7 @@ $pluginhooks[index_top]
 							<th$forum[folder]>
 								$forum[icon]
 								<div class="left">
-								<h2><a href="forumdisplay.php?fid=$forum[fid]" {if $forum[redirect]}target="_blank"{/if}>$forum[name]</a><!--{if $forum[todayposts] && !$forum['redirect']}--><em> ({lang index_today}: <strong>$forum[todayposts]</strong>)</em><!--{/if}--></h2>
+								<h2><a href="forumdisplay.php?fid=$forum[fid]" {if $forum[redirect]}target="_blank"{/if} style="{if $forum[extra][namecolor]}color: {$forum[extra][namecolor]};{/if}">$forum[name]</a><!--{if $forum[todayposts] && !$forum['redirect']}--><em> ({lang index_today}: <strong>$forum[todayposts]</strong>)</em><!--{/if}--></h2>
 								<!--{if $forum[description]}--><p>$forum[description]</p><!--{/if}-->
 								<!--{if $forum['subforums']}--><p>{lang forum_subforums}: $forum['subforums']</p><!--{/if}-->
 								<!--{if $forum['moderators']}--><!--{if $moddisplay == 'flat'}--><p>{lang forum_moderators}: $forum[moderators]</p><!--{else}--><span class="dropmenu" id="mod$forum[fid]" onmouseover="showMenu({'ctrlid':this.id})">{lang forum_moderators}</span><ul class="popupmenu_popup headermenu_popup" id="mod$forum[fid]_menu" style="display: none">$forum[moderators]</ul><!--{/if}--><!--{/if}-->
@@ -84,7 +84,7 @@ $pluginhooks[index_top]
 						<!--{/if}-->
 					<!--{/if}-->
 					<th width="$cat[forumcolwidth]"{$forum[folder]}>
-						<h2><a href="forumdisplay.php?fid=$forum[fid]" {if $forum[redirect]}target="_blank"{/if}>$forum[name]</a><!--{if $forum[todayposts]}--><em> ({lang index_today}: <strong>$forum[todayposts]</strong>)</em><!--{/if}--></h2>
+						<h2><a href="forumdisplay.php?fid=$forum[fid]" {if $forum[redirect]}target="_blank"{/if} style="{if $forum[extra][namecolor]}color: {$forum[extra][namecolor]};{/if}">$forum[name]</a><!--{if $forum[todayposts]}--><em> ({lang index_today}: <strong>$forum[todayposts]</strong>)</em><!--{/if}--></h2>
 						<!--{if !$forum[redirect]}-->
 							<p>{lang forum_threads}: $forum[threads], {lang forum_posts}: $forum[posts]</p>
 							<!--{if $forum['permission'] == 1}-->

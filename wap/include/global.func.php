@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: global.func.php 19606 2009-09-07 06:39:51Z liulanbo $
+	$Id: global.func.php 18537 2009-06-11 01:36:49Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -32,7 +32,6 @@ function wapheader($title) {
 
 function wapfooter() {
 	global $discuz_uid, $discuz_user, $lang, $action, $settings, $timestamp, $timeoffset, $wapdateformat, $timeformat;
-	stat_code('wap/', 1);
 	echo 	"<p>".gmdate("$wapdateformat $timeformat", $timestamp + ($timeoffset * 3600))."<br />".
 		($action != 'home' ? "<anchor title=\"confirm\"><prev/>$lang[return]</anchor> <a href=\"index.php\">$lang[home_page]</a><br />" : '').
 		($discuz_uid ? "<a href=\"index.php?action=login&amp;logout=yes&amp;formhash=".FORMHASH."\">$discuz_user:$lang[logout]</a>" : "<a href=\"index.php?action=login\">$lang[login]</a> <a href=\"index.php?action=register\">$lang[register]</a>")."<br /><br />\n".
@@ -47,14 +46,6 @@ function wapfooter() {
 
 function wapmsg($message, $forward = array()) {
 	extract($GLOBALS, EXTR_SKIP);
-	$statlogfile = '../forumdata/stat.log';
-	if(!IS_ROBOT) {
-		if($fp = @fopen($statlogfile, 'a')) {
-			@flock($fp, 2);
-			fwrite($fp, stat_query($message, '', '', 'wap/')."\n");
-			fclose($fp);
-		}
-	}
 	if(isset($lang[$message])) {
 		eval("\$message = \"".$lang[$message]."\";");
 	}

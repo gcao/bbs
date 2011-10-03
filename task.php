@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: task.php 20689 2009-10-14 09:42:41Z monkey $
+	$Id: task.php 13890 2008-07-08 02:21:38Z liuqiang $
 */
 
 define('CURSCRIPT', 'task');

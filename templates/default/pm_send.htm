@@ -13,7 +13,7 @@
 		</span>
 	</h3>
 	<div id="sendpmmsg" class="postbox">
-		<form id="sendpmform" method="post" action="pm.php?action=send&pmsubmit=yes&infloat=yes&sendnew=yes" onsubmit="$('pmsendmessage').value = parseurl($('pmsendmessage').value);ajaxpost('sendpmform', 'return_$handlekey', 'return_$handlekey', 'onerror');return false;">
+		<form id="sendpmform" method="post" action="pm.php?action=send&pmsubmit=yes&infloat=yes&sendnew=yes" onsubmit="$('pmsendmessage').value = parseurl($('pmsendmessage').value);{if !empty($infloat)}ajaxpost('sendpmform', 'return_$handlekey', 'return_$handlekey', 'onerror');return false;{/if}">
 			<input type="hidden" name="formhash" value="{FORMHASH}" />
 			<!--{if !empty($infloat)}--><input type="hidden" name="handlekey" value="$handlekey" /><!--{/if}-->
 			<div class="floatwrap">

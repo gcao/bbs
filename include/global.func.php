@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: global.func.php 20501 2009-09-29 06:55:07Z monkey $
+	$Id: global.func.php 21342 2010-01-06 08:52:53Z zhaoxiongfei $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -70,7 +70,7 @@ function aidencode($aid) {
 
 function clearcookies() {
 	global $discuz_uid, $discuz_user, $discuz_pw, $discuz_secques, $adminid, $credits;
-	foreach(array('sid', 'auth', 'visitedfid', 'onlinedetail', 'loginuser', 'activationauth', 'disableprompt', 'indextype') as $k) {
+	foreach(array('sid', 'auth', 'visitedfid', 'onlinedetail', 'loginuser', 'activationauth', 'indextype') as $k) {
 		dsetcookie($k);
 	}
 	$discuz_uid = $adminid = $credits = 0;
@@ -303,7 +303,7 @@ function dreferer($default = '') {
 		$referer = dhtmlspecialchars($referer);
 	}
 
-	if(!preg_match("/(\.php|[a-z]+(\-\d+)+\.html)/", $referer) || strpos($referer, 'logging.php')) {
+	if(strpos($referer, 'logging.php')) {
 		$referer = $default;
 	}
 	return $referer;
@@ -423,10 +423,12 @@ function forumperm($permstr) {
 }
 
 function formulaperm($formula, $type = 0, $wap = FALSE) {
-	global $db, $tablepre, $_DSESSION, $extcredits, $formulamessage, $usermsg, $forum, $language, $medalstatus, $discuz_uid;
+	global $db, $tablepre, $_DSESSION, $extcredits, $formulamessage, $usermsg, $forum, $language, $medalstatus, $discuz_uid, $timestamp;
 
 	$formula = unserialize($formula);
 	$medalperm = $formula['medal'];
+	$permusers = $formula['users'];
+	$permmessage = $formula['message'];
 	if(!$type && $medalstatus && $medalperm) {
 		$exists = 1;
 		$formulamessage = '';
@@ -460,31 +462,101 @@ function formulaperm($formula, $type = 0, $wap = FALSE) {
 		}
 	}
 	$formula = $formula[1];
-	if(!$type && (!$formula || $_DSESSION['adminid'] == 1 || $forum['ismoderator']) || $type && !$formula) {
+	if(!$type && ($_DSESSION['adminid'] == 1 || $forum['ismoderator'])) {
 		return FALSE;
+	}
+	if(!$type && $permusers) {
+		$permusers = str_replace(array("\r\n", "\r"), array("\n", "\n"), $permusers);
+		$permusers = explode("\n", trim($permusers));
+		if(!in_array($GLOBALS['discuz_user'], $permusers)) {
+			showmessage('forum_permforum_disallow', NULL, 'NOPERM');
+		}
+	}
+	if(!$formula) {
+		return FALSE;
+	}
+	if(strexists($formula, '$memberformula[')) {
+		preg_match_all("/\\\$memberformula\['(\w+?)'\]/", $formula, $a);
+		$fields = $profilefields = array();
+		$mfadd = '';
+		foreach($a[1] as $field) {
+			switch($field) {
+				case 'regdate':
+					$formula = preg_replace("/\{(\d{4})\-(\d{1,2})\-(\d{1,2})\}/e", "'\\1-'.sprintf('%02d', '\\2').'-'.sprintf('%02d', '\\3')", $formula);
+				case 'regday':
+					$fields[] = 'm.regdate';break;
+				case 'regip':
+				case 'lastip':
+					$formula = preg_replace("/\{([\d\.]+?)\}/", "'\\1'", $formula);
+					$fields[] = 'm.'.$field;break;
+				case substr($field, 0, 6) == 'field_':
+					$profilefields[] = $field;
+				case 'buyercredit':
+				case 'sellercredit':
+					$mfadd = "LEFT JOIN {$tablepre}memberfields mf ON m.uid=mf.uid";
+					$fields[] = 'mf.'.$field;break;
+			}
+		}
+		$memberformula = array();
+		if($discuz_uid) {
+			$memberformula = $db->fetch_first("SELECT ".implode(',', $fields)." FROM {$tablepre}members m $mfadd WHERE m.uid='$discuz_uid'");
+			if(in_array('regday', $a[1])) {
+				$memberformula['regday'] = intval(($timestamp - $memberformula['regdate']) / 86400);
+			}
+			if(in_array('regdate', $a[1])) {
+				$memberformula['regdate'] = date('Y-m-d', $memberformula['regdate']);
+			}
+			$memberformula['lastip'] = $memberformula['lastip'] ? $memberformula['lastip'] : $GLOBALS['onlineip'];
+		} else {
+			if(isset($memberformula['regip'])) {
+				$memberformula['regip'] = $GLOBALS['onlineip'];
+			}
+			if(isset($memberformula['lastip'])) {
+				$memberformula['lastip'] = $GLOBALS['onlineip'];
+			}
+		}
 	}
 	@eval("\$formulaperm = ($formula) ? TRUE : FALSE;");
 	if(!$formulaperm || $type == 2) {
-		include_once language('misc');
-		$search = array('$_DSESSION[\'digestposts\']', '$_DSESSION[\'posts\']', '$_DSESSION[\'threads\']', '$_DSESSION[\'oltime\']', '$_DSESSION[\'pageviews\']');
-		$replace = array($language['formulaperm_digestposts'], $language['formulaperm_posts'], $language['formulaperm_threads'], $language['formulaperm_oltime'], $language['formulaperm_pageviews']);
-		for($i = 1; $i <= 8; $i++) {
-			$search[] = '$_DSESSION[\'extcredits'.$i.'\']';
-			$replace[] = $extcredits[$i]['title'] ? $extcredits[$i]['title'] : $language['formulaperm_extcredits'].$i;
+		if(!$permmessage) {
+			include_once language('misc');
+			$search = array('$memberformula[\'regdate\']', '$memberformula[\'regday\']', '$memberformula[\'regip\']', '$memberformula[\'lastip\']', '$memberformula[\'buyercredit\']', '$memberformula[\'sellercredit\']', '$_DSESSION[\'digestposts\']', '$_DSESSION[\'posts\']', '$_DSESSION[\'threads\']', '$_DSESSION[\'oltime\']', '$_DSESSION[\'pageviews\']');
+			$replace = array($language['formulaperm_regdate'], $language['formulaperm_regday'], $language['formulaperm_regip'], $language['formulaperm_lastip'], $language['formulaperm_buyercredit'], $language['formulaperm_sellercredit'], $language['formulaperm_digestposts'], $language['formulaperm_posts'], $language['formulaperm_threads'], $language['formulaperm_oltime'], $language['formulaperm_pageviews']);
+			for($i = 1; $i <= 8; $i++) {
+				$search[] = '$_DSESSION[\'extcredits'.$i.'\']';
+				$replace[] = $extcredits[$i]['title'] ? $extcredits[$i]['title'] : $language['formulaperm_extcredits'].$i;
+			}
+			if($profilefields) {
+				@include DISCUZ_ROOT.'./forumdata/cache/cache_profilefields.php';
+				foreach($profilefields as $profilefield) {
+					$search[] = '$memberformula[\''.$profilefield.'\']';
+					$replace[] = !empty($_DCACHE['fields_optional'][$profilefield]) ? $_DCACHE['fields_optional'][$profilefield]['title'] : $_DCACHE['fields_required'][$profilefield]['title'];
+				}
+			}
+			$i = 0;$usermsg = '';
+			foreach($search as $s) {
+				if(!in_array($s, array('$memberformula[\'regdate\']', '$memberformula[\'regip\']', '$memberformula[\'lastip\']'))) {
+					$usermsg .= strexists($formula, $s) ? '<br />&nbsp;&nbsp;&nbsp;'.$replace[$i].': '.(@eval('return intval('.$s.');')) : '';
+				} elseif($s == '$memberformula[\'regdate\']') {
+					$usermsg .= strexists($formula, $s) ? '<br />&nbsp;&nbsp;&nbsp;'.$replace[$i].': '.(@eval('return '.$s.';')) : '';
+				}
+				$i++;
+			}
+			$search = array_merge($search, array('and', 'or', '>=', '<=', '=='));
+			$replace = array_merge($replace, array('&nbsp;&nbsp;<b>'.$language['formulaperm_and'].'</b>&nbsp;&nbsp;', '&nbsp;&nbsp;<b>'.$language['formulaperm_or'].'</b>&nbsp;&nbsp;', '&ge;', '&le;', '='));
+			$formulamessage = str_replace($search, $replace, $formula);
+		} else {
+			$formulamessage = nl2br(htmlspecialchars($permmessage));
 		}
-		$i = 0;$usermsg = '';
-		foreach($search as $s) {
-			$usermsg .= strexists($formula, $s) ? $replace[$i].' = '.(@eval('return intval('.$s.');')).'&nbsp;&nbsp;&nbsp;' : '';
-			$i++;
-		}
-		$search = array_merge($search, array('and', 'or', '>=', '<='));
-		$replace = array_merge($replace, array('&nbsp;&nbsp;'.$language['formulaperm_and'].'&nbsp;&nbsp;', '&nbsp;&nbsp;'.$language['formulaperm_or'].'&nbsp;&nbsp;', '&ge;', '&le;'));
-		$formulamessage = str_replace($search, $replace, $formula);
 
 		if($type == 1 || $type == 2) {
 			return $formulamessage;
 		} elseif(!$wap) {
-			showmessage('forum_permforum_nopermission', NULL, 'NOPERM');
+			if(!$permmessage) {
+				showmessage('forum_permforum_nopermission', NULL, 'NOPERM');
+			} else {
+				showmessage('forum_permforum_nopermission_custommsg', NULL, 'NOPERM');
+			}
 		} else {
 			wapmsg('forum_nopermission');
 		}
@@ -712,7 +784,7 @@ function output() {
 		return;
 	}
 	define('DISCUZ_OUTPUTED', 1);
-	global $sid, $transsidstatus, $rewritestatus, $ftp, $advlist, $thread, $inajax;
+	global $sid, $transsidstatus, $rewritestatus, $ftp, $advlist, $thread, $inajax, $forumdomains, $binddomains, $indexname;
 
 	if($advlist && !defined('IN_ADMINCP') && !$inajax) {
 		include template('adv');
@@ -720,7 +792,8 @@ function output() {
 	funcstat();
 	stat_code();
 
-	if(($transsidstatus = empty($GLOBALS['_DCOOKIE']['sid']) && $transsidstatus) || $rewritestatus) {
+	if(($transsidstatus = empty($GLOBALS['_DCOOKIE']['sid']) && $transsidstatus) || $rewritestatus || ($binddomains && $forumdomains)) {
+		$content = ob_get_contents();
 		if($transsidstatus) {
 			$searcharray = array
 				(
@@ -732,7 +805,22 @@ function output() {
 				"transsid('\\3','<a\\1href=\\2')",
 				"\\1\n<input type=\"hidden\" name=\"sid\" value=\"$sid\" />"
 				);
-		} else {
+			$content = preg_replace($searcharray, $replacearray, $content);
+		}
+
+		if($binddomains && $forumdomains) {
+			$bindsearcharray = $bindreplacearray = array();
+			$indexname = basename($indexname);
+			foreach($forumdomains as $fid => $domain) {
+				$bindsearcharray[] = "href=\"forumdisplay.php?fid=$fid&amp;";
+				$bindreplacearray[] = 'href="http://'.$domain.'/'.$indexname.'?';
+				$bindsearcharray[] = "href=\"forumdisplay.php?fid=$fid";
+				$bindreplacearray[] = 'href="http://'.$domain.'/'.$indexname;
+			}
+			$content = str_replace($bindsearcharray, $bindreplacearray, $content);
+		}
+
+		if($rewritestatus) {
 			$searcharray = $replacearray = array();
 			if($rewritestatus & 1) {
 				$searcharray[] = "/\<a href\=\"forumdisplay\.php\?fid\=(\d+)(&amp;page\=(\d+))?\"([^\>]*)\>/e";
@@ -750,9 +838,9 @@ function output() {
 				$searcharray[] = "/\<a href\=\"tag\.php\?name\=([^&]+?)\"([^\>]*)\>/e";
 				$replacearray[] = "rewrite_tag('\\1', '\\2')";
 			}
+			$content = preg_replace($searcharray, $replacearray, $content);
 		}
 
-		$content = preg_replace($searcharray, $replacearray, ob_get_contents());
 		ob_end_clean();
 		$GLOBALS['gzipcompress'] ? ob_start('ob_gzhandler') : ob_start();
 
@@ -846,7 +934,7 @@ function request($cachekey, $fid = 0, $type = 0, $return = 0) {
 		}
 	}
 	$cachefile = DISCUZ_ROOT.'./forumdata/cache/request_'.md5($cachekey).'.php';
-	if(((@!include($cachefile)) || $expiration < $timestamp) && !file_exists($cachefile.'.lock')) {
+	if(((@!include($cachefile)) || $expiration < $timestamp) && (!file_exists($cachefile.'.lock') || $timestamp - filemtime($cachefile.'.lock') > 3600)) {
 		include_once DISCUZ_ROOT.'./forumdata/cache/cache_request.php';
 		require_once DISCUZ_ROOT.'./include/request.func.php';
 		parse_str($_DCACHE['request'][$key]['url'], $requestdata);
@@ -876,6 +964,9 @@ function sendmail($email_to, $email_subject, $email_message, $email_from = '') {
 }
 
 function sendnotice($toid, $message, $type, $extraid = 0, $actor = array(), $uselang = 1) {
+	if(!$toid || $message === '') {
+		return;
+	}
 	extract($GLOBALS, EXTR_SKIP);
 	if($uselang) {
 		include language('notice');
@@ -885,6 +976,9 @@ function sendnotice($toid, $message, $type, $extraid = 0, $actor = array(), $use
 	}
 
 	$typeid = $prompts[$type]['id'];
+	if(!$typeid) {
+		return;
+	}
 	$toids = explode(',', $toid);
 	foreach($toids as $toid) {
 		$keysadd = $valuesadd = $statnewnotice = '';
@@ -909,13 +1003,7 @@ function sendnotice($toid, $message, $type, $extraid = 0, $actor = array(), $use
 			$db->query("INSERT INTO {$tablepre}promptmsgs (typeid, uid, new, dateline, message) VALUES ('$typeid', '$toid', '1', '$timestamp', '$message')");
 		}
 		if($statnewnotice) {
-			//统计各类通知条数
-			$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log';
-			if($fp = @fopen($statlogfile, 'a')) {
-				@flock($fp, 2);
-				fwrite($fp, stat_query('', 'action=counttype&typeid='.$typeid, '', '', 'notice.php')."\n");
-				fclose($fp);
-			}	
+			write_statlog('', 'action=counttype&typeid='.$typeid, '', '', 'notice.php');
 		}
 		$count = $db->result_first("SELECT count(*) FROM {$tablepre}promptmsgs WHERE uid='$toid' AND typeid='$typeid' AND new='1'");
 		updateprompt($type, $toid, $count);
@@ -973,12 +1061,7 @@ function showmessage($message, $url_forward = '', $extra = '', $forwardtype = 0)
 	}
 
 	if(!defined('STAT_DISABLED') && STAT_ID > 0 && !IS_ROBOT) {
-		$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log';
-		if($fp = @fopen($statlogfile, 'a')) {
-			@flock($fp, 2);
-			fwrite($fp, stat_query($message)."\n");
-			fclose($fp);
-		}
+		write_statlog($message);
 	}
 
 	if($url_forward && (!empty($quickforward) || empty($inajax) && $msgforward['quick'] && $msgforward['messages'] && @in_array($message, $msgforward['messages']))) {
@@ -992,7 +1075,6 @@ function showmessage($message, $url_forward = '', $extra = '', $forwardtype = 0)
 		$extra = '';
 	}
 	if(in_array($extra, array('HALTED', 'NOPERM'))) {
-		$fid = $tid = 0;
 		$discuz_action = 254;
 	} else {
 		$discuz_action = 255;
@@ -1002,7 +1084,7 @@ function showmessage($message, $url_forward = '', $extra = '', $forwardtype = 0)
 
 	$vars = explode(':', $message);
 	if(count($vars) == 2 && isset($scriptlang[$vars[0]][$vars[1]])) {
-		eval("\$show_message = \"".$scriptlang[$vars[0]][$vars[1]]."\";");
+		eval("\$show_message = \"".str_replace('"', '\"', $scriptlang[$vars[0]][$vars[1]])."\";");
 	} elseif(isset($language[$message])) {
 		$pre = $inajax ? 'ajax_' : '';
 		eval("\$show_message = \"".(isset($language[$pre.$message]) ? $language[$pre.$message] : $language[$message])."\";");
@@ -1598,6 +1680,7 @@ function transval($template, $data) {
 	}
 	return strtr($template, $trans);
 }
+
 function stat_code($scriptpath = '', $imgcode = 0) {
 	if(!defined('STAT_DISABLED') && STAT_ID > 0 && !IS_ROBOT) {
 		$statserver = 'http://stat.discuz.com/';
@@ -1608,7 +1691,7 @@ function stat_code($scriptpath = '', $imgcode = 0) {
 			if(file_exists($statlogold)) {
 				$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log.'.random(3);
 				@rename($statlogold, $statlogfile);
-				if(($logs = @file($statlogfile)) !== FALSE && is_array($logs)) {			
+				if(($logs = @file($statlogfile)) !== FALSE && is_array($logs)) {
 					foreach($logs as $log) {
 						if($log) {
 							$url = $statserver.'stat.php?q='.rawurlencode(base64_encode(trim($log)));
@@ -1622,7 +1705,7 @@ function stat_code($scriptpath = '', $imgcode = 0) {
 			echo '<script type="text/javascript" src="'.$statserver.'stat.php" reload="1"></script>';
 			echo '<script text="text/javascript" reload="1">
 			if(window.addEventListener) {
-				window.addEventListener("load", function () {document.body.stat("", "'.$GLOBALS['BASESCRIPT'].'")}, false); 
+				window.addEventListener("load", function () {document.body.stat("", "'.$GLOBALS['BASESCRIPT'].'")}, false);
 			} else if(document.attachEvent) {
 				window.attachEvent("onload", function () {document.body.stat("", "'.$GLOBALS['BASESCRIPT'].'")});
 			}
@@ -1654,6 +1737,17 @@ function stat_query($message = '', $query = '', $referer = '', $scriptpath = '',
 	return substr($s, 1);
 }
 
+function write_statlog($message = '', $query = '', $referer = '', $scriptpath = '', $script = '') {
+	if(defined('STAT_ID') && STAT_ID > 0) {
+		$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log';
+		if($fp = @fopen($statlogfile, 'a')) {
+			@flock($fp, 2);
+			fwrite($fp, stat_query($message, $query, $referer, $scriptpath, $script)."\n");
+			fclose($fp);
+		}
+	}
+}
+
 function funcstat($funcinfo = '', $scriptpath = '', $imgcode = 0) {
 	global $_DCACHE, $funcstatinfo;
 	$funcsiteid = $_DCACHE['settings']['funcsiteid'];
@@ -1663,7 +1757,7 @@ function funcstat($funcinfo = '', $scriptpath = '', $imgcode = 0) {
 		$funcinfo = array_unique($funcinfo);
 		foreach($funcinfo as $finfo) {
 			funcstat($finfo);
-		}		
+		}
 	} else {
 		list($funcmark, $funcversion) = explode(',', $funcinfo);
 		if($funcsiteid && $funckey && $funcmark && $funcversion && !IS_ROBOT) {
@@ -1686,7 +1780,7 @@ function funcstat($funcinfo = '', $scriptpath = '', $imgcode = 0) {
 					@unlink($statlogfile);
 				}
 			}
-		}		
+		}
 	}
 
 
@@ -1731,4 +1825,30 @@ function funcstat_query($funcinfo, $message = '', $query = '', $referer = '', $s
 	return substr($s, 1);
 }
 
+function setstatus($position, $value, $baseon = null) {
+	$t = pow(2, $position - 1);
+	if($value) {
+		$t = $baseon | $t;
+	} elseif ($baseon !== null) {
+		$t = $baseon & ~$t;
+	} else {
+		$t = ~$t;
+	}
+	return $t & 0xFFFF;
+}
+
+function getstatus($status, $position) {
+	$t = $status & pow(2, $position - 1) ? 1 : 0;
+	return $t;
+}
+
+function buildbitsql($fieldname, $position, $value) {
+	$t = " `$fieldname`=`$fieldname`";
+	if($value) {
+		$t .= ' | '.setstatus($position, 1);
+	} else {
+		$t .= ' & '.setstatus($position, 0);
+	}
+	return $t.' ';
+}
 ?>

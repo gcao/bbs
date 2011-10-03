@@ -7,7 +7,7 @@
 	<div class="main">
 		<div id="profilecontent" class="content">
 			<div class="itemtitle s_clear">
-				<h1>$member[username]</h1>
+				<h1>$member[username]<!--{if $member[online]}--> <img src="{IMGDIR}/online_buddy.gif" title="{lang online}" class="online_buddy" /><!--{/if}--></h1>
 				<ul>
 					<li>({lang uid}: $member[uid])</li>
 				</ul>
@@ -27,7 +27,7 @@
 							<!--{if $member['gender'] == 1}-->{lang male}<!--{elseif $member['gender'] == 2}-->{lang female}<!--{else}-->{lang secret}<!--{/if}-->
 						</td>
 					</tr>
-	
+
 					<!--{if $member[location]}-->
 					<tr>
 						<th width="70">{lang location}:</th>
@@ -36,7 +36,7 @@
 						</td>
 					</tr>
 					<!--{/if}-->
-	
+
 					<!--{if $member[bday] != '00-00'}-->
 					<tr>
 						<th width="70">{lang birthday}:</th>
@@ -45,7 +45,7 @@
 						</td>
 					</tr>
 					<!--{/if}-->
-	
+
 					<!--{if $member[bio]}-->
 					<tr>
 						<th>{lang bio}:</th>
@@ -178,7 +178,7 @@
 				</p>
 			<!--{/if}-->
 			$pluginhooks[profile_extrainfo]
-	
+
 			<!--{if $my_status}-->
 				<style>
 					.mynarrow { margin: 5px -10px 5px 10px; padding-top: 8px; width: 200px; border-top: 1px dashed #ccc; }
@@ -190,7 +190,7 @@
 				<!--{loop $my_list[wide] $value}-->
 					<hr class="dashline" />
 					<h3 class="blocktitle lightlink"><a href="$value[appurl]&from=space">$value[appname]</a></h3>
-					<p>		
+					<p>
 					<!--{eval eval($value[myml]);}-->
 					</p>
 				<!--{/loop}-->
@@ -211,26 +211,37 @@
 				<li class="pm"><a href="pm.php?action=new&amp;uid=$member[uid]" id="sendpm" prompt="sendpm" onclick="showWindow('sendpm', this.href);return false;">{lang send_pm}</a></li>
 				<li class="buddy"><a href="my.php?item=buddylist&amp;newbuddyid=$member[uid]&amp;buddysubmit=yes" id="addbuddy" prompt="addbuddy" onclick="ajaxmenu(this, 3000);doane(event);">{lang add_to_buddylist}</a></li>
 				<!--{if $discuz_uid && $magicstatus}--><li class="magic"><a href="magic.php?action=index&amp;username=$member[usernameenc]" target="_blank">{lang magics_use}</a></li><!--{/if}-->
-				<li class="searchpost"><a href="search.php?srchuid=$member[uid]&amp;srchfid=all&amp;srchfrom=0&amp;searchsubmit=yes">{lang search_posts}</a></li>
+				<!--{if $allowviewuserthread}-->
+					<li class="searchthread"><a href="my.php?item=threads&amp;uid=$member[uid]">{lang user_threads}</a></li>
+					<li class="searchpost"><a href="my.php?item=posts&amp;uid=$member[uid]">{lang user_posts}</a></li>
+				<!--{else}-->
+					<li class="searchpost"><a href="search.php?srchuid=$member[uid]&amp;srchfid=all&amp;srchfrom=0&amp;searchsubmit=yes">{lang search_posts}</a></li>
+				<!--{/if}-->
 				<!--{if $ucappopen['UCHOME']}-->
 				<li class="space"><a href="{$uchomeurl}/space.php?uid=$member[uid]" target="_blank">{lang user_space}</a></li>
 				<!--{elseif $ucappopen['XSPACE']}-->
 				<li class="space"><a href="{$xspaceurl}/?uid-$member[uid]" target="_blank">{lang user_space}</a></li>
 				<!--{/if}-->
 			</ul>
-			<!--{if $allowbanuser || $allowedituser || $member['adminid'] > 0 && $modworkstatus}-->
-			<ul>
-				<!--{if $allowbanuser}--><li><a href="{if $adminid==1}admincp.php?action=members&operation=ban&username=$member[usernameenc]&frames=yes{else}modcp.php?action=members&amp;op=ban&amp;uid=$member[uid]{/if}" target="_blank"><span>{lang ban_member}</span></a></li><!--{/if}-->
-				<!--{if $allowedituser}--><li><a href="{if $adminid == 1}admincp.php?action=members&amp;username=$member[usernameenc]&amp;submit=yes&frames=yes{else}modcp.php?action=members&amp;op=edit&amp;uid=$member[uid]{/if}" target="_blank"><span>{lang edit_member}</span></a></li><!--{/if}-->
-				<!--{if $member['adminid'] > 0 && $modworkstatus}--><li><a href="stats.php?type=modworks&amp;uid=$member[uid]"><span>{lang moderations}</span></a></li><!--{/if}-->
-			</ul>
-			<!--{/if}-->
 			<!--{if $discuz_uid && $magicstatus && $usemagic['user']}-->
 				<ul>
 					<!--{loop $usemagic['user'] $id $magic}-->
 						<a href="magic.php?action=mybox&operation=use&amp;type=1&amp;pid=$post[pid]&magicid=$id" onclick="showWindow('magics', this.href);doane(event);"><img src="images/magics/$magic[pic]" title="{lang magics_to_user}"></a>
 					<!--{/loop}-->
 				</ul>
+			<!--{/if}-->
+			<!--{if $allowbanuser || $allowedituser || $member['adminid'] > 0 && $modworkstatus}-->
+			<ul>
+				<!--{if $member['adminid'] > 0 && $modworkstatus}--><li><a href="stats.php?type=modworks&amp;uid=$member[uid]"><span>{lang moderations}</span></a></li><!--{/if}-->
+				<!--{if $allowbanuser || $allowedituser}-->
+					<li>{lang admin_member}</li>
+					<li>
+						<!--{if $allowbanuser}--><a href="{if $adminid==1}admincp.php?action=members&operation=ban&username=$member[usernameenc]&frames=yes{else}modcp.php?action=members&amp;op=ban&amp;uid=$member[uid]{/if}" target="_blank"><span>{lang ban_member}</span></a>&nbsp;<!--{/if}-->
+						<!--{if $allowedituser}--><a href="{if $adminid == 1}admincp.php?action=members&amp;username=$member[usernameenc]&amp;submit=yes&frames=yes{else}modcp.php?action=members&amp;op=edit&amp;uid=$member[uid]{/if}" target="_blank"><span>{lang edit}</span></a>&nbsp;<!--{/if}-->
+						<a href="modcp.php?action=threads&op=posts&do=search&searchsubmit=1&users=$member[usernameenc]" target="_blank">{lang posts}</a>
+					</li>
+				<!--{/if}-->
+			</ul>
 			<!--{/if}-->
 			<!--{if $my_status}-->
 				<!--{if $my_list[guide]}-->
@@ -240,7 +251,7 @@
 					<!--{/loop}-->
 					</ul>
 				<!--{/if}-->
-				
+
 				<!--{loop $my_list[narrow] $value}-->
 					<div class="mynarrow">
 					<h3 class="blocktitle lightlink"><a href="$value[appurl]&from=space">$value[appname]</a></h3>

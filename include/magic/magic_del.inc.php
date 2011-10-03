@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: magic_del.inc.php 19961 2009-09-15 23:35:27Z wangjinbo $
+	$Id: magic_del.inc.php 19960 2009-09-15 23:18:37Z wangjinbo $
 */
 
 if(!defined('IN_DISCUZ')) {

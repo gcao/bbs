@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: login.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: login.inc.php 20798 2009-10-22 04:59:28Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -50,13 +50,12 @@ if(empty($logout)) {
 		if(!$loginperm) {
 			wapmsg('login_strike');
 		}
-		
+
 		$answer = wapconvert($answer);
 		$username = wapconvert($username);
-		
+
 		require_once DISCUZ_ROOT.'./uc_client/client.php';
-		//$ucresult = uc_user_login($username, $password, preg_match("/^\d+$/", $username), 1, $questionid, $answer);
-		$ucresult = uc_user_login($username, $password, $loginfield, $username, 1, $questionid, $answer);
+		$ucresult = uc_user_login($username, $password, $loginfield, 1, $questionid, $answer);
 		list($tmp['uid'], $tmp['username'], $tmp['password'], $tmp['email']) = daddslashes($ucresult, 1);
 		$ucresult = $tmp;
 
@@ -89,11 +88,13 @@ if(empty($logout)) {
 				$member = $db->fetch_first("SELECT uid AS discuz_uid, username AS discuz_user, password AS discuz_pw, secques AS discuz_secques, groupid, invisible
 					FROM {$tablepre}members WHERE uid='$ucresult[uid]'");
 				@extract($member);
+				$discuz_user = addslashes($discuz_user);
 				dsetcookie('auth', authcode("$discuz_pw\t$discuz_secques\t$discuz_uid", 'ENCODE'), 2592000, 1, true);
 				wapmsg('login_succeed');
 			}
 
 			@extract($member);
+			$discuz_user = addslashes($discuz_user);
 			dsetcookie('auth', authcode("$discuz_pw\t$discuz_secques\t$discuz_uid", 'ENCODE'), 2592000, 1, true);
 			wapmsg('login_succeed');
 

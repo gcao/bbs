@@ -45,7 +45,7 @@
 			}
 
 			function updateavatar(updatenewbietask) {
-				$('avatar').src='{echo discuz_uc_avatar($discuz_uid, 'middle', TRUE)}&random=1'+Math.random();
+				$('avatar').src='{echo discuz_uc_avatar($discuz_uid, 'middle', TRUE)}{if $avatarmethod}?{else}&{/if}random=1'+Math.random();
 				<!--{if $prompts['newbietask'] && $newbietaskid && $newbietasks[$newbietaskid]['scriptname'] == 'uploadavatar'}-->
 				if(isUndefined(updatenewbietask)) {
 					ajaxget('task.php?action=updatenewbietask&scriptname=uploadavatar', 'avatarctrl');
@@ -528,7 +528,7 @@
 							}
 							</script>
 						</td>
-					</tr>					
+					</tr>
 					<!--{if $uchome['addfeed'] && $ucappopen['UCHOME']}-->
 						<tr>
 							<th>{lang memcp_profile_feed}</th>

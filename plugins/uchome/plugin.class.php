@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: plugin.class.php 20482 2009-09-28 09:00:08Z monkey $
+	$Id: plugin.class.php 20939 2009-11-02 01:14:31Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -38,8 +38,8 @@ class plugin_uchome {
 	}
 
 	function viewthread_bottom_output() {
-		global $page, $uchomeurl, $_DCACHE, $discuz_uid, $infosidestatus, $feedpostnum, $feeduid, $firstpid;
-		if($page == 1 && $uchomeurl && $_DCACHE['settings']['uchomeurl'] && $discuz_uid) {
+		global $page, $uchomeurl, $_DCACHE, $discuz_uid, $infosidestatus, $feedpostnum, $feeduid, $firstpid, $postlist;
+		if($page == 1 && $uchomeurl && $_DCACHE['settings']['uchomeurl'] && $discuz_uid && !$postlist[$firstpid]['anonymous']) {
 			return '<div id="authornewfeed_menu" style="display:none"></div><script type="text/javascript" src="'.$uchomeurl.'/api/discuz.php?pagetype=viewthread&amp;status='.$_DCACHE['settings']['homeshow'].'&amp;uid='.$discuz_uid.'&amp;infosidestatus='.$infosidestatus['allow'].'&amp;feedpostnum='.$feedpostnum.'&amp;updateuid='.$feeduid.'&amp;pid='.$firstpid.'&amp;plugin=1"></script>';
 		}
 	}

@@ -4,12 +4,12 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: my.php 19869 2009-09-14 02:18:07Z monkey $
+	$Id: my.php 21156 2009-11-18 00:44:35Z monkey $
 */
 
 error_reporting(0);
 define('IN_DISCUZ', TRUE);
-define('X_VER', '7.1');
+define('X_VER', '7.2');
 define('X_MYVER', '0.3');
 define('X_LANGUAGE', 'zh_CN');
 define('DISCUZ_ROOT', substr(dirname(__FILE__), 0, -10));

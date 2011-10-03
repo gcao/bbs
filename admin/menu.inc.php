@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: menu.inc.php 20616 2009-10-12 09:33:18Z monkey $
+	$Id: menu.inc.php 21081 2009-11-11 06:49:33Z zhaoxiongfei $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -23,7 +23,7 @@ showmenu('global', array(
 	array('menu_settings_datetime', 'settings&operation=datetime'),
 	array('menu_settings_attachments', 'settings&operation=attach'),
 	array('menu_settings_dzfeed', 'settings&operation=dzfeed'),
-	array('menu_settings_wap', 'settings&operation=wap'),	
+	array('menu_settings_wap', 'settings&operation=wap'),
 	$isfounder ? array('menu_settings_uc', 'settings&operation=uc') : array(),
 ));
 showmenu('forum', array(
@@ -54,7 +54,9 @@ showmenu('topic', array(
 	array('menu_moderate_recyclebin', 'recyclebin'),
 	array('menu_posting_tags', 'misc&operation=tag'),
 	array('menu_posting_censors', 'misc&operation=censor'),
-	array('menu_posting_attachtypes', 'misc&operation=attachtype')
+	array('menu_posting_attachtypes', 'misc&operation=attachtype'),
+	array('menu_threads_forumstick', 'threads&operation=forumstick'),
+	array('menu_post_position_index', 'threads&operation=postposition')
 ));
 showmenu('extended', array(
 	array('menu_tasks', 'tasks'),
@@ -83,6 +85,7 @@ showmenu('style', array(
 	$isfounder ? array('menu_styles_templates', 'templates') : array(),
 	array('menu_posting_smilies', 'smilies'),
 	array('menu_thread_icon', 'misc&operation=icon'),
+	array('menu_thread_stamp', 'misc&operation=stamp'),
 	array('menu_posting_editor', 'settings&operation=editor'),
 	array('menu_misc_onlinelist', 'misc&operation=onlinelist'),
 ));
@@ -108,11 +111,15 @@ showmenu('adv', array(
 ));
 showmenu('uc', array());
 $historymenus = array(array('menu_home', 'home'));
-$query = $db->query("SELECT title, url FROM {$tablepre}admincustom WHERE uid='$discuz_uid' AND sort IN ('0','1') ORDER BY dateline DESC LIMIT 0, 10");
+$query = $db->query("SELECT sort, title, url FROM {$tablepre}admincustom WHERE uid='$discuz_uid' AND sort IN ('0','1') ORDER BY dateline DESC LIMIT 0, 10");
+$historyexist = 0;
 while($custom = $db->fetch_array($query)) {
 	$historymenus[] = array($custom['title'], substr($custom['url'], 19));
+	if(!$custom['sort']) {
+		$historyexist = 1;
+	}
 }
-if(count($historymenus) > 1) {
+if($historyexist) {
 	$historymenus[] = array('menu_home_clearhistorymenus', 'misc&operation=custommenu&do=clean', 'main', 'class="menulink"');
 }
 

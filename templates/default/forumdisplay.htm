@@ -24,7 +24,7 @@
 	<div class="content">
 		$pluginhooks[forumdisplay_header]
 		<div id="forumheader" class="s_clear">
-			<h1>$forum[name]</h1>
+			<h1 style="{if $forum[extra][namecolor]}color: {$forum[extra][namecolor]};{/if}">$forum[name]</h1>
 			<p class="forumstats">[ <strong>$forum[threads]</strong> {lang thread} / {echo $forum[posts]-$forum[threads]} {lang reply} ]</p>
 			<div class="forumaction">
 				<div class="right">
@@ -35,8 +35,8 @@
 				<!--{/if}-->
 				<!--{if $rssstatus}--><a href="rss.php?fid=$fid&amp;auth=$rssauth" target="_blank" class="feed">RSS</a><!--{/if}-->
 				</div>
-				<!--{if $forum['recyclebin']}-->
-					<a href="{if $adminid == 1}admincp.php?action=recyclebin&frames=yes{elseif $forum['ismoderator']}modcp.php?action=recyclebins&fid=$fid{/if}" class="recyclebin" target="_blank">{lang forum_recyclebin}</a>
+				<!--{if $forum['recyclebin'] && $forum['ismoderator']}-->
+					<a href="{if $adminid == 1}admincp.php?action=recyclebin&amp;frames=yes{elseif $forum['ismoderator']}modcp.php?action=recyclebins&amp;fid=$fid{/if}" class="recyclebin" target="_blank">{lang forum_recyclebin}</a>
 				<!--{/if}-->
 			</div>
 			<!--{if $forum[description]}--><p class="channelinfo">{lang forum_description}: $forum[description]</p><!--{/if}-->
@@ -45,7 +45,9 @@
 					<div class="modlink">
 					$pluginhooks[forumdisplay_modlink]
 					<!--{if $forum['modworks']}-->
-						<a href="modcp.php?action=report&fid=$fid" target="_blank">{lang mod_works_existence}</a> |
+						<!--{if $reportnum}--><a href="modcp.php?action=report&fid=$fid" target="_blank">{lang mod_works_report_existence}</a> |<!--{/if}-->
+						<!--{if $modnum}--><a href="modcp.php?action=moderate&op=threads&fid=$fid" target="_blank">{lang mod_works_modpost_existence}</a> |<!--{/if}-->
+						<!--{if $modusernum}--><a href="modcp.php?action=moderate&op=members&fid=$fid" target="_blank">{lang mod_works_moduser_existence}</a> |<!--{/if}-->
 					<!--{/if}-->
 					<a href="modcp.php?fid=$fid" target="_blank">{lang modcp}</a>
 					</div>
@@ -61,7 +63,7 @@
 					<span class="headactions"><img onclick="toggle_collapse('modarea_c');" alt="{lang spread}" title="{lang spread}" src="{IMGDIR}/$collapseimg[modarea_c].gif" id="modarea_c_img" class="toggle" /></span>
 					<h3>
 						<!--{if $forum['recommendlist']}-->
-							<a href="javascript:;" id="tab_1" class="current" {if $forum['rules']} onclick="switchTab('tab', 1, 2)"{/if}>{lang forum_recommend}</a><!--{if $forum['ismoderator']}--><a href="modcp.php?action=forums&op=recommend&show=all&fid=$fid" target="_blank">[{lang edit}]</a><!--{/if}-->
+							<a href="javascript:;" id="tab_1" class="current" {if $forum['rules']} onclick="switchTab('tab', 1, 2)"{/if}>{lang forum_recommend}</a><!--{if $forum['ismoderator'] && $allowrecommendthread}--><a href="modcp.php?action=forums&op=recommend&show=all&fid=$fid" target="_blank">[{lang edit}]</a><!--{/if}-->
 						<!--{/if}-->
 						<!--{if $forum['recommendlist'] &&  $forum['rules']}--><span class="pipe">|</span><!--{/if}--><!--{if $forum['rules']}--><a href="javascript:;" id="tab_2"{if !$forum['recommendlist']} class="current"{/if} {if $forum['recommendlist']} onclick="switchTab('tab', 2, 2)"{/if}>{lang forum_rules}</a><!--{/if}-->
 					</h3>
@@ -89,56 +91,6 @@
 			<span <!--{if $visitedforums}-->id="visitedforums" onmouseover="$('visitedforums').id = 'visitedforumstmp';this.id = 'visitedforums';showMenu({'ctrlid':this.id})"<!--{/if}--> class="pageback"><a href="$indexname">{lang return_index}</a></span>
 			<span class="postbtn" id="newspecial" prompt="post_newthread" onmouseover="$('newspecial').id = 'newspecialtmp';this.id = 'newspecial';showMenu({'ctrlid':this.id})"><a href="post.php?action=newthread&fid=$fid"{if !$forum['allowspecialonly']} onclick="showWindow('newthread', this.href);return false;"{/if}>{lang send_posts}</a></span>
 		</div>
-
-		<!--{if $forum['threadtypes'] && $forum['threadtypes']['listable'] || $forum['threadsorts'] && $forum['threadsorts']['listable']}-->
-		<div class="threadtype">
-			<!--{if $forum['threadtypes'] && $forum['threadtypes']['listable']}-->
-			<p>
-				<!--{if $typeid || $sortid}--><a href="forumdisplay.php?fid=$fid">{lang forum_viewall}</a><!--{else}--><strong>{lang forum_viewall}</strong><!--{/if}-->
-				<!--{loop $forum['threadtypes']['flat'] $id $name}--><!--{if $typeid != $id}--><a href="forumdisplay.php?fid=$fid&amp;filter=type&amp;typeid=$id$sortadd">$name</a><!--{else}--><strong>$name</strong><!--{/if}--> <!--{/loop}-->
-				<!--{if $forum['threadtypes']['selectbox']}-->
-					<span id="threadtypesmenu" class="dropmenu" onmouseover="showMenu({'ctrlid':this.id})">{lang admin_type_more}</span>
-					<div class="popupmenu_popup headermenu_popup" id="threadtypesmenu_menu" style="display: none">
-					<ul>
-					<!--{loop $forum['threadtypes']['selectbox'] $id $name}-->
-						<li>
-						<!--{if $typeid != $id}-->
-							<a href="forumdisplay.php?fid=$fid&filter=type&typeid=$id$sortadd">$name</a>
-						<!--{else}-->
-							<strong>$name</strong>
-						<!--{/if}-->
-						</li>
-					<!--{/loop}-->
-					</ul>
-					</div>
-				<!--{/if}-->
-			</p>
-			<!--{/if}-->
-
-			<!--{if $forum['threadsorts'] && $forum['threadsorts']['listable']}-->
-			<p>
-				<!--{if !$forum['threadtypes']['listable']}--><!--{if $sortid}--><a href="forumdisplay.php?fid=$fid">{lang forum_viewall}</a><!--{else}--><strong>{lang forum_viewall}</strong><!--{/if}--><!--{/if}-->
-				<!--{loop $forum['threadsorts']['flat'] $id $name}--><!--{if $sortid != $id}--><a href="forumdisplay.php?fid=$fid&amp;filter=sort&amp;sortid=$id$typeadd">$name</a><!--{else}--><strong>$name</strong><!--{/if}--> <!--{/loop}-->
-				<!--{if $forum['threadsorts']['selectbox']}-->
-					<span id="threadsortsmenu" class="dropmenu" onmouseover="showMenu({'ctrlid':this.id})">{lang admin_type_more}</span>
-					<div class="popupmenu_popup headermenu_popup" id="threadsortsmenu_menu" style="display: none">
-					<ul>
-					<!--{loop $forum['threadsorts']['selectbox'] $id $name}-->
-						<li>
-						<!--{if $sortid != $id}-->
-							<a href="forumdisplay.php?fid=$fid&filter=sort&sortid=$id$typeadd">$name</a>
-						<!--{else}-->
-							<strong>$name</strong>
-						<!--{/if}-->
-						</li>
-					<!--{/loop}-->
-					</ul>
-					</div>
-				<!--{/if}-->
-			</p>
-			<!--{/if}-->
-		</div>
-		<!--{/if}-->
 
 		<div id="threadlist" class="threadlist datalist" style="position: relative;">
 		<form method="post" name="moderate" id="moderate" action="topicadmin.php?action=moderate&fid=$fid&infloat=yes&nopost=yes">
@@ -197,7 +149,7 @@
 				<!--{if $threadcount}-->
 				<!--{loop $threadlist $key $thread}-->
 
-				<!--{if $separatepos == $key + 1}-->
+				<!--{if $forumseparator == 1 && $separatepos == $key + 1}-->
 				<tbody>
 					<tr>
 						<td class="folder"></td><td>&nbsp;</td>
@@ -212,7 +164,7 @@
 							<a href="viewthread.php?tid=$thread[tid]&amp;extra=$extra" title="{lang target_blank}" target="_blank">
 							<!--{if $thread[folder] == 'lock'}-->
 								<img src="{IMGDIR}/folder_lock.gif" /></a>
-							<!--{elseif in_array($thread['displayorder'], array(1, 2, 3))}-->
+							<!--{elseif in_array($thread['displayorder'], array(1, 2, 3, 4))}-->
 								<img src="{IMGDIR}/pin_$thread[displayorder].gif" alt="$threadsticky[3-$thread[displayorder]]" /></a>
 							<!--{else}-->
 								<img src="{IMGDIR}/folder_$thread[folder].gif" /></a>
@@ -236,7 +188,11 @@
 						<!--{if $forum['ismoderator']}-->
 						<td class="icon">
 							<!--{if $thread['fid'] == $fid && $thread['digest'] >= 0}-->
-								<input onclick="tmodclick(this)" class="checkbox" type="checkbox" name="moderate[]" value="$thread[tid]" />
+								<!--{if $thread['displayorder'] <= 3 || $adminid == 1}-->
+									<input onclick="tmodclick(this)" class="checkbox" type="checkbox" name="moderate[]" value="$thread[tid]" />
+								<!--{else}-->
+									<input class="checkbox" type="checkbox" disabled="disabled" />
+								<!--{/if}-->
 							<!--{else}-->
 								<input class="checkbox" type="checkbox" disabled="disabled" />
 							<!--{/if}-->
@@ -323,6 +279,55 @@
 			<span <!--{if $visitedforums}-->id="visitedforums" onmouseover="$('visitedforums').id = 'visitedforumstmp';this.id = 'visitedforums';showMenu({'ctrlid':this.id})"<!--{/if}--> class="pageback"><a href="$indexname">{lang return_index}</a></span>
 			<span class="postbtn" id="newspecialtmp" onmouseover="$('newspecial').id = 'newspecialtmp';this.id = 'newspecial';showMenu({'ctrlid':this.id})"><a href="post.php?action=newthread&fid=$fid"{if !$forum['allowspecialonly']} onclick="showWindow('newthread', this.href);return false;"{/if}>{lang send_posts}</a></span>
 		</div>
+                <!--{if $forum['threadtypes'] && $forum['threadtypes']['listable'] || $forum['threadsorts']}-->
+                <div class="threadtype">
+                        <!--{if $forum['threadtypes'] && $forum['threadtypes']['listable']}-->
+                        <p>
+                                <!--{if $typeid || $sortid}--><a href="forumdisplay.php?fid=$fid">{lang forum_viewall}</a><!--{else}--><strong>{lang forum_viewall}</strong><!--{/if}-->
+                                <!--{loop $forum['threadtypes']['flat'] $id $name}--><!--{if $typeid != $id}--><a href="forumdisplay.php?fid=$fid&amp;filter=type&amp;typeid=$id$sortadd">$name</a><!--{else}--><strong>$name</strong><!--{/if}--> <!--{/loop}-->
+                                <!--{if $forum['threadtypes']['selectbox']}-->
+                                        <span id="threadtypesmenu" class="dropmenu" onmouseover="showMenu({'ctrlid':this.id})">{lang admin_type_more}</span>
+                                        <div class="popupmenu_popup headermenu_popup" id="threadtypesmenu_menu" style="display: none">
+                                        <ul>
+                                        <!--{loop $forum['threadtypes']['selectbox'] $id $name}-->
+                                                <li>
+                                                <!--{if $typeid != $id}-->
+                                                        <a href="forumdisplay.php?fid=$fid&filter=type&typeid=$id$sortadd">$name</a>
+                                                <!--{else}-->
+                                                        <strong>$name</strong>
+                                                <!--{/if}-->
+                                                </li>
+                                        <!--{/loop}-->
+                                        </ul>
+                                        </div>
+                                <!--{/if}-->
+                        </p>
+                        <!--{/if}-->
+
+                        <!--{if $forum['threadsorts']}-->
+                        <p>
+                                <!--{if !$forum['threadtypes']['listable']}--><!--{if $sortid}--><a href="forumdisplay.php?fid=$fid">{lang forum_viewall}</a><!--{else}--><strong>{lang forum_viewall}</strong><!--{/if}--><!--{/if}-->
+                                <!--{loop $forum['threadsorts']['flat'] $id $name}--><!--{if $sortid != $id}--><a href="forumdisplay.php?fid=$fid&amp;filter=sort&amp;sortid=$id$typeadd">$name</a><!--{else}--><strong>$name</strong><!--{/if}--> <!--{/loop}-->
+                                <!--{if $forum['threadsorts']['selectbox']}-->
+                                        <span id="threadsortsmenu" class="dropmenu" onmouseover="showMenu({'ctrlid':this.id})">{lang admin_type_more}</span>
+                                        <div class="popupmenu_popup headermenu_popup" id="threadsortsmenu_menu" style="display: none">
+                                        <ul>
+                                        <!--{loop $forum['threadsorts']['selectbox'] $id $name}-->
+                                                <li>
+                                                <!--{if $sortid != $id}-->
+                                                        <a href="forumdisplay.php?fid=$fid&filter=sort&sortid=$id$typeadd">$name</a>
+                                                <!--{else}-->
+                                                        <strong>$name</strong>
+                                                <!--{/if}-->
+                                                </li>
+                                        <!--{/loop}-->
+                                        </ul>
+                                        </div>
+                                <!--{/if}-->
+                        </p>
+                        <!--{/if}-->
+                </div>
+                <!--{/if}-->
 
 		<!--{if $whosonlinestatus}-->
 		<dl id="onlinelist">

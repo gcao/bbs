@@ -4,13 +4,9 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: sample.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: sample.inc.php 21053 2009-11-09 10:29:02Z wangjinbo $
 */
 
-/*
-	模块调用脚本范例程序
-	最新主题调用
-*/
 
 if(!defined('IN_DISCUZ')) {
         exit('Access Denied');
@@ -18,12 +14,6 @@ if(!defined('IN_DISCUZ')) {
 
 if($requestrun) {
 
-/*
-	模块脚本运行代码
-	脚本中的设置参数在数组 $settings 中
-	脚本中不能有输出语句，所有输出结果赋值给变量 $writedata
-	脚本输出结果自动缓存，缓存时间根据数据调用模块设置而定，如不缓存，可令 $nocache = 1
-*/
 
 	$settings['fid'] = !empty($settings['sidestatus']) && $specialfid ? $specialfid : $settings['fid'];
 	$limit = !empty($settings['limit']) ? intval($settings['limit']) : 10;
@@ -43,25 +33,6 @@ if($requestrun) {
 
 } else {
 
-/*
-	模块脚本设置参数
-	
-	版本 $request_version
-	名称 $request_name
-	描述 $request_description
-	版权 $request_copyright
-	参数 $request_settings
-
-	变量名 => array(变量含义, 备注说明, 类型, 选项数组, 默认值)
-	类型:
-		text		单行文本
-		textarea	多行文本
-		radio		单选(是/否)
-		mradio		自定义单选
-		mcheckbox	多选
-		select		单选下拉
-		mselect		多选下拉
-*/
 
 	$request_version = '1.0';
 	$request_name = '模块调用脚本范例';

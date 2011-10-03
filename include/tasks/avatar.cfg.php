@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: avatar.cfg.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: avatar.cfg.php 16697 2008-11-14 07:36:51Z monkey $
 */
 
 	$task_name = $tasklang['avatar_name'];

@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: rowcombine.inc.php 20153 2009-09-21 02:26:02Z monkey $
+	$Id: rowcombine.inc.php 20152 2009-09-21 02:22:58Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {

@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: prune.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: prune.inc.php 21266 2009-11-24 05:35:06Z liulanbo $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -98,23 +98,33 @@ EOT;
 
 		if(!$donotupdatemember) {
 			$postsarray = $tuidarray = $ruidarray = array();
-			$query1 = $db->query("SELECT pid, first, authorid FROM {$tablepre}posts WHERE pid IN ($pidsdelete)");
-			$query2 = $db->query("SELECT pid, first, authorid FROM {$tablepre}posts WHERE tid IN ($tidsdelete)");
+			$query1 = $db->query("SELECT fid, pid, first, authorid FROM {$tablepre}posts WHERE pid IN ($pidsdelete)");
+			$query2 = $db->query("SELECT fid, pid, first, authorid FROM {$tablepre}posts WHERE tid IN ($tidsdelete)");
 			while(($post = $db->fetch_array($query1)) || ($post = $db->fetch_array($query2))) {
-				$postsarray[$post['pid']] = $post;
+				$forumpostsarray[$post['fid']][$post['pid']] = $post;
 			}
-			foreach($postsarray as $post) {
-				if($post['first']) {
-					$tuidarray[] = $post['authorid'];
-				} else {
-					$ruidarray[] = $post['authorid'];
+			foreach($forumpostsarray as $fid => $postsarray) {
+				$query = $db->query("SELECT postcredits, replycredits FROM {$tablepre}forumfields WHERE fid='$fid'");
+				if($forum = $db->fetch_array($query)) {
+					$forum['postcredits'] = !empty($forum['postcredits']) ? unserialize($forum['postcredits']) : array();
+					$forum['replycredits'] = !empty($forum['replycredits']) ? unserialize($forum['replycredits']) : array();
 				}
-			}
-			if($tuidarray) {
-				updatepostcredits('-', $tuidarray, $creditspolicy['post']);
-			}
-			if($ruidarray) {
-				updatepostcredits('-', $ruidarray, $creditspolicy['reply']);
+				$postcredits = $forum['postcredits'] ? $forum['postcredits'] : $creditspolicy['post'];
+				$replycredits = $forum['replycredits'] ? $forum['replycredits'] : $creditspolicy['reply'];
+				$tuidarray = $ruidarray = array();
+				foreach($postsarray as $post) {
+					if($post['first']) {
+						$tuidarray[] = $post['authorid'];
+					} else {
+						$ruidarray[] = $post['authorid'];
+					}
+				}
+				if($tuidarray) {
+					updatepostcredits('-', $tuidarray, $postcredits);
+				}
+				if($ruidarray) {
+					updatepostcredits('-', $ruidarray, $replycredits);
+				}				
 			}
 		}
 
@@ -137,6 +147,7 @@ EOT;
 		$db->query("DELETE FROM {$tablepre}activities WHERE tid IN ($tidsdelete)", 'UNBUFFERED');
 		$db->query("DELETE FROM {$tablepre}activityapplies WHERE tid IN ($tidsdelete)", 'UNBUFFERED');
 		$db->query("DELETE FROM {$tablepre}typeoptionvars WHERE tid IN ($tidsdelete)", 'UNBUFFERED');
+		$db->query("DELETE FROM {$tablepre}postposition WHERE tid IN ($tidsdelete)", 'UNBUFFERED');
 
 		if(count($prune['thread']) < 50) {
 			foreach($prune['thread'] as $tid => $decrease) {

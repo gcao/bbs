@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: medals.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: medals.inc.php 21268 2009-11-24 06:15:58Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -274,27 +274,47 @@ if(!$operation) {
 			$extcreditsbtn .= '<a href="###" onclick="insertunit(\'extcredits'.$i.'\')">'.$extcredittitle.'</a> &nbsp;';
 		}
 
+		$profilefields = '';
+		$query = $db->query("SELECT * FROM {$tablepre}profilefields WHERE available='1' AND unchangeable='1'");
+		while($profilefield = $db->fetch_array($query)) {
+			echo 'result = result.replace(/field_'.$profilefield['fieldid'].'/g, \'<u>'.str_replace("'", "\'", $profilefield['title']).'</u>\');';
+			$profilefields .= '<a href="###" onclick="insertunit(\' field_'.$profilefield['fieldid'].' \')">&nbsp;'.$profilefield['title'].'&nbsp;</a>&nbsp;';
+		}
+
+		echo 'result = result.replace(/regdate/g, \'<u>'.$lang['forums_edit_perm_formula_regdate'].'</u>\');';
+		echo 'result = result.replace(/regday/g, \'<u>'.$lang['forums_edit_perm_formula_regday'].'</u>\');';
+		echo 'result = result.replace(/regip/g, \'<u>'.$lang['forums_edit_perm_formula_regip'].'</u>\');';
+		echo 'result = result.replace(/lastip/g, \'<u>'.$lang['forums_edit_perm_formula_lastip'].'</u>\');';
+		echo 'result = result.replace(/buyercredit/g, \'<u>'.$lang['forums_edit_perm_formula_buyercredit'].'</u>\');';
+		echo 'result = result.replace(/sellercredit/g, \'<u>'.$lang['forums_edit_perm_formula_sellercredit'].'</u>\');';
 		echo 'result = result.replace(/digestposts/g, \'<u>'.$lang['settings_credits_formula_digestposts'].'</u>\');';
 		echo 'result = result.replace(/posts/g, \'<u>'.$lang['settings_credits_formula_posts'].'</u>\');';
 		echo 'result = result.replace(/threads/g, \'<u>'.$lang['settings_credits_formula_threads'].'</u>\');';
 		echo 'result = result.replace(/oltime/g, \'<u>'.$lang['settings_credits_formula_oltime'].'</u>\');';
 		echo 'result = result.replace(/pageviews/g, \'<u>'.$lang['settings_credits_formula_pageviews'].'</u>\');';
-		echo 'result = result.replace(/and/g, \'&nbsp;&nbsp;'.$lang['settings_formulaperm_and'].'&nbsp;&nbsp;\');';
-		echo 'result = result.replace(/or/g, \'&nbsp;&nbsp;'.$lang['settings_formulaperm_or'].'&nbsp;&nbsp;\');';
+		echo 'result = result.replace(/and/g, \'&nbsp;&nbsp;<b>'.$lang['forums_edit_perm_formula_and'].'</b>&nbsp;&nbsp;\');';
+		echo 'result = result.replace(/or/g, \'&nbsp;&nbsp;<b>'.$lang['forums_edit_perm_formula_or'].'</b>&nbsp;&nbsp;\');';
 		echo 'result = result.replace(/>=/g, \'&ge;\');';
 		echo 'result = result.replace(/<=/g, \'&le;\');';
+		echo 'result = result.replace(/==/g, \'=\');';
 
 ?>
 		$('formulapermexp').innerHTML = result;
 	}
 </script>
 <tr><td colspan="2"><div class="extcredits">
-<?=$extcreditsbtn?><br />
-<a href="###" onclick="insertunit(' digestposts ')"><?=$lang['settings_credits_formula_digestposts']?></a>&nbsp;
-<a href="###" onclick="insertunit(' posts ')"><?=$lang['settings_credits_formula_posts']?></a>&nbsp;
-<a href="###" onclick="insertunit(' threads ')"><?=$lang['settings_credits_formula_threads']?></a>&nbsp;
-<a href="###" onclick="insertunit(' oltime ')"><?=$lang['settings_credits_formula_oltime']?></a>&nbsp;
-<a href="###" onclick="insertunit(' pageviews ')"><?=$lang['settings_credits_formula_pageviews']?></a>&nbsp;
+<?php echo $extcreditsbtn?>
+<a href="###" onclick="insertunit(' regdate ')">&nbsp;<?php echo lang('forums_edit_perm_formula_regdate')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' regday ')">&nbsp;<?php echo lang('forums_edit_perm_formula_regday')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' regip ')">&nbsp;<?php echo lang('forums_edit_perm_formula_regip')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' lastip ')">&nbsp;<?php echo lang('forums_edit_perm_formula_lastip')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' buyercredit ')">&nbsp;<?php echo lang('forums_edit_perm_formula_buyercredit')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' sellercredit ')">&nbsp;<?php echo lang('forums_edit_perm_formula_sellercredit')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' digestposts ')"><?php echo lang('forums_edit_perm_formula_digestposts')?></a>&nbsp;
+<a href="###" onclick="insertunit(' posts ')"><?php echo lang('forums_edit_perm_formula_posts')?></a>&nbsp;
+<a href="###" onclick="insertunit(' threads ')"><?php echo lang('forums_edit_perm_formula_threads')?></a>&nbsp;
+<a href="###" onclick="insertunit(' oltime ')"><?php echo lang('forums_edit_perm_formula_oltime')?></a>&nbsp;
+<a href="###" onclick="insertunit(' pageviews ')"><?php echo lang('forums_edit_perm_formula_pageviews')?></a><?php echo $profilefields;?><br />
 <a href="###" onclick="insertunit(' + ')">&nbsp;+&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' - ')">&nbsp;-&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' * ')">&nbsp;*&nbsp;</a>&nbsp;
@@ -303,10 +323,12 @@ if(!$operation) {
 <a href="###" onclick="insertunit(' >= ')">&nbsp;>=&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' < ')">&nbsp;<&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' <= ')">&nbsp;<=&nbsp;</a>&nbsp;
-<a href="###" onclick="insertunit(' = ')">&nbsp;=&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' == ')">&nbsp;=&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' != ')">&nbsp;!=&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' (', ') ')">&nbsp;(&nbsp;)&nbsp;</a>&nbsp;
-<a href="###" onclick="insertunit(' and ')">&nbsp;<?=$lang['settings_credits_formulaperm_and']?>&nbsp;</a>&nbsp;
-<a href="###" onclick="insertunit(' or ')">&nbsp;<?=$lang['settings_credits_formulaperm_or']?>&nbsp;</a>&nbsp;<br />
+<a href="###" onclick="insertunit(' and ')">&nbsp;<?php echo lang('forums_edit_perm_formula_and')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' or ')">&nbsp;<?php echo lang('forums_edit_perm_formula_or')?>&nbsp;</a>&nbsp;<br />
+
 </div><div id="formulapermexp" class="marginbot diffcolor2"><?=$formulapermexp?></div>
 <textarea name="formulapermnew" id="formulapermnew" style="width: 80%" rows="3" onkeyup="formulaexp()"><?=dhtmlspecialchars($medal['permission'])?></textarea>
 <br /><span class="smalltxt"><?=$lang['medals_permformula']?></span>
@@ -319,12 +341,18 @@ if(!$operation) {
 			showformfooter();
 
 	} else {
-		if($formulapermnew && !preg_match("/^(\+|\-|\*|\/|\.|>|<|=|\d|\s|extcredits[1-8]|digestposts|posts|threads|pageviews|oltime|and|or)+$/", $formulapermnew) || !is_null(@eval(preg_replace("/(digestposts|posts|pageviews|oltime|extcredits[1-8])/", "\$\\1", $formulapermnew).';'))) {
+		if($formulapermnew && !preg_match("/^(\{|\}|\+|\-|\*|\/|\.|>|<|=|!|\d|\s|\(|\)|extcredits[1-8]|regdate|regday|regip|lastip|buyercredit|sellercredit|field\_\d+|digestposts|posts|threads|pageviews|oltime|and|or)+$/", $formulapermnew) ||
+			!is_null(@eval(preg_replace(
+				array("/(regdate|regday|regip|lastip|buyercredit|sellercredit|field\_\d+|digestposts|posts|threads|pageviews|oltime|extcredits[1-8])/", "/\{([\d\.\-]+?)\}/"),
+				array("\$\\1", "'\\1'"), $formulapermnew).';'))) {
 			cpmsg('forums_formulaperm_error', '', 'error');
 		}
 
 		$formulapermary[0] = $formulapermnew;
-		$formulapermary[1] = preg_replace("/(digestposts|posts|threads|pageviews|oltime|extcredits[1-8])/", "\$_DSESSION['\\1']", $formulapermnew);
+		$formulapermary[1] = preg_replace(
+			array("/(digestposts|posts|threads|pageviews|oltime|extcredits[1-8])/", "/(regdate|regday|regip|lastip|buyercredit|sellercredit|field\_\d+)/"),
+			array("\$_DSESSION['\\1']", "\$memberformula['\\1']"),
+			$formulapermnew);
 		$formulapermnew = addslashes(serialize($formulapermary));
 
 		$db->query("UPDATE {$tablepre}medals SET name=".($namenew ? '\''.dhtmlspecialchars($namenew).'\'' : 'name').", type='$typenew', description='".dhtmlspecialchars($descriptionnew)."', expiration='".intval($expirationnew)."', permission='$formulapermnew', image='$imagenew' WHERE medalid='$medalid'");

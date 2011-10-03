@@ -4,7 +4,7 @@
 [Discuz!] (C)2001-2009 Comsenz Inc.
 This is NOT a freeware, use is subject to license terms
 
-$Id: cpanel.share.php 19961 2009-09-15 23:35:27Z wangjinbo $
+$Id: cpanel.share.php 20964 2009-11-04 03:18:22Z zhaoxiongfei $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -217,7 +217,7 @@ function deletethreads($tids = array()) {
 	static $cleartable = array(
 		'threadsmod', 'relatedthreads', 'posts', 'polls',
 		'polloptions', 'trades', 'activities', 'activityapplies', 'debates',
-		'debateposts', 'attachments', 'favorites', 'typeoptionvars', 'forumrecommend'
+		'debateposts', 'attachments', 'favorites', 'typeoptionvars', 'forumrecommend', 'postposition'
 	);
 	$threadsdel = 0;
 	if($tids = implodeids($tids)) {

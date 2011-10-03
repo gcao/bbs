@@ -35,7 +35,7 @@
 		}
 
 		function setTitle(x) {
-			document.title = x + ' - $discuz_user - $bbname - Powered by Discuz!';
+			document.title = x + ' - <!--{eval echo addslashes($discuz_user.' - '.$bbname);}--> - Powered by Discuz!';
 		}
 
 		</script>

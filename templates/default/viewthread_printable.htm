@@ -16,6 +16,7 @@ body,table {font-size: {FONTSIZE}; font-family: {FONT};}
 <b>{lang subject}: </b>$thread[subject] <b><a href="###" onclick="this.style.visibility='hidden';window.print();this.style.visibility='visible'">[{lang thread_print}]</a></b></span><br />
 
 <!--{loop $postlist $post}-->
+	{eval $needhiddenreply = ($hiddenreplies && $discuz_uid != $post['authorid'] && $discuz_uid != $thread['authorid'] && !$post['first'] && !$forum['ismoderator']);}
 	<hr noshade size="2" width="100%" color="#808080">
 	<b>{lang author}: </b><!--{if $post['author'] && !$post['anonymous']}-->$post[author]<!--{else}-->{lang anonymous}<!--{/if}-->&nbsp; &nbsp; <b>{lang time}: </b>$post[dateline]
 	<!--{if $post['subject']}--> &nbsp; &nbsp; <b>{lang subject}: </b>$post[subject]<!--{/if}-->
@@ -26,6 +27,8 @@ body,table {font-size: {FONTSIZE}; font-family: {FONT};}
 		{lang message_single_banned}
 	<!--{elseif $post['first'] && $threadpay}-->
 		{lang pay_comment}
+	<!--{elseif $needhiddenreply}-->
+		{lang message_ishidden_hiddenreplies}
 	<!--{else}-->
 		$post[message]
 		<!--{loop $post['attachments'] $attach}-->

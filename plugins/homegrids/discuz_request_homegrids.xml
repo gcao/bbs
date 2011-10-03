@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <root>
 	<item id="Title"><![CDATA[Discuz! Request]]></item>
-	<item id="Version"><![CDATA[7.1]]></item>
+	<item id="Version"><![CDATA[7.2]]></item>
 	<item id="Data">
 		<item id="__首页多格_图片">
 			<item id="url"><![CDATA[function=images&sidestatus=0&isimage=1&threadmethod=1&maxwidth=&maxheight=&startrow=0&items=5&orderby=dateline&hours=0&digest=0&newwindow=1&jscharset=0&cachelife=600&jstemplate=%5Bnode%5D%0D%0A%3Cscript%20type%3D%5C%22text%2Fjavascript%5C%22%3E%0D%0AslideImgs%5B%7Border%7D%5D%20%3D%20%5C%22%7Bimgfile%7D%5C%22%3B%0D%0AslideImgLinks%5B%7Border%7D%5D%20%3D%20%5C%22%7Blink%7D%5C%22%3B%0D%0AslideImgTexts%5B%7Border%7D%5D%20%3D%20%5C%22%7Bsubject%7D%5C%22%3B%0D%0A%3C%2Fscript%3E%0D%0A%5Bshow%3D1%5D%3Ca%20href%3D%5C%22%7Blink%7D%5C%22%20id%3D%5C%22homegrids_Img%5C%22%3E%3Cimg%20width%3D%5C%22300%5C%22%20src%3D%5C%22%7Bimgfile%7D%5C%22%20%2F%3E%3Cbr%20%2F%3E%7Bsubject%7D%3C%2Fa%3E%5B%2Fshow%5D%0D%0A%5B%2Fnode%5D%0D%0A%3C%2Fscript%3E%0D%0A%3Cscript%20language%3D%5C%22javascript%5C%22%20type%3D%5C%22text%2Fjavascript%5C%22%20src%3D%5C%22include%2Fjs%2Fslide.js%5C%22%3E%3C%2Fscript%3E%0D%0A%3Cscript%20type%3D%5C%22text%2Fjavascript%5C%22%3Eif%28%24%28%5C%27homegrids_Img%5C%27%29%29%20%24%28%5C%27homegrids_Img%5C%27%29.style.display%3D%5C%27none%5C%27%3C%2Fscript%3E]]></item>

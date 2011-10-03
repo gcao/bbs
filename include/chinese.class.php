@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: chinese.class.php 20402 2009-09-25 09:33:59Z monkey $
+	$Id: chinese.class.php 20401 2009-09-25 09:26:17Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {

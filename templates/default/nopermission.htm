@@ -9,7 +9,7 @@
 			<div class="postbox"><div class="alert_error">
 				<p>{lang nopermission}</p>
 			<!--{if $show_message}--><p>$show_message</p></div><!--{/if}-->
-			<!--{if $discuz_uid}--><p>{lang nopermission_loggedin}</p></div>
+			<!--{if $discuz_uid}--><p class="alert_btnleft">{lang nopermission_loggedin}</p></div>
 			<!--{else}-->
 			<div class="alert_act">
 				<form method="post" name="login" id="loginform" class="gateform" onsubmit="{if $pwdsafety}pwmd5('password3');{/if}pwdclear = 1;" action="logging.php?action=login&loginsubmit=yes">
@@ -20,6 +20,7 @@
 								<select name="loginfield" id="loginfield">
 									<option value="username">{lang username}</option>
 									<option value="uid">{lang uid}</option>
+									<option value="email">{lang email}</option>
 								</select>
 							</th>
 							<td><input type="text" name="username" autocomplete="off" size="36" class="txt" tabindex="1" value="" /></td>

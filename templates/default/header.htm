@@ -12,6 +12,7 @@ $seohead
 <meta name="MSSmartTagsPreventParsing" content="True" />
 <meta http-equiv="MSThemeCompatible" content="Yes" />
 <meta http-equiv="x-ua-compatible" content="ie=7" />
+<link rel="icon" type="image/x-icon" href="/app/favicon.ico" />
 <link rel="archives" title="$bbname" href="{$boardurl}archiver/" />
 $rsshead
 $extrahead
@@ -29,7 +30,7 @@ $extrahead
 			<h2><a href="$indexname" title="$bbname">{BOARDLOGO}</a></h2>
 			<div id="umenu">
 			<!--{if $discuz_uid}-->
-				{eval include("XXX/gocool/public/shared/my_turn.html")}
+				{eval include("/data/apps/gocool/current/public/shared/my_turn.html")}
 				<cite><a href="space.php?uid=$discuz_uid" class="noborder">$discuz_userss</a><!--{if $allowinvisible}--><span id="loginstatus"><!--{if !empty($invisible)}--><a href="member.php?action=switchstatus" onclick="ajaxget(this.href, 'loginstatus');doane(event);">{lang login_invisible_mode}</a><!--{else}--><a href="member.php?action=switchstatus" title="{lang login_switch_invisible_mode}" onclick="ajaxget(this.href, 'loginstatus');doane(event);">{lang login_normal_mode}</a><!--{/if}--></span><!--{/if}--></cite>
 				<span class="pipe">|</span>
 				<!--{if $ucappopen['UCHOME']}-->
@@ -61,7 +62,7 @@ $extrahead
 			<div id="ad_headerbanner"><!--{if $admode && !empty($advlist['headerbanner'])}-->$advlist[headerbanner]<!--{/if}--></div>
 			<div id="menu">
 				<ul>
-					<li><span><a href="/app">棋谱库</a></span></li>
+					<li><span><a href="/app">对弈 <span style="color:#ff7777;font-style:italic">Beta</span></a></span></li>
 					<!--{if $_DCACHE['settings']['frameon'] > 0}-->
 						<li>
 						<span class="frameswitch">

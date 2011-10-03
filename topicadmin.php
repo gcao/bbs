@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: topicadmin.php 20038 2009-09-17 04:30:29Z liuqiang $
+	$Id: topicadmin.php 20962 2009-11-04 02:55:39Z zhaoxiongfei $
 */
 
 define('CURSCRIPT', 'topicadmin');
@@ -70,7 +70,7 @@ if($action == 'moderate') {
 
 	require_once DISCUZ_ROOT.'./include/moderation.inc.php';
 
-} elseif($action == 'delpost') {
+} elseif($action == 'delpost' && $allowdelpost) {
 
 	$modpostsnum = count($topiclist);
 	if(!($deletepids = implodeids($topiclist))) {
@@ -149,6 +149,7 @@ if($action == 'moderate') {
 		$db->query("DELETE FROM {$tablepre}attachments WHERE pid IN ($pids)");
 		$db->query("DELETE FROM {$tablepre}attachmentfields WHERE pid IN ($pids)");
 		$db->query("DELETE FROM {$tablepre}posts WHERE pid IN ($pids)");
+		getstatus($thread['status'], 1) && $db->query("DELETE FROM {$tablepre}postposition WHERE pid IN ($pids)");
 
 		if($thread['special']) {
 			$db->query("DELETE FROM {$tablepre}trades WHERE pid IN ($pids)");
@@ -162,7 +163,7 @@ if($action == 'moderate') {
 		$modaction = 'DLP';
 
 		$resultarray = array(
-		'redirect'	=> "viewthread.php?tid=$tid&amp;page=$page",
+		'redirect'	=> "viewthread.php?tid=$tid&page=$page",
 		'reasonpm'	=> ($sendreasonpm ? array('data' => $posts, 'var' => 'post', 'item' => 'reason_delete_post') : array()),
 		'modtids'	=> 0,
 		'modlog'	=> $thread
@@ -223,7 +224,7 @@ if($action == 'moderate') {
 
 	}
 
-} elseif($action == 'repair') {
+} elseif($action == 'repair' && $allowrepairthread) {
 
 	$replies = $db->result_first("SELECT COUNT(*) FROM {$tablepre}posts WHERE tid='$tid' AND invisible='0'") - 1;
 
@@ -242,7 +243,6 @@ if($action == 'moderate') {
 	showmessage('admin_repair_succeed');
 
 } elseif($action == 'getip' && $allowviewip) {
-
 	$member = $db->fetch_first("SELECT m.adminid, p.first, p.useip FROM {$tablepre}posts p
 				LEFT JOIN {$tablepre}members m ON m.uid=p.authorid
 				WHERE pid='$pid' AND tid='$tid'");
@@ -258,7 +258,7 @@ if($action == 'moderate') {
 
 	include template('topicadmin_getip');
 
-} elseif($action == 'split') {
+} elseif($action == 'split' && $allowsplitthread) {
 
 	if(!submitcheck('modsubmit')) {
 
@@ -345,7 +345,7 @@ if($action == 'moderate') {
 
 	}
 
-} elseif($action == 'merge') {
+} elseif($action == 'merge' && $allowmergethread) {
 
 	if(!submitcheck('modsubmit')) {
 
@@ -401,7 +401,7 @@ if($action == 'moderate') {
 
 	}
 
-} elseif($action == 'copy' && $thread) {
+} elseif($action == 'copy' && $allowcopythread && $thread) {
 
 	if(!submitcheck('modsubmit')) {
 		require_once DISCUZ_ROOT.'./include/forum.func.php';
@@ -459,14 +459,13 @@ if($action == 'moderate') {
 		);
 	}
 
-} elseif($action == 'removereward') {
-
-	$modaction = 'RMR';
+} elseif($action == 'removereward' && $allowremovereward) {
 
 	if(!is_array($thread) || $thread['special'] != '3') {
 		showmessage('reward_end');
 	}
 
+	$modaction = 'RMR';
 	$answererid = $db->result_first("SELECT answererid FROM {$tablepre}rewardlog WHERE tid='$thread[tid]'");
 	$rewardprice = abs($thread['price']);
 
@@ -480,7 +479,7 @@ if($action == 'moderate') {
 
 	showmessage('admin_succeed');
 
-} elseif($action == 'banpost') {
+} elseif($action == 'banpost' && $allowbanpost) {
 
 	$modpostsnum = count($topiclist);
 	if(!($banpids = implodeids($topiclist))) {
@@ -529,7 +528,7 @@ if($action == 'moderate') {
 		}
 
 		$resultarray = array(
-		'redirect'	=> "viewthread.php?tid=$tid&amp;page=$page",
+		'redirect'	=> "viewthread.php?tid=$tid&page=$page",
 		'reasonpm'	=> ($sendreasonpm ? array('data' => $posts, 'var' => 'post', 'item' => 'reason_ban_post') : array()),
 		'modtids'	=> 0,
 		'modlog'	=> $thread
@@ -539,7 +538,7 @@ if($action == 'moderate') {
 
 	}
 
-} elseif($action == 'warn') {
+} elseif($action == 'warn' && $allowwarnpost) {
 
 	if(!($warnpids = implodeids($topiclist))) {
 		showmessage('admin_warn_invalid');
@@ -551,7 +550,7 @@ if($action == 'moderate') {
 	$authorwarnings = $warningauthor = $warnstatus = '';
 	$query = $db->query("SELECT p.pid, p.authorid, p.author, p.status, p.dateline, p.message, m.adminid FROM {$tablepre}posts p LEFT JOIN {$tablepre}members m ON p.authorid=m.uid WHERE pid IN ($warnpids) AND p.tid='$tid'");
 	while($post = $db->fetch_array($query)) {
-		if($post['adminid'] == 0) {
+		if($post['adminid'] == 0 || $post['adminid'] == -1) {
 			$warnstatus = ($post['status'] & 2) || $warnstatus;
 			$authors[$post['authorid']] = 1;
 			$posts[] = $post;
@@ -618,13 +617,41 @@ if($action == 'moderate') {
 		}
 
 		$resultarray = array(
-		'redirect'	=> "viewthread.php?tid=$tid&amp;page=$page",
+		'redirect'	=> "viewthread.php?tid=$tid&page=$page",
 		'reasonpm'	=> ($sendreasonpm ? array('data' => $posts, 'var' => 'post', 'item' => 'reason_warn_post') : array()),
 		'modtids'	=> 0,
 		'modlog'	=> $thread
 		);
 
 		procreportlog('', $pids);
+
+	}
+
+} elseif($action == 'stamp' && $allowstampthread) {
+
+	@include_once DISCUZ_ROOT.'./forumdata/cache/cache_stamps.php';
+
+	if(!submitcheck('modsubmit')) {
+
+		include template('topicadmin_action');
+
+	} else {
+
+		$modaction = $stamp !== '' ? 'SPA' : 'SPD';
+		checkreasonpm();
+
+		$db->query("UPDATE {$tablepre}threads SET moderated='1', ".buildbitsql('status', 5, $stamp !== '')." WHERE tid='$tid'");
+
+		$resultarray = array(
+		'redirect'	=> "viewthread.php?tid=$tid&page=$page",
+		'reasonpm'	=> ($sendreasonpm ? array('data' => array($thread), 'var' => 'thread', 'item' => $stamp !== '' ? 'reason_stamp_update' : 'reason_stamp_delete') : array()),
+		'modaction'	=> $stamp !== '' ? 'S'.sprintf('%02d', $stamp) : 'SPD',
+		'modlog'	=> $thread
+		);
+		$modpostsnum = 1;
+
+		updatemodlog($tid, $modaction);
+		$db->query("UPDATE {$tablepre}threadsmod SET stamp='$stamp' WHERE tid='$tid' ORDER BY dateline DESC LIMIT 1");
 
 	}
 

@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: plugin.php 20441 2009-09-28 01:13:32Z monkey $
+	$Id: plugin.php 20440 2009-09-28 01:13:19Z monkey $
 */
 
 define('CURSCRIPT', 'plugin');

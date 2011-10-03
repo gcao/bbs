@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: Photo.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: Photo.php 21053 2009-11-09 10:29:02Z wangjinbo $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -29,7 +29,6 @@ class Photo extends MyBase {
 		return new APIResponse(0);
 	}
 
-	// todo 测试远程模式上传的图片
 	function upload($uId, $aId, $fileName, $fileType, $fileSize, $data, $caption = null) {
 		$result = array();
 		return new APIResponse($result);

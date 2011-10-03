@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: moderation.inc.php 20677 2009-10-14 07:49:37Z monkey $
+	$Id: moderation.inc.php 21052 2009-11-09 10:12:34Z monkey $
 */
 
 if(!empty($tid)) {
@@ -98,6 +98,7 @@ if(!submitcheck('modsubmit')) {
 
 	$moderatetids = implodeids(array_keys($threadlist));
 	checkreasonpm();
+	$stampstatus = 0;
 
 	if(empty($operations)) {
 		showmessage('admin_nonexistence');
@@ -117,14 +118,23 @@ if(!submitcheck('modsubmit')) {
 
 			$updatemodlog = TRUE;
 			if($operation == 'stick') {
-				$expiration = checkexpiration($expirationstick);
 				$sticklevel = intval($sticklevel);
 				if($sticklevel < 0 || $sticklevel > 3 || $sticklevel > $allowstickthread) {
 					showmessage('undefined_action');
 				}
+				$expiration = checkexpiration($expirationstick);
 				$expirationstick = $sticklevel ? $expirationstick : 0;
 
+				$forumstickthreads = $db->result_first("SELECT value FROM {$tablepre}settings WHERE variable='forumstickthreads'");
+				$forumstickthreads = isset($forumstickthreads) ? unserialize($forumstickthreads) : array();
+
 				$db->query("UPDATE {$tablepre}threads SET displayorder='$sticklevel', moderated='1' WHERE tid IN ($moderatetids)");
+				$delkeys = array_keys($threadlist);
+				foreach($delkeys as $k) {
+					unset($forumstickthreads[$k]);
+				}
+				$forumstickthreads = serialize($forumstickthreads);
+				$db->query("UPDATE {$tablepre}settings SET value='$forumstickthreads' WHERE variable='forumstickthreads'");
 
 				$stickmodify = 0;
 				foreach($threadlist as $thread) {
@@ -140,10 +150,13 @@ if(!submitcheck('modsubmit')) {
 				$db->query("UPDATE {$tablepre}threadsmod SET status='0' WHERE tid IN ($moderatetids) AND action IN ('STK', 'UST', 'EST', 'UES')", 'UNBUFFERED');
 
 				if($sticklevel > 0) {
-					send_thread_feed('thread_pin', $threadlist, $posts);
+					send_thread_feed('thread_pin', $threadlist);
 				}
-
+				$stampstatus = 1;
 			} elseif($operation == 'highlight') {
+				if(!$allowhighlightthread) {
+					showmessage('undefined_action');
+				}
 				$expiration = checkexpiration($expirationhighlight);
 				$stylebin = '';
 				for($i = 1; $i <= 3; $i++) {
@@ -165,10 +178,16 @@ if(!submitcheck('modsubmit')) {
 				$db->query("UPDATE {$tablepre}threadsmod SET status='0' WHERE tid IN ($moderatetids) AND action IN ('HLT', 'UHL', 'EHL', 'UEH')", 'UNBUFFERED');
 
 				if($highlight_style > 0) {
-					send_thread_feed('thread_highlight', $threadlist, $posts);
+					send_thread_feed('thread_highlight', $threadlist);
 				}
 			} elseif($operation == 'digest') {
+				$digestlevel = intval($digestlevel);
+				if($digestlevel < 0 || $digestlevel > 3 || $digestlevel > $allowdigestthread) {
+					showmessage('undefined_action');
+				}
 				$expiration = checkexpiration($expirationdigest);
+				$expirationdigest = $digestlevel ? $expirationdigest : 0;
+
 				$db->query("UPDATE {$tablepre}threads SET digest='$digestlevel', moderated='1' WHERE tid IN ($moderatetids)");
 
 				foreach($threadlist as $thread) {
@@ -182,10 +201,13 @@ if(!submitcheck('modsubmit')) {
 				$db->query("UPDATE {$tablepre}threadsmod SET status='0' WHERE tid IN ($moderatetids) AND action IN ('DIG', 'UDI', 'EDI', 'UED')", 'UNBUFFERED');
 
 				if($digestlevel > 0) {
-					send_thread_feed('thread_digest', $threadlist, $posts);
+					send_thread_feed('thread_digest', $threadlist);
 				}
+				$stampstatus = 2;
 			} elseif($operation == 'recommend') {
-
+				if(!$allowrecommendthread) {
+					showmessage('undefined_action');
+				}
 				$modrecommend = $forum['modrecommend'] ? unserialize($forum['modrecommend']) : array();
 				$imgw = $modrecommend['imagewidth'] ? intval($modrecommend['imagewidth']) : 200;
 				$imgh = $modrecommend['imageheight'] ? intval($modrecommend['imageheight']) : 150;
@@ -239,12 +261,16 @@ if(!submitcheck('modsubmit')) {
 						$db->query("REPLACE INTO {$tablepre}forumrecommend (fid, tid, typeid, displayorder, subject, author, authorid, moderatorid, expiration, position, aid, filename, highlight) VALUES $addthread");
 					}
 
-					send_thread_feed('thread_recommend', $threadlist, $posts);
+					send_thread_feed('thread_recommend', $threadlist);
+					$stampstatus = 3;
 				} else {
 					$db->query("DELETE FROM {$tablepre}forumrecommend WHERE fid='$fid' AND tid IN ($moderatetids)");
 				}
 
 			} elseif($operation == 'bump') {
+				if(!$allowbumpthread) {
+					showmessage('undefined_action');
+				}
 				$modaction = 'BMP';
 				$thread = $threadlist;
 				$thread = array_pop($thread);
@@ -256,12 +282,18 @@ if(!submitcheck('modsubmit')) {
 
 				$forum['threadcaches'] && deletethreadcaches($thread['tid']);
 			} elseif($operation == 'down') {
+				if(!$allowbumpthread) {
+					showmessage('undefined_action');
+				}
 				$modaction = 'DWN';
 				$downtime = $timestamp - 86400 * 730;
 				$db->query("UPDATE {$tablepre}threads SET lastpost='$downtime', moderated='1' WHERE tid IN ($moderatetids)");
 
 				$forum['threadcaches'] && deletethreadcaches($thread['tid']);
 			} elseif($operation == 'delete') {
+				if(!$allowdelpost) {
+					showmessage('undefined_action');
+				}
 				$stickmodify = 0;
 				foreach($threadlist as $thread) {
 					if($thread['digest']) {
@@ -321,9 +353,10 @@ if(!submitcheck('modsubmit')) {
 						updateattachcredits('-', $auidarray, $postattachcredits);
 					}
 
-					foreach(array('threads', 'threadsmod', 'relatedthreads', 'posts', 'polls', 'polloptions', 'trades', 'activities', 'activityapplies', 'debates', 'debateposts', 'attachments', 'favorites', 'typeoptionvars', 'forumrecommend') as $value) {
+					foreach(array('threads', 'threadsmod', 'relatedthreads', 'posts', 'polls', 'polloptions', 'trades', 'activities', 'activityapplies', 'debates', 'debateposts', 'attachments', 'favorites', 'typeoptionvars', 'forumrecommend', 'postposition') as $value) {
 						$db->query("DELETE FROM {$tablepre}$value WHERE tid IN ($moderatetids)", 'UNBUFFERED');
 					}
+
 					$updatemodlog = FALSE;
 				}
 
@@ -334,19 +367,28 @@ if(!submitcheck('modsubmit')) {
 
 				updateforumcount($fid);
 			} elseif($operation == 'close') {
+				if(!$allowclosethread) {
+					showmessage('undefined_action');
+				}
 				$expiration = checkexpiration($expirationclose);
 				$modaction = $expiration ? 'ECL' : 'CLS';
 
 				$db->query("UPDATE {$tablepre}threads SET closed='1', moderated='1' WHERE tid IN ($moderatetids)");
 				$db->query("UPDATE {$tablepre}threadsmod SET status='0' WHERE tid IN ($moderatetids) AND action IN ('CLS','OPN','ECL','UCL','EOP','UEO')", 'UNBUFFERED');
 			} elseif($operation == 'open') {
+				if(!$allowclosethread) {
+					showmessage('undefined_action');
+				}
 				$expiration = checkexpiration($expirationopen);
 				$modaction = $expiration ? 'EOP' : 'OPN';
 
 				$db->query("UPDATE {$tablepre}threads SET closed='0', moderated='1' WHERE tid IN ($moderatetids)");
 				$db->query("UPDATE {$tablepre}threadsmod SET status='0' WHERE tid IN ($moderatetids) AND action IN ('CLS','OPN','ECL','UCL','EOP','UEO')", 'UNBUFFERED');
 			} elseif($operation == 'move') {
-				$toforum = $db->fetch_first("SELECT fid, name, modnewposts, allowpostspecial FROM {$tablepre}forums WHERE fid='$moveto' AND status='1' AND type<>'group'");
+				if(!$allowmovethread) {
+					showmessage('undefined_action');
+				}
+				$toforum = $db->fetch_first("SELECT f.fid, f.name, f.modnewposts, f.allowpostspecial, ff.threadplugin FROM {$tablepre}forums f LEFT JOIN {$tablepre}forumfields ff ON ff.fid=f.fid WHERE f.fid='$moveto' AND f.status='1' AND f.type<>'group'");
 				if(!$toforum) {
 					showmessage('admin_move_invalid');
 				} elseif($fid == $toforum['fid']) {
@@ -377,8 +419,34 @@ if(!submitcheck('modsubmit')) {
 
 				$moderate = array();
 				$stickmodify = 0;
+				$toforumallowspecial = array(
+					1 => $toforum['allowpostspecial'] & 1,
+					2 => $toforum['allowpostspecial'] & 2,
+					3 => isset($extcredits[$creditstransextra[2]]) && ($toforum['allowpostspecial'] & 4),
+					4 => $toforum['allowpostspecial'] & 8,
+					5 => $toforum['allowpostspecial'] & 16,
+					127 => $threadplugins ? unserialize($toforum['threadplugin']) : array(),
+				);
 				foreach($threadlist as $tid => $thread) {
-					if(!$thread['special'] || substr(sprintf('%04b', $toforum['allowpostspecial']), -$thread['special'], 1)) {
+					$allowmove = 0;
+					if(!$thread['special']) {
+						$allowmove = 1;
+					} else {
+						if($thread['special'] != 127) {
+							$allowmove = $toforum['allowpostspecial'] ? $toforumallowspecial[$thread['special']] : 0;
+						} else {
+							if($toforumallowspecial[127]) {
+								$message = $db->result_first("SELECT message FROM {$tablepre}posts WHERE tid='$thread[tid]' AND first='1'");
+								$sppos = strrpos($message, chr(0).chr(0).chr(0));
+								$specialextra = substr($message, $sppos + 3);
+								$allowmove = in_array($specialextra, $toforumallowspecial[127]);
+							} else {
+								$allowmove = 0;
+							}
+						}
+					}
+
+					if($allowmove) {
 						$moderate[] = $tid;
 						if(in_array($thread['displayorder'], array(2, 3))) {
 							$stickmodify = 1;
@@ -408,6 +476,9 @@ if(!submitcheck('modsubmit')) {
 				updateforumcount($moveto);
 				updateforumcount($fid);
 			} elseif($operation == 'type') {
+				if(!$allowedittypethread) {
+					showmessage('undefined_action');
+				}
 				if(!isset($forum['threadtypes']['types'][$typeid]) && ($typeid != 0 || $forum['threadtypes']['required'])) {
 					showmessage('admin_type_invalid');
 				}
@@ -435,6 +506,10 @@ if(!submitcheck('modsubmit')) {
 
 			procreportlog($moderatetids, '', $operation == 'delete');
 
+			if($stampstatus) {
+				set_stamp($stampstatus);
+			}
+
 		}
 
 		showmessage('admin_succeed', $referer);
@@ -455,7 +530,15 @@ function checkexpiration($expiration) {
 	return $expiration;
 }
 
-function send_thread_feed($type, $threadlist, $posts) {
+function set_stamp($typeid) {
+	global $tablepre, $db, $_DCACHE, $moderatetids, $expiration;
+	if(array_key_exists($typeid, $_DCACHE['stamptypeid'])) {
+		$db->query("UPDATE {$tablepre}threads SET ".buildbitsql('status', 5, TRUE)." WHERE tid IN ($moderatetids)");
+		updatemodlog($moderatetids, 'SPA', $expiration, 0, $_DCACHE['stamptypeid'][$typeid]);
+	}
+}
+
+function send_thread_feed($type, $threadlist) {
 	global $tablepre, $db;
 	include DISCUZ_ROOT.'./forumdata/cache/cache_forums.php';
 	$arg = $data = array();

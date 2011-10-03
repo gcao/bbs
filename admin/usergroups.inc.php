@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: usergroups.inc.php 20247 2009-09-22 09:31:08Z monkey $
+	$Id: usergroups.inc.php 20965 2009-11-04 06:37:32Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -229,6 +229,32 @@ EOT;
 				} elseif($group['grouptitle'] && $group['creditshigher'] != '') {
 					$sqladd = !empty($group['projectid']) && !empty($extadd[$group['projectid']]) ? $extadd[$group['projectid']] : '';
 					$db->query("INSERT INTO {$tablepre}usergroups SET grouptitle='$group[grouptitle]', creditshigher='$creditshighernew', creditslower='$creditslowernew', stars='$group[stars]' $sqladd");
+					if($sqladd) {
+						$newgid = $db->insert_id();
+						$query = $db->query("SELECT fid, viewperm, postperm, replyperm, getattachperm, postattachperm FROM {$tablepre}forumfields");
+						while($row = $db->fetch_array($query)) {
+							$upforumperm = array();
+							$projectid = substr($group['projectid'], 1);
+							if($row['viewperm'] && in_array($projectid, explode("\t", $row['viewperm']))) {
+								$upforumperm[] = "viewperm='$row[viewperm]$newgid\t'";
+							}
+							if($row['postperm'] && in_array($projectid, explode("\t", $row['postperm']))) {
+								$upforumperm[] = "postperm='$row[postperm]$newgid\t'";
+							}
+							if($row['replyperm'] && in_array($projectid, explode("\t", $row['replyperm']))) {
+								$upforumperm[] = "replyperm='$row[replyperm]$newgid\t'";
+							}
+							if($row['getattachperm'] && in_array($projectid, explode("\t", $row['getattachperm']))) {
+								$upforumperm[] = "getattachperm='$row[getattachperm]$newgid\t'";
+							}
+							if($row['postattachperm'] && in_array($projectid, explode("\t", $row['postattachperm']))) {
+								$upforumperm[] = "postattachperm='$row[postattachperm]$newgid\t'";
+							}
+							if($upforumperm) {
+								$db->query("UPDATE {$tablepre}forumfields SET ".implode(',', $upforumperm)." WHERE fid='$row[fid]'");
+							}
+						}
+					}
 				}
 			}
 
@@ -329,15 +355,17 @@ EOT;
 
 		$group['exempt'] = strrev(sprintf('%0'.strlen($group['exempt']).'b', $group['exempt']));
 
-		@include_once DISCUZ_ROOT.'./forumdata/cache/cache_usergroups.php';
+		$query = $db->query("SELECT type, groupid, grouptitle, radminid FROM {$tablepre}usergroups ORDER BY (creditshigher<>'0' || creditslower<>'0'), creditslower, groupid");
 		$grouplist = array();
-		foreach($_DCACHE['usergroups'] as $ugid => $ugroup) {
-			$grouplist[$ugroup['type']] .= '<a href="###" onclick="location.href=\''.$BASESCRIPT.'?action=usergroups&operation=edit&switch=yes&id='.$ugid.'&anchor=\'+currentAnchor+\'&scrolltop=\'+document.documentElement.scrollTop"'.($id == $ugid ? ' class="current"' : '').'>'.$ugroup['grouptitle'].'</a>';
+		while($ggroup = $db->fetch_array($query)) {
+			$ggroup['type'] = $ggroup['type'] == 'special' && $ggroup['radminid'] ? 'specialadmin' : $ggroup['type'];
+			$grouplist[$ggroup['type']] .= '<a href="###" onclick="location.href=\''.$BASESCRIPT.'?action=usergroups&operation=edit&switch=yes&id='.$ggroup['groupid'].'&anchor=\'+currentAnchor+\'&scrolltop=\'+document.documentElement.scrollTop"'.($id == $ggroup['groupid'] ? ' class="current"' : '').'>'.$ggroup['grouptitle'].'</a>';
 		}
 		$gselect = '<span id="ugselect" class="right popupmenu_dropmenu" onmouseover="showMenu({\'ctrlid\':this.id,\'pos\':\'34\'});$(\'ugselect_menu\').style.top=(parseInt($(\'ugselect_menu\').style.top)-document.documentElement.scrollTop)+\'px\'">'.$lang['usergroups_switch'].'<em>&nbsp;&nbsp;</em></span>'.
 			'<div id="ugselect_menu" class="popupmenu_popup" style="display:none">'.
 			'<em>'.$lang['usergroups_member'].'</em>'.$grouplist['member'].'<br />'.
 			($grouplist['special'] ? '<em>'.$lang['usergroups_special'].'</em>'.$grouplist['special'].'<br />' : '').
+			($grouplist['specialadmin'] ? '<em>'.$lang['usergroups_specialadmin'].'</em>'.$grouplist['specialadmin'].'<br />' : '').
 			'<em>'.$lang['usergroups_system'].'</em>'.$grouplist['system'].'</div>';
 
 		$anchor = in_array($anchor, array('basic', 'system', 'special', 'post', 'attach', 'magic', 'invite', 'credit')) ? $anchor : 'basic';
@@ -426,6 +454,7 @@ EOT;
 		showsetting('usergroups_edit_special_trade_max', 'maxtradepricenew', $group['maxtradeprice'], "text");
 		showsetting('usergroups_edit_special_trade_stick', 'tradesticknew', $group['tradestick'], "text");
 		showsetting('usergroups_edit_special_debate', 'allowpostdebatenew', $group['allowpostdebate'], "radio");
+		showsetting('usergroups_edit_special_rushreply', 'allowpostrushreplynew', $group['allowpostrushreply'], "radio");
 		$threadpluginselect = '';
 		if(is_array($threadplugins)) foreach($threadplugins as $tpid => $data) {
 			$threadpluginselect .= '<input class="checkbox" type="checkbox" name="allowthreadpluginnew[]" value="'.$tpid.'" '.(@in_array($tpid, $group['allowthreadplugin'][$id]) ? 'checked' : '').'> '.$data['name'].'<br />';
@@ -463,7 +492,10 @@ EOT;
 		showsetting('usergroups_edit_post_sig_bbcode', 'allowsigbbcodenew', $group['allowsigbbcode'], 'radio');
 		showsetting('usergroups_edit_post_sig_img_code', 'allowsigimgcodenew', $group['allowsigimgcode'], 'radio');
 		showsetting('usergroups_edit_post_max_sig_size', 'maxsigsizenew', $group['maxsigsize'], 'text');
-		showsetting('usergroups_edit_post_recommend', 'allowrecommendnew', $group['allowrecommend'], 'text');
+		if($group['groupid'] != 7) {
+			showsetting('usergroups_edit_post_recommend', 'allowrecommendnew', $group['allowrecommend'], 'text');
+		}
+		showsetting('usergroups_edit_post_edit_time_limit', 'edittimelimitnew', $group['edittimelimit'], 'text');
 		showtagfooter('tbody');
 
 		$group['maxattachsize'] = intval($group['maxattachsize'] / 1024);
@@ -629,6 +661,7 @@ EOT;
 		$maxsizeperdaynew = $maxsizeperdaynew > 0 ? intval($maxsizeperdaynew * 1024) : 0;
 		$maxattachnumnew = $maxattachnumnew > 0 ? intval($maxattachnumnew) : 0;
 		$allowrecommendnew = $allowrecommendnew > 0 ? intval($allowrecommendnew) : 0;
+		$edittimelimitnew = $edittimelimitnew > 0 ? intval($edittimelimitnew) : 0;
 
 		$db->query("UPDATE {$tablepre}usergroups SET grouptitle='$grouptitlenew', radminid='$radminidnew', system='$systemnew', allowvisit='$allowvisitnew',
 			readaccess='$readaccessnew', allowmultigroups='$allowmultigroupsnew', allowtransfer='$allowtransfernew', allowsendpm='$allowsendpmnew', allowviewpro='$allowviewpronew',
@@ -639,10 +672,12 @@ EOT;
 			allowhtml='$allowhtmlnew', allowpostpoll='$allowpostpollnew', allowdirectpost='$allowdirectpostnew', allowposturl='$allowposturlnew', allowvote='$allowvotenew',
 			allowcusbbcode='$allowcusbbcodenew', allowsigbbcode='$allowsigbbcodenew', allowsigimgcode='$allowsigimgcodenew', allowinvite='$allowinvitenew', allowmailinvite='$allowmailinvitenew', raterange='$raterangenew',
 			maxsigsize='$maxsigsizenew', allowrecommend='$allowrecommendnew', allowgetattach='$allowgetattachnew', allowpostattach='$allowpostattachnew',
+			edittimelimit='$edittimelimitnew',
 			allowsetattachperm='$allowsetattachpermnew', allowpostreward='$allowpostrewardnew', maxrewardprice='$maxrewardpricenew', minrewardprice='$minrewardpricenew', inviteprice='$invitepricenew',
 			maxattachsize='$maxattachsizenew', maxsizeperday='$maxsizeperdaynew', maxattachnum='$maxattachnumnew', attachextensions='$attachextensionsnew',
 			allowbiobbcode='$allowbiobbcodenew', allowbioimgcode='$allowbioimgcodenew', maxbiosize='$maxbiosizenew', exempt='$exemptnew',
-			maxtradeprice='$maxtradepricenew', mintradeprice='$mintradepricenew', tradestick='$tradesticknew', allowposttrade='$allowposttradenew', allowpostactivity='$allowpostactivitynew', allowmagics='$allowmagicsnew', maxmagicsweight='$maxmagicsweightnew', magicsdiscount='$magicsdiscountnew', allowpostdebate='$allowpostdebatenew' WHERE groupid='$id'");
+			maxtradeprice='$maxtradepricenew', mintradeprice='$mintradepricenew', tradestick='$tradesticknew', allowposttrade='$allowposttradenew',
+			allowpostactivity='$allowpostactivitynew', allowmagics='$allowmagicsnew', maxmagicsweight='$maxmagicsweightnew', magicsdiscount='$magicsdiscountnew', allowpostdebate='$allowpostdebatenew', allowpostrushreply='$allowpostrushreplynew' WHERE groupid='$id'");
 
 		if($allowinvisiblenew == 0 && $group['allowinvisible'] != $allowinvisiblenew) {
 			$db->query("UPDATE {$tablepre}members SET invisible='0' WHERE groupid='$id'");

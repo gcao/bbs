@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: MyBase.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: MyBase.php 21053 2009-11-09 10:29:02Z wangjinbo $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -13,7 +13,6 @@ if(!defined('IN_DISCUZ')) {
 
 class MyBase {
 
-	// 获取用户空间
 	function getUserSpace($uId) {
 		return getUserSpace($uId);
 	}
@@ -202,10 +201,8 @@ class my{
 		return $response;
 	}
 
-	//格式化返回结果
 	function formatResponse($data) {
 		global $_DCACHE;
-		//返回结果要参加一些统一的返回信息
 		$res = array(
 			'timezone'	=> intval($_DCACHE['settings']['timeoffset']),
 			'version'   	=> X_VER,
@@ -269,7 +266,6 @@ function getUserSpace($uId) {
 	return $member;
 }
 
-//添加数据
 function inserttable($tablename, $insertsqlarr, $returnid=0, $replace = false, $silent=0) {
 	$insertkeysql = $insertvaluesql = $comma = '';
 	foreach ($insertsqlarr as $insert_key => $insert_value) {
@@ -284,7 +280,6 @@ function inserttable($tablename, $insertsqlarr, $returnid=0, $replace = false, $
 	}
 }
 
-//更新数据
 function updatetable($tablename, $setsqlarr, $wheresqlarr, $silent=0) {
 	$setsql = $comma = '';
 	foreach ($setsqlarr as $set_key => $set_value) {
@@ -305,7 +300,6 @@ function updatetable($tablename, $setsqlarr, $wheresqlarr, $silent=0) {
 	$GLOBALS['db']->query('UPDATE '.$GLOBALS['tablepre'].$tablename.' SET '.$setsql.' WHERE '.$where, $silent?'SILENT':'');
 }
 
-//去掉slassh
 function sstripslashes($string) {
 	if(is_array($string)) {
 		foreach($string as $key => $val) {
@@ -317,7 +311,6 @@ function sstripslashes($string) {
 	return $string;
 }
 
-//事件发布
 function feed_add($icon, $title_template='', $title_data=array(), $body_template='', $body_data=array(), $body_general='', $images=array(), $image_links=array(), $target_ids='', $friend='', $appid=UC_APPID, $returnid=0) {
 	$arg = array(
 		'type' => 'manyou',

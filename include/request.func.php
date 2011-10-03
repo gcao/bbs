@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: request.func.php 20540 2009-10-04 08:42:21Z monkey $
+	$Id: request.func.php 21221 2009-11-22 00:23:57Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -92,7 +92,7 @@ function parse_request($requestdata, $cachefile, $mode, $specialfid = 0, $key = 
 }
 
 function updaterequest($requestdata, $requesttemplatebody, $requesttemplate, $specialfid, $mode, $key, &$nocache) {
-	global $db, $tablepre, $timestamp, $boardurl, $dateformat, $timeformat, $rewritestatus, $uc, $_DCACHE;
+	global $db, $tablepre, $timestamp, $dateformat, $timeformat, $rewritestatus, $uc, $_DCACHE;
 
 	$function = $requestdata['function'];
 	$fids = isset($requestdata['fids']) ? $requestdata['fids'] : NULL;
@@ -103,10 +103,10 @@ function updaterequest($requestdata, $requesttemplatebody, $requesttemplate, $sp
 	$newwindow = isset($requestdata['newwindow']) ? $requestdata['newwindow'] : 1;
 	$LinkTarget = $newwindow == 1 ? " target='_blank'" : ($newwindow == 2 ? " target='main'" : NULL);
 	$sidestatus = !empty($requestdata['sidestatus']) ? 1 : 0;
-	$boardurl = empty($requestdata['boardurl']) ? ($mode ? $boardurl : '') : $requestdata['boardurl'].'/';
+	$boardurl = empty($requestdata['boardurl']) ? ($mode ? $GLOBALS['boardurl'] : '') : $requestdata['boardurl'].'/';
 
 	if($function == 'threads') {
-		$orderby = isset($requestdata['orderby']) ? (in_array($requestdata['orderby'],array('lastpost','dateline','replies','views','heats','hourviews','todayviews','weekviews','monthviews')) ? $requestdata['orderby'] : 'lastpost') : 'lastpost';
+		$orderby = isset($requestdata['orderby']) ? (in_array($requestdata['orderby'],array('lastpost','dateline','replies','views','heats','recommends','hourviews','todayviews','weekviews','monthviews')) ? $requestdata['orderby'] : 'lastpost') : 'lastpost';
 		$hours	 = isset($requestdata['hours']) ? intval($requestdata['hours']) : 0;
 		$highlight = isset($requestdata['highlight']) ? $requestdata['highlight'] : 0;
 		$picpre = isset($requestdata['picpre']) ? urldecode($requestdata['picpre']) : NULL;
@@ -124,7 +124,8 @@ function updaterequest($requestdata, $requesttemplatebody, $requesttemplate, $sp
 		$tag = !empty($requestdata['tag']) ? trim($requestdata['tag']) : NULL;
 		$messagelength = !empty($requestdata['messagelength']) ? intval($requestdata['messagelength']) : 255;
 
-		require DISCUZ_ROOT.'./forumdata/cache/cache_forums.php';
+		include DISCUZ_ROOT.'./forumdata/cache/cache_forums.php';
+		require_once DISCUZ_ROOT.'./include/post.func.php';
 
 		$datalist = array();
 		$threadtypeids = array();
@@ -179,8 +180,7 @@ function updaterequest($requestdata, $requesttemplatebody, $requesttemplate, $sp
 			}
 			$sql .= ' AND t.dateline>='.$historytime;
 			$orderby = 'views';
-		}
-		if($orderby == 'heats') {
+		} elseif($orderby == 'heats') {
 			$heatdateline = $timestamp - 86400 * $GLOBALS['indexhot']['days'];
 			$sql .= " AND t.dateline>'$heatdateline' AND t.heats>'0'";
 		}
@@ -228,7 +228,7 @@ function updaterequest($requestdata, $requesttemplatebody, $requesttemplate, $sp
 			$datalist[$data['tid']]['views'] = $data['views'];
 			$datalist[$data['tid']]['replies'] = $data['replies'];
 			$datalist[$data['tid']]['highlight'] = $data['highlight'];
-			$datalist[$data['tid']]['message'] = cutmessage($data['message'], $messagelength);
+			$datalist[$data['tid']]['message'] = messagecutstr($data['message'], $messagelength);
 			$datalist[$data['tid']]['imgattach'] = ($data['remote'] ? $_DCACHE['settings']['ftp']['attachurl'] : $attachurl)."/$data[attachment]".($_DCACHE['settings']['thumbstatus'] && $data['thumb'] ? '.thumb.jpg' : '');
 			if($data['author']) {
 				$datalist[$data['tid']]['author'] = $data['author'];
@@ -622,17 +622,6 @@ function writetorequestcache($cachfile, $requestcachelife, $data='') {
 			"\n//Created: ".date("M j, Y, G:i").
 			"\n//Identify: ".md5(basename($cachfile).$cachedata.$_DCACHE['settings']['authkey'])."\n\n$cachedata?>");
 	@fclose($fp);
-}
-
-function cutmessage($message, $messagelength) {
-	$message = preg_replace(array(
-		"/\[hide=?\d*\](.+?)\[\/hide\]/is",
-		"/\[quote](.*)\[\/quote]/siU",
-		"/\[attach\](\d+)\[\/attach\]/i",
-		"/\[(\w+)[^\]]*?\](.*?)\[\/\\1\]/is"
-		), array('', '', '', '\\2'), strip_tags(nl2br($message)));
-	$message = addslashes(cutstr(dhtmlspecialchars($message), $messagelength));
-	return str_replace(array('\'',"\n","\r"), '', $message);
 }
 
 ?>

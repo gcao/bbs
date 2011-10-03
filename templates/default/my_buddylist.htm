@@ -6,6 +6,10 @@
 		<!--{if $regstatus > 1}-->&nbsp;<button onclick="window.location='invite.php'; return false;">{lang my_buddylist_invite}</button><!--{/if}-->
 	</form>
 	<h1>{lang my_buddylist}</h1>
+	<ul>
+		<li{if empty($type)} class="current"{/if}><a href="my.php?item=buddylist"><span>{lang my_buddylist_status_3}</span></a></li>
+		<li{if !empty($type)} class="current"{/if}><a href="my.php?item=buddylist&type=fans"><span>{lang my_buddylist_status_1}</span></a></li>
+	</ul>
 </div>
 <div class="datalist">
 	<table cellspacing="0" cellpadding="0" class="datatable" style="table-layout:fixed;margin-top:10px;">
@@ -19,7 +23,7 @@
 						<div class="friendinfo">
 							<h5 class="buddyname">
 								<a href="space.php?uid=$buddy[friendid]" target="_blank">$buddy[username]</a>
-								<!--{if !$buddy[online]}--><img src="{IMGDIR}/online_buddy.gif" title="{lang online}" class="online_buddy" /><!--{/if}-->
+								<!--{if $buddy[online]}--><img src="{IMGDIR}/online_buddy.gif" title="{lang online}" class="online_buddy" /><!--{/if}-->
 								<!--{if $buddy['msn'][1]}-->
 									<a target='_blank' href='http://settings.messenger.live.com/Conversation/IMMe.aspx?invitee={$buddy[msn][1]}@apps.messenger.live.com&mkt=zh-cn' title="{lang msn_chat}"><img class='online_buddy' src='http://messenger.services.live.com/users/{$buddy[msn][1]}@apps.messenger.live.com/presenceimage?mkt=zh-cn' width='16' height='16' /></a>
 								<!--{/if}-->
@@ -32,7 +36,7 @@
 								<a href="pm.php?action=new&uid=$buddy[friendid]" onclick="showWindow('sendpm', this.href);return false;" title="{lang send_pm}">{lang send_pm}</a> |
 								<!--{if $uchomeurl}--><a href="$uchomeurl/space.php?uid=$buddy[friendid]" target="_blank">{lang my_buddylist_space}</a><!--{else}--><a href="space.php?uid=$buddy[friendid]" target="_blank">{lang memcp_profile}</a><!--{/if}--> |
 								<a href="search.php?srchuid=$buddy[friendid]&srchfid=all&srchfrom=0&searchsubmit=yes" target="_blank"><!--{if $buddy[gender] == 2}-->{lang she}<!--{else}-->{lang he}<!--{/if}-->{lang my_buddylist_post}</a> |
-								<a href="my.php?item=buddylist&action=delete&friendid=$buddy[friendid]&buddysubmit=yes">{lang delete}</a>
+								<a href="my.php?item=buddylist&action=delete&friendid=$buddy[friendid]{$extratype}&buddysubmit=yes">{lang delete}</a>
 							</p>
 						</div>
 					</td>

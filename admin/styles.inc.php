@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: styles.inc.php 20010 2009-09-16 09:13:55Z monkey $
+	$Id: styles.inc.php 21213 2009-11-20 04:55:21Z zhaoxiongfei $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -140,7 +140,7 @@ if($operation == 'admin') {
 			$stylelist .= ($i == 0 ? '<tr>' : '').
 				'<td width="33%" '.($available ? 'style="background: #F2F9FD"' : '').'><table cellspacing="0" cellpadding="0" style="margin-left: 10px; width: 200px;"><tr><td style="width: 120px; text-align: center; border-top: none;">'.
 				($id > 0 ? "<p style=\"margin-bottom: 2px;\">&nbsp;</p>".
-				($available ? "<a href=\"{$boardurl}$indexname?styleid=$id\" target=\"_blank\">" : '' )."<img src=\"$preview\" alt=\"$lang[preview]\"/></a>
+				($available ? "<a href=\"$indexname?styleid=$id\" target=\"_blank\">" : '' )."<img src=\"$preview\" alt=\"$lang[preview]\"/></a>
 				<p style=\"margin: 2px 0\"><span style=\"float: left; dispaly: inline; margin-left: 4px; width: 20px; height: 20px; background: ".($styleicons[$id] ? $styleicons[$id] : 'url(./images/admincp/transparent.gif)')."\">&nbsp;</span><input type=\"text\" class=\"txt\" name=\"namenew[$id]\" value=\"$style[name]\" size=\"30\" style=\"margin-right:0; width: 80px;\"></p>
 				<p class=\"lightfont\">($style[tplname])</p></td><td style=\"padding-top: 17px; width: 80px; border-top: none; vertical-align: top;\">
 				<p style=\"margin: 2px 0\">$lang[available] <input class=\"checkbox\" type=\"checkbox\" name=\"availablenew[$id]\" value=\"1\" $available></p>
@@ -606,7 +606,7 @@ function setgcolor(color) {
 			echo '<tr><td>'.$lang['styles_edit_visual_setting_sidebgcolor'].'</td><td><input id="sidebgcolorimg" name="stylevarbgimg['.$stylestuff['sidebgcolor']['id'].']" value="'.$sidebgcolorimg.'" size="10" onchange="$(\'sp_wrap\').style.backgroundImage = \'url(\' + imgdirurl + this.value + \')\'" /><input name="stylevar['.$stylestuff['sidebgcolor']['id'].']" type="hidden" value="'.$sidebgcolor.'"><input name="stylevarbgextra['.$stylestuff['sidebgcolor']['id'].']" type="hidden" value="'.$sidebgcolorextra.'"></td></tr>';
 			echo '<tr><td>'.$lang['styles_edit_visual_setting_wrapwidth'].'</td><td><input name="stylevar['.$stylestuff['wrapwidth']['id'].']" value="'.$stylestuff['wrapwidth']['subst'].'" size="10" /></td></tr>';
 			echo '<tr><td>'.$lang['styles_edit_visual_setting_wrapbg'].'</td><td><div class="color"><input id="wrapbg" name="stylevar['.$stylestuff['wrapbg']['id'].']" value="'.$stylestuff['wrapbg']['subst'].'" size="10" onchange="$(\'sp_wrap\').style.backgroundColor = this.value;updatecolorpreview(\'c10\', \'wrapbg\')" onclick="setfocus(this)" />'.getcolor(10, 'wrapbg').'</div></td></tr>';
-			echo '<tr><td>'.$lang['styles_edit_visual_setting_wrapborder'].'</td><td><div class="color"><input id="wrapbordercolor" name="stylevar['.$stylestuff['wrapbordercolor']['id'].']" value="'.$stylestuff['headerbordercolor']['subst'].'" size="10" onchange="$(\'sp_wrap\').style.border = $(\'wrapborder\').value + \' solid \' + this.value;updatecolorpreview(\'c11\', \'wrapbordercolor\')" onclick="setfocus(this)" />'.getcolor(11, 'wrapbordercolor').'</div>'.
+			echo '<tr><td>'.$lang['styles_edit_visual_setting_wrapborder'].'</td><td><div class="color"><input id="wrapbordercolor" name="stylevar['.$stylestuff['wrapbordercolor']['id'].']" value="'.$stylestuff['wrapbordercolor']['subst'].'" size="10" onchange="$(\'sp_wrap\').style.border = $(\'wrapborder\').value + \' solid \' + this.value;updatecolorpreview(\'c11\', \'wrapbordercolor\')" onclick="setfocus(this)" />'.getcolor(11, 'wrapbordercolor').'</div>'.
 				' <input id="wrapborder" name="stylevar['.$stylestuff['wrapborder']['id'].']" value="'.$stylestuff['wrapborder']['subst'].'" size="10" onchange="$(\'sp_wrap\').style.border = this.value + \' solid \' + $(\'wrapbordercolor\').value" /></td></tr>';
 
 			echo '<tr><td>'.$lang['styles_edit_visual_setting_footertext'].'</td><td><div class="color"><input id="footertext" name="stylevar['.$stylestuff['footertext']['id'].']" value="'.$stylestuff['footertext']['subst'].'" size="10" onchange="$(\'sp_footer\').style.color = this.value;updatecolorpreview(\'c12\', \'footertext\')" onclick="setfocus(this)" />'.getcolor(12, 'footertext').'</div></td></tr>';

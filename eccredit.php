@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: eccredit.php 20207 2009-09-22 02:42:49Z monkey $
+	$Id: eccredit.php 20206 2009-09-22 02:37:49Z monkey $
 */
 
 define('NOROBOT', TRUE);

@@ -4,7 +4,7 @@
 [Discuz!] (C)2001-2009 Comsenz Inc.
 This is NOT a freeware, use is subject to license terms
 
-$Id: plugin.inc.php 20200 2009-09-22 00:10:01Z monkey $
+$Id: plugin.inc.php 20199 2009-09-22 00:08:56Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_MODCP')) {

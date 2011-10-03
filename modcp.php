@@ -4,7 +4,7 @@
 [Discuz!] (C)2001-2009 Comsenz Inc.
 This is NOT a freeware, use is subject to license terms
 
-$Id: modcp.php 20198 2009-09-21 13:34:03Z monkey $
+$Id: modcp.php 21068 2009-11-10 04:48:56Z monkey $
 */
 
 define('NOROBOT', TRUE);
@@ -15,6 +15,8 @@ $action = !empty($_REQUEST['action']) ? (!empty($_GET['action']) ? $_GET['action
 
 require_once './include/common.inc.php';
 require_once './admin/cpanel.share.php';
+
+$discuz_action = 210;
 
 $action = empty($action) && $fid ? 'threads' : $action;
 $cpscript = basename($PHP_SELF);
@@ -76,7 +78,7 @@ if($modforums === null) {
 			}
 		}
 	}
-	
+
 	$modsession->set('modforums', $modforums, true);
 }
 
@@ -104,37 +106,39 @@ switch ($action) {
 		break;
 
 	case 'report':
-		$script = 'report';
+		$allowviewreport && $script = 'report';
 		break;
 
 	case 'moderate':
-		$allowmodpost && $script = 'moderate';
+		($op == 'threads' || $op == 'replies') && $allowmodpost && $script = 'moderate';
+		$op == 'members' && $allowmoduser && $script = 'moderate';
 		break;
 
 	case 'forums':
-		$script = 'forums';
+		$op == 'editforum' && $alloweditforum && $script = 'forums';
+		$op == 'recommend' && $allowrecommendthread && $script = 'forums';
 		break;
 
 	case 'forumaccess':
-		$script = 'forumaccess';
+		$allowedituser && $script = 'forumaccess';
 		break;
 
 	case 'logs':
-		$script = 'logs';
+		$allowviewlog && $script = 'logs';
 		break;
 
 	case 'login':
 		$script = $modsession->cpaccess == 1 ? 'login' : 'home';
 		break;
-	
+
 	case 'threads':
 		$script = 'threads';
 		break;
-		
+
 	case 'recyclebins':
 		$script = 'recyclebins';
 		break;
-		
+
 	case 'plugin':
 		$script = 'plugin';
 		break;
@@ -160,8 +164,9 @@ $reportnum = $modpostnum = $modthreadnum = $modforumnum = 0;
 $modforumnum = count($modforums['list']);
 if($modforumnum) {
 	$reportnum = $db->result_first("SELECT COUNT(*) FROM {$tablepre}reportlog WHERE fid IN($modforums[fids]) AND status='1'");
-	$modnum = $db->result_first("SELECT COUNT(*) FROM {$tablepre}posts WHERE invisible='-2' AND first='0' and fid IN($modforums[fids])") +
-		$db->result_first("SELECT COUNT(*) FROM {$tablepre}threads WHERE fid IN($modforums[fids]) AND displayorder='-2'");
+	$modnum = ($allowmodpost ? ($db->result_first("SELECT COUNT(*) FROM {$tablepre}posts WHERE invisible='-2' AND first='0' and fid IN($modforums[fids])") +
+		$db->result_first("SELECT COUNT(*) FROM {$tablepre}threads WHERE fid IN($modforums[fids]) AND displayorder='-2'")) : 0) +
+		($allowmoduser ? $db->result_first("SELECT COUNT(*) FROM {$tablepre}validating WHERE status='0'") : 0);
 }
 
 switch($adminid) {

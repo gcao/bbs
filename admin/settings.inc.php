@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: settings.inc.php 20693 2009-10-15 02:30:16Z monkey $
+	$Id: settings.inc.php 21057 2009-11-10 01:05:36Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -210,6 +210,7 @@ if(!submitcheck('settingsubmit')) {
 			array(1, $lang['settings_access_register_verify_email']),
 			array(2, $lang['settings_access_register_verify_manual'])
 		)), $settings['regverify'], 'select');
+		showsetting('settings_access_register_verify_ipwhite', 'settingsnew[ipverifywhite]', $settings['ipverifywhite'], 'textarea');
 		showsetting('settings_access_register_ctrl', 'settingsnew[regctrl]', $settings['regctrl'], 'text');
 		showsetting('settings_access_register_floodctrl', 'settingsnew[regfloodctrl]', $settings['regfloodctrl'], 'text');
 		showsetting('settings_access_register_ipctrl', 'settingsnew[ipregctrl]', $settings['ipregctrl'], 'textarea');
@@ -323,6 +324,7 @@ if(!submitcheck('settingsubmit')) {
 		showsetting('settings_styles_forumdisplay_threadmaxpages', 'settingsnew[threadmaxpages]', $settings['threadmaxpages'], 'text');
 		showsetting('settings_styles_forumdisplay_globalstick', 'settingsnew[globalstick]', $settings['globalstick'], 'radio');
 		showsetting('settings_styles_forumdisplay_stick', 'settingsnew[threadsticky]', $settings['threadsticky'], 'text');
+		showsetting('settings_styles_forumdisplay_part', 'settingsnew[forumseparator]', $settings['forumseparator'], 'radio');
 		showsetting('settings_styles_forumdisplay_visitedforums', 'settingsnew[visitedforums]', $settings['visitedforums'], 'text');
 		showtablefooter();
 
@@ -332,6 +334,7 @@ if(!submitcheck('settingsubmit')) {
 		showsetting('settings_styles_viewthread_starthreshold', 'settingsnew[starthreshold]', $settings['starthreshold'], 'text');
 		showsetting('settings_styles_viewthread_maxsigrows', 'settingsnew[maxsigrows]', $settings['maxsigrows'], 'text');
 		showsetting('settings_styles_viewthread_sigviewcond', 'settingsnew[sigviewcond]', $settings['sigviewcond'], 'text');
+		showsetting('settings_styles_viewthread_rate_on', 'settingsnew[ratelogon]', $settings['ratelogon'], 'radio');
 		showsetting('settings_styles_viewthread_rate_number', 'settingsnew[ratelogrecord]', $settings['ratelogrecord'], 'text');
 		showsetting('settings_styles_viewthread_show_signature', 'settingsnew[showsignatures]', $settings['showsignatures'], 'radio');
 		showsetting('settings_styles_viewthread_show_face', 'settingsnew[showavatars]', $settings['showavatars'], 'radio');
@@ -617,14 +620,25 @@ if(!submitcheck('settingsubmit')) {
 
 	} elseif($operation == 'permissions') {
 
+		include_once DISCUZ_ROOT.'./include/forum.func.php';
+		$forumselect = '<select name="settingsnew[allowviewuserthread][fids][]" multiple="multiple" size="10">'.forumselect(FALSE, 0, 0, TRUE).'</select>';
+		$settings['allowviewuserthread'] = unserialize($settings['allowviewuserthread']);
+		if($settings['allowviewuserthread']['fids']) {
+			foreach($settings['allowviewuserthread']['fids'] as $v) {
+				$forumselect = str_replace('<option value="'.$v.'">', '<option value="'.$v.'" selected>', $forumselect);
+			}
+		}
+
 		showtableheader();
+		showsetting('settings_permissions_allowviewuserthread', 'settingsnew[allowviewuserthread][allow]', $settings['allowviewuserthread']['allow'], 'radio', 0, 1);
+		showsetting('settings_permissions_allowviewuserthread_fids', '', '', $forumselect);
+		showtagfooter('tbody');
 		showsetting('settings_permissions_memliststatus', 'settingsnew[memliststatus]', $settings['memliststatus'], 'radio');
 		showsetting('settings_permissions_reportpost', 'settingsnew[reportpost]', $settings['reportpost'], 'radio');
 		showsetting('settings_permissions_minpostsize', 'settingsnew[minpostsize]', $settings['minpostsize'], 'text');
 		showsetting('settings_permissions_maxpostsize', 'settingsnew[maxpostsize]', $settings['maxpostsize'], 'text');
 		showsetting('settings_permissions_favorite_storage', 'settingsnew[maxfavorites]', $settings['maxfavorites'], 'text');
 		showsetting('settings_permissions_maxpolloptions', 'settingsnew[maxpolloptions]', $settings['maxpolloptions'], 'text');
-		showsetting('settings_permissions_edittimelimit', 'settingsnew[edittimelimit]', $settings['edittimelimit'], 'text');
 		showsetting('settings_permissions_editby', 'settingsnew[editedby]', $settings['editedby'], 'radio');
 
 		showtitle('nav_settings_rate');
@@ -928,6 +942,7 @@ EOT;
 		)), $settings['attachsave'], 'select', $checkmkdirfunc);
 		$settings['swfupload'] = $settings['swfupload'] == 2 ? array(0, 1) : array($settings['swfupload']);
 		showsetting('settings_attach_basic_swfupload', array('settingsnew[swfupload]', array(array(0, $lang['settings_attach_basic_simple']), array(1, $lang['settings_attach_basic_multi']))), $settings['swfupload'], 'mcheckbox');
+		showsetting('settings_attach_basic_allowattachurl', 'settingsnew[allowattachurl]', $settings['allowattachurl'], 'radio');
 		showsubmit('settingsubmit');
 		showtablefooter();
 
@@ -1222,11 +1237,6 @@ EOT;
 		}
 	}
 
-	if($settingsnew['allowfloatwin']) {
-		$settingsnew['disallowfloat'] = array_diff($floatwinkeys, $settingsnew['allowfloatwin']);
-		$settingsnew['disallowfloat'] = addslashes(serialize($settingsnew['disallowfloat']));
-	}
-
 	if(isset($settingsnew['welcomemsgtitle'])) {
 		$settingsnew['welcomemsgtitle'] = cutstr(trim(dhtmlspecialchars($settingsnew['welcomemsgtitle'])), 75);
 	}
@@ -1388,6 +1398,10 @@ EOT;
 		$settingsnew['seccodedata'] = addslashes(serialize($settingsnew['seccodedata']));
 	}
 
+	if(isset($settingsnew['allowviewuserthread'])) {
+		$settingsnew['allowviewuserthread'] = addslashes(serialize($settingsnew['allowviewuserthread']));
+	}
+
 	if($operation == 'sec') {
 		$settingsnew['seccodestatus'] = bindec(intval($settingsnew['seccodestatus'][5]).intval($settingsnew['seccodestatus'][4]).intval($settingsnew['seccodestatus'][3]).intval($settingsnew['seccodestatus'][2]).intval($settingsnew['seccodestatus'][1]));
 		if(is_array($delete)) {
@@ -1398,7 +1412,7 @@ EOT;
 			foreach($question as $key => $q) {
 				$q = trim($q);
 				$a = cutstr(dhtmlspecialchars(trim($answer[$key])), 50);
-				if($q && $a) {
+				if($q !== '' && $a !== '') {
 					$db->query("UPDATE {$tablepre}itempool SET question='$q', answer='$a' WHERE id='$key'");
 				}
 			}
@@ -1408,7 +1422,7 @@ EOT;
 			foreach($newquestion as $key => $q) {
 				$q = trim($q);
 				$a = cutstr(dhtmlspecialchars(trim($newanswer[$key])), 50);
-				if($q && $a) {
+				if($q !== '' && $a !== '') {
 					$db->query("INSERT INTO	{$tablepre}itempool (question, answer) VALUES ('$q', '$a')");
 				}
 			}
@@ -1588,6 +1602,8 @@ EOT;
 
 	$updatestyles = FALSE;
 	if($operation == 'styles') {
+		$settingsnew['disallowfloat'] = array_diff($floatwinkeys, isset($settingsnew['allowfloatwin']) ? $settingsnew['allowfloatwin'] : array());
+		$settingsnew['disallowfloat'] = addslashes(serialize($settingsnew['disallowfloat']));
 		$settingsnew['customauthorinfo'] = addslashes(serialize(array($settingsnew['customauthorinfo'])));
 		list(, $imagemaxwidth) = explode("\t", $settings['zoomstatus']);
 		if($imagemaxwidth != $settingsnew['imagemaxwidth']) {
@@ -1625,7 +1641,7 @@ EOT;
 				'searchctrl', 'extcredits1', 'extcredits2', 'extcredits3', 'extcredits4', 'extcredits5', 'extcredits6',
 				'extcredits7', 'extcredits8', 'transfermincredits', 'exchangemincredits', 'maxincperthread', 'maxchargespan',
 				'maxspm', 'maxsearchresults', 'maxsmilies', 'threadmaxpages', 'membermaxpages', 'maxpostsize', 'minpostsize',
-				'maxpolloptions', 'karmaratelimit', 'losslessdel', 'edittimelimit', 'smcols',
+				'maxpolloptions', 'karmaratelimit', 'losslessdel', 'smcols',
 				'watermarktrans', 'watermarkquality', 'jscachelife', 'waptpp', 'wapppp', 'wapmps', 'maxmodworksmonths', 'frameon', 'maxonlinelist'))) {
 				$val = (float)$val;
 			}
@@ -1664,6 +1680,9 @@ EOT;
 		}
 		if($operation == 'credits') {
 			updatecache('custominfo');
+		}
+		if($operation == 'access') {
+			updatecache('ipctrl');
 		}
 		if($updatestyles) {
 			updatecache('styles');

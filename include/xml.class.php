@@ -1,10 +1,10 @@
 <?php
 
 /*
-	[UCenter] (C)2001-2009 Comsenz Inc.
+	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: xml.class.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: xml.class.php 20753 2009-10-18 16:02:26Z monkey $
 */
 
 function xml2array(&$xml, $isnormal = FALSE) {
@@ -63,6 +63,7 @@ class XMLparse {
 	}
 
 	function open(&$parser, $tag, $attributes) {
+		$this->data = '';
 		$this->failed = FALSE;
 		if(!$this->isnormal) {
 			if(isset($attributes['id']) && !is_string($this->document[$attributes['id']])) {
@@ -84,9 +85,7 @@ class XMLparse {
 
 	function data(&$parser, $data) {
 		if($this->last_opened_tag != NULL) {
-			$this->data = $data;
-		} else {
-			$this->data = '';
+			$this->data .= $data;
 		}
 	}
 

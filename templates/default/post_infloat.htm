@@ -11,7 +11,7 @@
 		</span>
 	</h3>
 	<div class="postbox">
-		<form method="post" id="postform" action="post.php?infloat=yes&action=$action&fid=$fid&extra=$extra{if $action == 'newthread'}&topicsubmit=yes{elseif $action == 'reply'}&tid=$tid&replysubmit=yes{/if}" onsubmit="this.message.value = parseurl(this.message.value);ajaxpost('postform', 'return_$handlekey', 'return_$handlekey', 'onerror');return false;">
+		<form method="post" id="postform" action="post.php?infloat=yes&action=$action&fid=$fid&extra=$extra{if $action == 'newthread'}&topicsubmit=yes{elseif $action == 'reply'}&tid=$tid&replysubmit=yes{/if}" onsubmit="this.message.value = parseurl(this.message.value);{if !empty($infloat)}ajaxpost('postform', 'return_$handlekey', 'return_$handlekey', 'onerror');return false;{/if}">
 			<input type="hidden" name="formhash" id="formhash" value="{FORMHASH}" />
 			<input type="hidden" name="handlekey" value="$handlekey" />
 			<!--{if $action == 'reply'}-->

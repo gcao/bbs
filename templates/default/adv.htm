@@ -12,7 +12,6 @@
 		<!--{/loop}-->
 	<!--{/if}-->
 	<!--{if CURSCRIPT == 'viewthread'}-->
-		<!--{if !$thread['special']}-->
 		<!--{loop $postlist $post}-->
 			<!--{if $post['count'] > 0}-->
 				<!--{if !empty($advlist['thread1'][$post['count']])}--><div class="ad_textlink1" id="hide_ad_thread1_$post[count]">$advlist[thread1][$post[count]]</div><!--{/if}-->
@@ -24,7 +23,6 @@
 				<div class="ad_pip" id="hide_ad_thread3_0">$advlist[thread3][0]</div>
 			<!--{/if}-->
 		<!--{/loop}-->
-		<!--{/if}-->
 		<div class="ad_column" id="hide_ad_interthread"><!--{if !empty($advlist['interthread']) && $thread['replies']}-->$advlist[interthread]<!--{/if}--></div>
 	<!--{/if}-->
 	<div class="ad_footerbanner" id="hide_ad_footerbanner1">$advlist[footerbanner1]</div>

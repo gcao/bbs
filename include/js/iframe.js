@@ -2,7 +2,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: iframe.js 19605 2009-09-07 06:18:45Z monkey $
+	$Id: iframe.js 20769 2009-10-19 06:23:23Z monkey $
 */
 
 function refreshmain(e) {

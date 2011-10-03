@@ -37,7 +37,8 @@
 <script type="text/javascript" reload="1">
 function submithandle_$handlekey(locationhref) {
 	<!--{loop $list $id}-->
-		$('pid_$id').outerHTML = '';
+		$('pidcheck_$id').parentNode.removeChild($('pidcheck_$id'));
+		$('pid_$id').style.display = 'none';		
 	<!--{/loop}-->
 	recountobj();
 	hideWindow('mods');

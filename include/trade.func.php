@@ -3,7 +3,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: trade.func.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: trade.func.php 18283 2009-04-11 11:41:49Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {

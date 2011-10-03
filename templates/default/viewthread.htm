@@ -19,60 +19,36 @@ $pluginhooks[viewthread_top]
 
 <!--{if $admode && !empty($advlist['text'])}--><div class="ad_text" id="ad_text"><table summary="Text Ad" cellpadding="0" cellspacing="1">$advlist[text]</table></div><!--{else}--><div id="ad_text"></div><!--{/if}-->
 
-<div id="wrap" class="wrap s_clear threadfix">
-<div class="forumcontrol">
-	<table cellspacing="0" cellpadding="0">
-		<tr>
-			<td class="modaction">
-				<!--{if $forum['ismoderator']}-->
-					<span id="modopt" onclick="$('modopt').id = 'modopttmp';this.id = 'modopt';showMenu({'ctrlid':this.id})" class="dropmenu">{lang admin_modoptions}</span>
-				<!--{/if}-->
-			</td>
-			<td>
-				$multipage
-				<span class="pageback"{if $visitedforums} id="visitedforums" onmouseover="$('visitedforums').id = 'visitedforumstmp';this.id = 'visitedforums';showMenu({'ctrlid':this.id})"{/if}><a href="$upnavlink">{lang return_forumdisplay}</a></span>
-				<span class="replybtn" id="post_reply" prompt="post_reply"><a href="post.php?action=reply&fid=$fid&tid=$tid" onclick="showWindow('reply', this.href);return false;">{lang reply}</a></span>
-				<span class="postbtn" id="newspecial" prompt="post_newthread" onmouseover="$('newspecial').id = 'newspecialtmp';this.id = 'newspecial';showMenu({'ctrlid':this.id})"><a href="post.php?action=newthread&fid=$fid" onclick="showWindow('newthread', this.href);return false;">{lang send_posts}</a></span>
-			</td>
-		</tr>
-	</table>
-</div>
-
 <!--{if $forum['ismoderator']}-->
-	<ul class="popupmenu_popup headermenu_popup inlinelist" id="modopt_menu" style="width: 180px; display: none">
+	<ul class="popupmenu_popup headermenu_popup inlinelist" id="modopt_menu" style="width: 180px; display: none">{eval $modopt=0;}
 	<!--{if $thread['digest'] >= 0}-->
-		<!--{if $allowdelpost}--><li class="wide"><a href="javascript:;" onclick="modthreads(3, 'delete')">{lang admin_delthread}</a></li><!--{/if}-->
-		<li class="wide"><a href="javascript:;" onclick="modthreads(3, 'down')">{lang admin_bump_down}</a></li>
-		<!--{if $allowstickthread}-->
-			<li class="wide"><a href="javascript:;" onclick="modthreads(1, 'stick')">{lang admin_stick}</a></li>
-		<!--{/if}-->
-		<li class="wide"><a href="javascript:;" onclick="modthreads(1, 'highlight')">{lang admin_highlight}</a></li>
-		<li class="wide"><a href="javascript:;" onclick="modthreads(1, 'digest')">{lang admin_digest}</a></li>
-		<!--{if $forum['modrecommend']['open'] && $forum['modrecommend']['sort'] != 1}-->
-			<li class="wide"><a href="javascript:;" onclick="modthreads(1, 'recommend')">{lang admin_recommend}</a></li>
-		<!--{/if}-->
-		<li class="wide"><a href="javascript:;" onclick="modthreads(4)">{lang admin_openclose}</a></li>
-		<li class="wide"><a href="javascript:;" onclick="modthreads(2, 'move')">{lang admin_move}</a></li>
-		<li class="wide"><a href="javascript:;" onclick="modthreads(2, 'type')">{lang admin_type}</a></li>
+		<!--{if $allowdelpost}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modthreads(3, 'delete')">{lang admin_delthread}</a></li><!--{/if}-->
+		<!--{if $allowbumpthread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modthreads(3, 'down')">{lang admin_bump_down}</a></li><!--{/if}-->
+		<!--{if $allowstickthread && ($thread['displayorder'] <= 3 || $adminid == 1)}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modthreads(1, 'stick')">{lang admin_stick}</a></li><!--{/if}-->
+		<!--{if $allowhighlightthread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modthreads(1, 'highlight')">{lang admin_highlight}</a></li><!--{/if}-->
+		<!--{if $allowdigestthread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modthreads(1, 'digest')">{lang admin_digest}</a></li><!--{/if}-->
+		<!--{if $allowrecommendthread && $forum['modrecommend']['open'] && $forum['modrecommend']['sort'] != 1}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modthreads(1, 'recommend')">{lang admin_recommend}</a></li><!--{/if}-->
+		<!--{if $allowstampthread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modaction('stamp')">{lang admin_stamp}</a></li><!--{/if}-->
+		<!--{if $allowclosethread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modthreads(4)">{lang admin_openclose}</a></li><!--{/if}-->
+		<!--{if $allowmovethread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modthreads(2, 'move')">{lang admin_move}</a></li><!--{/if}-->
+		<!--{if $allowedittypethread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modthreads(2, 'type')">{lang admin_type}</a></li><!--{/if}-->
 		<!--{if !$thread['special']}-->
-			<li class="wide"><a href="javascript:;" onclick="modaction('copy')">{lang admin_copy}</a></li>
-			<li class="wide"><a href="javascript:;" onclick="modaction('merge')">{lang admin_merges}</a></li>
-			<!--{if $thread['price'] > 0 && $allowrefund}-->
-				<li class="wide"><a href="javascript:;" onclick="modaction('refund')">{lang admin_refund}</a></li>
-			<!--{/if}-->
+			<!--{if $allowcopythread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modaction('copy')">{lang admin_copy}</a></li><!--{/if}-->
+			<!--{if $allowmergethread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modaction('merge')">{lang admin_merges}</a></li><!--{/if}-->
+			<!--{if $allowrefund && $thread['price'] > 0}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modaction('refund')">{lang admin_refund}</a></li><!--{/if}-->
 		<!--{/if}-->
-		<li class="wide"><a href="javascript:;" onclick="modaction('split')">{lang admin_split}</a></li>
-		<li class="wide"><a href="javascript:;" onclick="modaction('repair')">{lang admin_repair}</a></li>
+		<!--{if $allowsplitthread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modaction('split')">{lang admin_split}</a></li><!--{/if}-->
+		<!--{if $allowrepairthread}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modaction('repair')">{lang admin_repair}</a></li><!--{/if}-->
 	<!--{/if}-->
-	<!--{if $thread['special'] == 3}-->
-		<li class="wide"><a href="javascript:;" onclick="modaction('removereward')">{lang admin_remove_reward}</a></li>
-	<!--{/if}-->
+	<!--{if $allowremovereward && $thread['special'] == 3}-->{eval $modopt++}<li class="wide"><a href="javascript:;" onclick="modaction('removereward')">{lang admin_remove_reward}</a></li><!--{/if}-->
 	</ul>
-	<!--{if $allowbanpost || $allowdelpost}-->
+	<!--{if $allowwarnpost || $allowbanpost || $allowdelpost}-->
 		<div id="modlayer" style="display:none;position:position;width:165px;">
 			<span>{lang admin_select}</span><strong id="modcount"></strong><span>{lang piece}: </span>
-			<!--{if $allowbanpost}-->
+			<!--{if $allowwarnpost}-->
 				<a href="javascript:;" onclick="modaction('warn')">{lang warn}</a>
+			<!--{/if}-->
+			<!--{if $allowbanpost}-->
 				<a href="javascript:;" onclick="modaction('banpost')">{lang admin_banpost}</a>
 			<!--{/if}-->
 			<!--{if $allowdelpost}-->
@@ -81,6 +57,27 @@ $pluginhooks[viewthread_top]
 		</div>
 	<!--{/if}-->
 <!--{/if}-->
+
+<div id="wrap" class="wrap s_clear threadfix">
+<div class="forumcontrol">
+	<table cellspacing="0" cellpadding="0">
+		<tr>
+			<td class="modaction">
+				<!--{if $forum['ismoderator'] && $modopt}-->
+					<span id="modopt" onclick="$('modopt').id = 'modopttmp';this.id = 'modopt';showMenu({'ctrlid':this.id})" class="dropmenu">{lang admin_modoptions}</span>
+				<!--{/if}-->
+			</td>
+			<td>
+				$multipage
+				<span class="pageback"{if $visitedforums} id="visitedforums" onmouseover="$('visitedforums').id = 'visitedforumstmp';this.id = 'visitedforums';showMenu({'ctrlid':this.id})"{/if}><a href="$upnavlink">{lang return_forumdisplay}</a></span>
+				<!--{if $allowpostreply}-->
+					<span class="replybtn" id="post_reply" prompt="post_reply"><a href="post.php?action=reply&fid=$fid&tid=$tid" onclick="showWindow('reply', this.href);return false;">{lang reply}</a></span>
+				<!--{/if}-->
+				<span class="postbtn" id="newspecial" prompt="post_newthread" onmouseover="$('newspecial').id = 'newspecialtmp';this.id = 'newspecial';showMenu({'ctrlid':this.id})"><a href="post.php?action=newthread&fid=$fid" onclick="showWindow('newthread', this.href);return false;">{lang send_posts}</a></span>
+			</td>
+		</tr>
+	</table>
+</div>
 
 <!--{if $allowpost && ($allowposttrade || $allowpostpoll || $allowpostreward || $allowpostactivity || $allowpostdebate || $threadplugins || $forum['threadsorts'])}-->
 	<ul class="popupmenu_popup postmenu" id="newspecial_menu" style="display: none">
@@ -134,7 +131,7 @@ $tagscript
 	<table cellspacing="0" cellpadding="0" <!--{if $fastpost}-->class="narrow"<!--{/if}-->>
 		<tr>
 			<td class="modaction">
-				<!--{if $forum['ismoderator']}-->
+				<!--{if $forum['ismoderator'] && $modopt}-->
 				<span id="modopttmp" onclick="$('modopt').id = 'modopttmp';this.id = 'modopt';showMenu({'ctrlid':this.id})" class="dropmenu">{lang admin_modoptions}</span>
 				<!--{/if}-->
 			</td>
@@ -191,7 +188,7 @@ $pluginhooks[viewthread_bottom]
 </h5>
 </div>
 
-<!--{if $maxpage > 1}-->
+<!--{if $maxpage > 10000}-->
 	<script type="text/javascript">document.onkeyup = function(e){keyPageScroll(e, {if $page > 1}1{else}0{/if}, {if $page < $maxpage}1{else}0{/if}, 'viewthread.php?tid=$tid{if $authorid}&authorid=$authorid{/if}', $page);}</script>
 <!--{/if}-->
 

@@ -4,28 +4,30 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: index.php 20430 2009-09-27 06:03:22Z monkey $
+	$Id: index.php 21048 2009-11-09 05:59:18Z monkey $
 */
 
-define('CURSCRIPT', 'index');
+define('BINDDOMAIN', 'index');
 
 require_once './include/common.inc.php';
 
+if(!$loadforum) {
+	if($indextype) {
+		$op = empty($op) ? $indextype : $op;
+		$indexfile = in_array($op, array('classics', 'feeds')) ? $op : 'classics';
+	} else {
+		$indexfile = 'classics';
+	}
 
-if($indextype) {
-	$op = empty($op) ? (!empty($_DCOOKIE['indextype']) ? $_DCOOKIE['indextype'] : $indextype) : $op;
-	$indexfile = in_array($op, array('classics', 'feeds')) ? $op : 'classics';
-	dsetcookie('indextype', $indexfile, 604800);
+	if($indexfile == 'classics' || !empty($gid)) {
+		require_once DISCUZ_ROOT.'./include/index_classics.inc.php';
+	} elseif($indexfile == 'feeds') {
+		require_once DISCUZ_ROOT.'./include/index_feeds.inc.php';
+	} else {
+		showmessage('undefined_action');
+	}
 } else {
-	$indexfile = 'classics';
-}
-
-if($indexfile == 'classics' || !empty($gid)) {
-	require_once DISCUZ_ROOT.'./include/index_classics.inc.php';
-} elseif($indexfile == 'feeds') {
-	require_once DISCUZ_ROOT.'./include/index_feeds.inc.php';
-} else {
-	showmessage('undefined_action');
+	require_once './forumdisplay.php';
 }
 
 ?>

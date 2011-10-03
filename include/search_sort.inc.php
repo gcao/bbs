@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: search_sort.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: search_sort.inc.php 21043 2009-11-09 03:08:08Z tiger $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -34,8 +34,11 @@ if(!empty($searchid)) {
 	$query = $db->query("SELECT tid, optionid, value FROM {$tablepre}typeoptionvars WHERE tid IN ($index[tids])");
 	while($info = $db->fetch_array($query)) {
 		if($_DTYPE[$info['optionid']]['search']) {
-			$typelist[$info['tid']][$info['optionid']]['value'] = $info['value'];
-			$optionlist[] = $_DTYPE[$info['optionid']]['title'];
+			$optionid = $info['optionid'];
+			$identifier = $_DTYPE[$optionid]['identifier'];
+			$unit = $_DTYPE[$optionid]['unit'];
+			$typelist[$info['tid']][$optionid]['value'] = $info['value'];
+			$optionlist[$identifier] = $_DTYPE[$optionid]['title'].($unit ? "($unit)" : '');
 		}
 	}
 
@@ -48,21 +51,22 @@ if(!empty($searchid)) {
 		$resultlist[$tid]['dateline'] = $thread['dateline'];
 		if(is_array($typelist[$tid])) {
 			foreach($typelist[$tid] as $optionid => $value) {
+				$identifier = $_DTYPE[$optionid]['identifier'];
 				if(in_array($_DTYPE[$optionid]['type'], array('select', 'radio'))) {
-					$resultlist[$tid]['option'][] = $_DTYPE[$optionid]['choices'][$value['value']];
+					$resultlist[$tid]['option'][$identifier] = $_DTYPE[$optionid]['choices'][$value['value']];
 				} elseif($_DTYPE[$optionid]['type'] == 'checkbox') {
 					foreach(explode("\t", $value['value']) as $choiceid) {
 						$choiceshow[$tid] .= $_DTYPE[$optionid]['choices'][$choiceid].'&nbsp;';
 					}
-					$resultlist[$tid]['option'][] = $choiceshow[$tid];
+					$resultlist[$tid]['option'][$identifier] = $choiceshow[$tid];
 				} elseif($_DTYPE[$optionid]['type'] == 'image') {
 					$maxwidth = $_DTYPE[$optionid]['maxwidth'] ? 'width="'.$_DTYPE[$optionid]['maxwidth'].'"' : '';
 					$maxheight = $_DTYPE[$optionid]['maxheight'] ? 'height="'.$_DTYPE[$optionid]['maxheight'].'"' : '';
-					$resultlist[$tid]['option'][] = $optiondata[$optionid] ? "<a href=\"$optiondata[$optionid]\" target=\"_blank\"><img src=\"$value[value]\"  $maxwidth $maxheight border=\"0\"></a>" : '';
+					$resultlist[$tid]['option'][$identifier] = $optiondata[$optionid] ? "<a href=\"$optiondata[$optionid]\" target=\"_blank\"><img src=\"$value[value]\"  $maxwidth $maxheight border=\"0\"></a>" : '';
 				} elseif($_DTYPE[$optionid]['type'] == 'url') {
-					$resultlist[$tid]['option'][] = $optiondata[$optionid] ? "<a href=\"$value[value]\" target=\"_blank\">$value[value]</a>" : '';
+					$resultlist[$tid]['option'][$identifier] = $optiondata[$optionid] ? "<a href=\"$value[value]\" target=\"_blank\">$value[value]</a>" : '';
 				} else {
-					$resultlist[$tid]['option'][] = $value['value'];
+					$resultlist[$tid]['option'][$identifier] = $value['value'];
 				}
 			}
 		}
@@ -143,9 +147,12 @@ if(!empty($searchid)) {
 			}
 		}
 
+		@include_once DISCUZ_ROOT.'./forumdata/cache/threadsort_'.$selectsortid.'.php';
+
 		$sqlsrch = $or = '';
 		if(!empty($searchoption) && is_array($searchoption)) {
 			foreach($searchoption as $optionid => $option) {
+				$fieldname = $_DTYPE[$optionid]['identifier'] ? $_DTYPE[$optionid]['identifier'] : 1;
 				if($option['value']) {
 					if(in_array($option['type'], array('number', 'radio', 'select'))) {
 						$option['value'] = intval($option['value']);
@@ -153,24 +160,22 @@ if(!empty($searchid)) {
 						if($option['condition']) {
 							$exp = $option['condition'] == 1 ? '>' : '<';
 						}
-						$sql = "value$exp'$option[value]'";
+						$sql = "$fieldname$exp'$option[value]'";
 					} elseif($option['type'] == 'checkbox') {
-						$sql = "value LIKE '%\t".(implode("\t", $option['value']))."\t%'";
+						$sql = "$fieldname LIKE '%\t".(implode("\t", $option['value']))."\t%'";
 					} else {
-						$sql = "value LIKE '%$option[value]%'";
+						$sql = "$fieldname LIKE '%$option[value]%'";
 					}
-					$sqlsrch .= $or."(optionid='$optionid' AND $sql) ";
-					$or = 'OR ';
+					$sqlsrch .= $and."$sql ";
+					$and = 'AND ';
 				}
 			}
 		}
 
 		$threads = $tids = 0;
-		$query = $db->query("SELECT tid, sortid FROM {$tablepre}typeoptionvars WHERE (expiration='0' OR expiration>'$timestamp') ".($sqlsrch ? 'AND '.$sqlsrch : '')."");
+		$query = $db->query("SELECT tid FROM {$tablepre}optionvalue$selectsortid ".($sqlsrch ? 'WHERE '.$sqlsrch : '')."");
 		while($post = $db->fetch_array($query)) {
-			if($post['sortid'] == $selectsortid) {
-				$tids .= ','.$post['tid'];
-			}
+			$tids .= ','.$post['tid'];
 		}
 		$db->free_result($query);
 

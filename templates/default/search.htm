@@ -32,7 +32,7 @@
 			<!--{/if}-->
 			<button type="submit" name="searchsubmit" id="searchsubmit" value="true" prompt="search_submit">{lang search}</button>
 			<!--{if $checkarray[posts]}-->
-				<a href="javascript:;" onclick="display('search_option')">{lang search_adv}</a>
+				<a href="javascript:;" onclick="userdisplay = $('search_option').style.display == '' ? '0' : '1'; display('search_option'); ajaxget('ajax.php?action=displaysearch_adv&display='+userdisplay);">{lang search_adv}</a>
 			<!--{/if}-->
 		</p>
 		<!--{/if}-->
@@ -51,7 +51,7 @@
 		<!--{if $policymsgs}--><p>{lang search_credit_msg}</p><!--{/if}-->
 
 		<!--{if $srchtype != 'qihoo'}-->
-		<div id="search_option" {if $checkarray[posts]}style="display: none;"{/if}>
+		<div id="search_option" {if $checkarray[posts] && empty($_DCOOKIE[displaysearch_adv])}style="display: none;"{/if}>
 			<hr class="shadowline"/>
 			<h3>{lang search_option}</h3>
 			<table summary="{lang search}" cellspacing="0" cellpadding="0" class="formtable">

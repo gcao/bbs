@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: threads.inc.php 20693 2009-10-15 02:30:16Z monkey $
+	$Id: threads.inc.php 21266 2009-11-24 05:35:06Z liulanbo $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -353,20 +353,32 @@ EOT;
 		}
 
 		if(!$donotupdatemember) {
-			$tuidarray = $ruidarray = array();
-			$query = $db->query("SELECT first, authorid FROM {$tablepre}posts WHERE $tidsadd");
+			$query = $db->query("SELECT fid, first, authorid FROM {$tablepre}posts WHERE $tidsadd");
 			while($post = $db->fetch_array($query)) {
-				if($post['first']) {
-					$tuidarray[] = $post['authorid'];
-				} else {
-					$ruidarray[] = $post['authorid'];
+				$forumposts[$post['fid']][] = $post;
+			}
+			foreach($forumposts as $fid => $postarray) {
+				$query = $db->query("SELECT postcredits, replycredits FROM {$tablepre}forumfields WHERE fid='$fid'");
+				if($forum = $db->fetch_array($query)) {
+					$forum['postcredits'] = !empty($forum['postcredits']) ? unserialize($forum['postcredits']) : array();
+					$forum['replycredits'] = !empty($forum['replycredits']) ? unserialize($forum['replycredits']) : array();
 				}
-			}
-			if($tuidarray) {
-				updatepostcredits('-', $tuidarray, $creditspolicy['post']);
-			}
-			if($ruidarray) {
-				updatepostcredits('-', $ruidarray, $creditspolicy['reply']);
+				$postcredits = $forum['postcredits'] ? $forum['postcredits'] : $creditspolicy['post'];
+				$replycredits = $forum['replycredits'] ? $forum['replycredits'] : $creditspolicy['reply'];
+				$tuidarray = $ruidarray = array();
+				foreach($postarray as $post) {
+					if($post['first']) {
+						$tuidarray[] = $post['authorid'];
+					} else {
+						$ruidarray[] = $post['authorid'];
+					}
+				}
+				if($tuidarray) {
+					updatepostcredits('-', $tuidarray, $postcredits);
+				}
+				if($ruidarray) {
+					updatepostcredits('-', $ruidarray, $replycredits);
+				}				
 			}
 		}
 
@@ -386,6 +398,8 @@ EOT;
 		$db->query("DELETE FROM {$tablepre}threadsmod WHERE $tidsadd", 'UNBUFFERED');
 		$db->query("DELETE FROM {$tablepre}relatedthreads WHERE $tidsadd", 'UNBUFFERED');
 		$db->query("DELETE FROM {$tablepre}typeoptionvars WHERE $tidsadd", 'UNBUFFERED');
+		$db->query("DELETE FROM {$tablepre}postposition WHERE $tidsadd", 'UNBUFFERED');
+
 
 		if($globalstick) {
 			updatecache('globalstick');
@@ -435,13 +449,266 @@ EOT;
 
 		eval("\$cpmsg = \"".lang('threads_succeed')."\";");
 
+	} elseif($operation == 'forumstick') {
+		shownav('topic', 'threads_forumstick');
+		@include DISCUZ_ROOT . '/forumdata/cache/cache_forums.php';
+		$forumstickthreads = $db->result_first("SELECT value FROM {$tablepre}settings WHERE variable='forumstickthreads'");
+		$forumstickthreads = isset($forumstickthreads) ? unserialize($forumstickthreads) : array();
+		if(!submitcheck('forumsticksubmit')) {
+			showsubmenu('threads_forumstick', array(
+				array('admin', 'threads&operation=forumstick', !$do),
+				array('add', 'threads&operation=forumstick&do=add', $do == 'add'),
+			));
+			showtips('threads_forumstick_tips');
+			if(!$do) {
+				showformheader('threads&operation=forumstick');
+				showtableheader('admin', 'fixpadding');
+				showsubtitle(array('', 'subject', 'forum', 'edit'));
+				if(is_array($forumstickthreads)) {
+					foreach($forumstickthreads as $k => $v) {
+						$forumnames = array();
+						foreach($v['forums'] as $forum_id){
+							$forumnames[] = $_DCACHE['forums'][$forum_id]['name'];
+						}
+						showtablerow('', array('class="td25"'), array(
+							"<input type=\"checkbox\" class=\"checkbox\" name=\"delete[]\" value=\"$k\">",
+							"<a href=\"viewthread.php?tid=$v[tid]\" target=\"_blank\">$v[subject]</a>",
+							implode(', ', $forumnames),
+							"<a href=\"$BASESCRIPT?action=threads&operation=forumstick&do=edit&id=$k\">$lang[threads_forumstick_targets_change]</a>",
+						));
+					}
+				}
+				showsubmit('forumsticksubmit', 'submit', 'del');
+				showtablefooter();
+				showformfooter();
+			} elseif($do == 'add') {
+				require_once DISCUZ_ROOT.'./include/forum.func.php';
+				showformheader('threads&operation=forumstick&do=add');
+				showtableheader('add', 'fixpadding');
+				showsetting('threads_forumstick_threadurl', 'forumstick_url', '', 'text');
+				$targetsselect = '<select name="forumsticktargets[]" size="10" multiple="multiple">'.forumselect(FALSE, 0, 0, TRUE).'</select>';
+				showsetting('threads_forumstick_targets', '', '', $targetsselect);
+				echo '<input type="hidden" value="add" name="do" />';
+				showsubmit('forumsticksubmit', 'submit');
+				showtablefooter();
+				showformfooter();
+			} elseif($do == 'edit') {
+				require_once DISCUZ_ROOT.'./include/forum.func.php';
+				showformheader("threads&operation=forumstick&do=edit&id=$id");
+				showtableheader('edit', 'fixpadding');
+				$targetsselect = '<select name="forumsticktargets[]" size="10" multiple="multiple">'.forumselect(FALSE, 0, 0, TRUE).'</select>';
+				foreach($forumstickthreads[$id]['forums'] as $target) {
+					$targetsselect = preg_replace("/(\<option value=\"$target\")([^\>]*)(\>)/", "\\1 \\2 selected=\"selected\" \\3", $targetsselect);
+				}
+				showsetting('threads_forumstick_targets', '', '', $targetsselect);
+				echo '<input type="hidden" value="edit" name="do" />';
+				echo "<input type=\"hidden\" value=\"$id\" name=\"id\" />";
+				showsubmit('forumsticksubmit', 'submit');
+				showtablefooter();
+				showformfooter();
+			}
+		} else {
+			if(!$do) {
+				$do = 'del';
+			}
+			if($do == 'del') {
+				$del_tids = '0';
+				foreach($delete as $del_tid){
+					unset($forumstickthreads[$del_tid]);
+					$del_tids .= ", $del_tid";
+				}
+				$db->query("UPDATE {$tablepre}threads SET displayorder='0' WHERE tid IN ($del_tids)");
+			} elseif($do == 'add') {
+				if(preg_match('/(tid=|thread-)(\d+)/i', $forumstick_url, $matches)) {
+					$forumstick_tid = $matches[2];
+				} else {
+					cpmsg('threads_forumstick_url_invalid', "$BASESCRIPT?action=threads&operation=forumstick&do=add", 'error');
+				}
+				if(empty($forumsticktargets)) {
+					cpmsg('threads_forumstick_targets_empty', "$BASESCRIPT?action=threads&operation=forumstick&do=add", 'error');
+				}
+				$stickthread_tmp = array(
+					'subject' => $db->result_first("SELECT subject FROM {$tablepre}threads WHERE tid='$forumstick_tid'"),
+					'tid' => $forumstick_tid,
+					'forums' => $forumsticktargets,
+				);
+				$forumstickthreads[$forumstick_tid] = $stickthread_tmp;
+				$db->query("UPDATE {$tablepre}threads SET displayorder='4' WHERE tid='$forumstick_tid'");
+			} elseif($do == 'edit') {
+				if(empty($forumsticktargets)) {
+					cpmsg('threads_forumstick_targets_empty', "$BASESCRIPT?action=threads&operation=forumstick&do=edit&id=$id", 'error');
+				}
+				$forumstickthreads[$id]['forums'] = $forumsticktargets;
+				$db->query("UPDATE {$tablepre}threads SET displayorder='4' WHERE tid='$forumstick_tid'");
+			}
+			$forumstickthreads = serialize($forumstickthreads);
+			$db->query("REPLACE INTO {$tablepre}settings(variable, value) VALUES('forumstickthreads', '$forumstickthreads')");
+			updatecache('forumstick');
+			cpmsg("threads_forumstick_{$do}_succeed", "$BASESCRIPT?action=threads&operation=forumstick", 'succeed');
+		}
+	} elseif($operation == 'postposition') {
+
+		shownav('topic', 'threads_postposition');
+		if(!$do) {
+			if(submitcheck('delpositionsubmit')) {
+				delete_position($delete);
+				cpmsg('delete_position_succeed', $BASESCRIPT.'?action=threads&operation=postposition');
+			} elseif(submitcheck('delandaddsubmit')) {
+				delete_position($delete);
+				cpmsg('delete_position_gotu_add', $BASESCRIPT.'?action=threads&operation=postposition&do=add&addpositionsubmit=yes&formhash='.FORMHASH.'&tids='.urlencode(implode(',', $delete)));
+			} else {
+				showsubmenu('threads_postposition', array(
+					array('admin', 'threads&operation=postposition', !$do),
+					array('add', 'threads&operation=postposition&do=add', $do == 'add'),
+				));
+				showtips('threads_postposition_tips');
+				@include DISCUZ_ROOT . '/forumdata/cache/cache_forums.php';
+				showformheader('threads&operation=postposition');
+				showtableheader('admin', 'fixpadding');
+				showsubtitle(array('', 'ID', 'subject', 'forum', 'replies', 'dateline'));
+				$limit_start = 20 * ($page - 1);
+				if($count = $db->result_first("SELECT COUNT(DISTINCT(tid)) FROM {$tablepre}postposition")) {
+					$multipage = multi($count, 20, $page, "$BASESCRIPT?action=threads&operation=postposition");
+					$query = $db->query("SELECT DISTINCT(tid) FROM {$tablepre}postposition LIMIT $limit_start, 20");
+					$tids = 0;
+					while($row = $db->fetch_array($query)) {
+						$tids .= ", $row[tid]";
+					}
+					$query = $db->query("SELECT * FROM {$tablepre}threads WHERE tid IN ($tids)");
+					while($v = $db->fetch_array($query)) {
+						showtablerow('', array('class="td25"'), array(
+								"<input type=\"checkbox\" class=\"checkbox\" name=\"delete[]\" value=\"$v[tid]\">",
+								$v['tid'],
+								"<a href=\"viewthread.php?tid=$v[tid]\" target=\"_blank\">$v[subject]</a>",
+								'<a href="forumdisplay.php?fid='.$v['fid'].'" target="_blank">'.$_DCACHE['forums'][$v['fid']]['name'].'</a>',
+								$v['replies'],
+								dgmdate("$dateformat $timeformat", $v['dateline'] + $timeoffset * 3600)
+							));
+					}
+				}
+				showsubmit('delpositionsubmit', 'deleteposition', 'select_all', '<input type="submit" class="btn" name="delandaddsubmit" value="'.lang('delandadd').'" />', $multipage);
+				showtablefooter();
+				showformfooter();
+			}
+		} elseif($do == 'add') {
+			if(submitcheck('addpositionsubmit', 1)) {
+				$delete = isset($delete) && is_array($delete) ? $delete : explode(',', $tids);
+				if(empty($delete)) {
+					cpmsg('select_thread_empty');
+				}
+				$lastpid = create_position($delete, $lastpid);
+				if(empty($delete)) {
+					cpmsg('add_postposition_succeed', $BASESCRIPT.'?action=threads&operation=postposition');
+				}
+				cpmsg('addpostposition_continue', $BASESCRIPT.'?action=threads&operation=postposition&do=add&addpositionsubmit=yes&formhash='.FORMHASH.'&tids='.urlencode(implode(',', $delete)).'&lastpid='.$lastpid);
+
+			} else {
+				showsubmenu('threads_postposition', array(
+					array('admin', 'threads&operation=postposition', !$do),
+					array('add', 'threads&operation=postposition&do=add', $do == 'add'),
+				));
+				showtips('threads_postposition_tips');
+
+				showformheader('threads&operation=postposition&do=add');
+				showtableheader('srchthread', 'fixpadding');
+				echo '<tr><td>'.lang('srch_replies').'<label><input type="radio" name="replies" value="5000"'.($replies == 5000 ? ' checked="checked"' : '').' />5000</label> &nbsp;&nbsp;'.
+				'<label><input type="radio" name="replies" value="10000"'.($replies == 10000 ? ' checked="checked"' : '').' />10000</label>&nbsp;&nbsp;'.
+				'<label><input type="radio" name="replies" value="20000"'.($replies == 20000 ? ' checked="checked"' : '').' />20000</label>&nbsp;&nbsp;'.
+				'<label><input type="radio" name="replies" value="50000"'.($replies == 50000 ? ' checked="checked"' : '').' />50000</label>&nbsp;&nbsp;'.
+				'<label><input id="replies_other" type="radio" name="replies" value="0"'.(isset($replies) && $replies == 0 ? ' checked="checked"' : '').' onclick="$(\'above_replies\').focus()" />'.lang('threads_postposition_replies').'</label>&nbsp;'.
+				'<input id="above_replies" onclick="$(\'replies_other\').checked=true" type="text class="txt" name="above_replies" value="'.$above_replies.'" size="5" />&nbsp;&nbsp;&nbsp;&nbsp;'.
+				'&nbsp;&nbsp;&nbsp;&nbsp;<label>'.lang('srch_tid').'&nbsp;<input type="text class="txt" name="srchtid" size="5" value="'.$srchtid.'" /></label>&nbsp;'.
+				'&nbsp;&nbsp;&nbsp;<input type="submit" class="btn" name="srchthreadsubmit" value="'.lang('submit').'" />';
+				showtablefooter();
+				showformfooter();
+
+
+				@include DISCUZ_ROOT . '/forumdata/cache/cache_forums.php';
+				showformheader('threads&operation=postposition&do=add');
+				showtableheader('addposition', 'fixpadding');
+				showsubtitle(array('', 'ID', 'subject', 'forum', 'replies', 'dateline'));
+				if(submitcheck('srchthreadsubmit', 1)) {
+					if($srchtid = max(0, intval($srchtid))) {
+						if($thread = $db->fetch_first("SELECT * FROM {$tablepre}threads WHERE tid='$srchtid'")) {
+							showtablerow('', array('class="td25"'), array(
+								"<input type=\"checkbox\" class=\"checkbox\" name=\"delete[]\" value=\"$thread[tid]\">",
+								$thread['tid'],
+								"<a href=\"viewthread.php?tid=$thread[tid]\" target=\"_blank\">$thread[subject]</a>",
+								'<a href="forumdisplay.php?fid='.$thread['fid'].'" target="_blank">'.$_DCACHE['forums'][$thread['fid']]['name'].'</a>',
+								$thread['replies'],
+								dgmdate("$dateformat $timeformat", $thread['dateline'] + $timeoffset * 3600)
+							));
+						}
+					} else {
+						$r_replies = $replies ? $replies : $above_replies;
+						if($r_replies = max(0, intval($r_replies))) {
+							$limit_start = 2 * ($page - 1);
+							if($count = $db->result_first("SELECT COUNT(*) FROM {$tablepre}threads WHERE replies>'$r_replies'")) {
+								$multipage = multi($count, 2, $page, "$BASESCRIPT?action=threads&operation=postposition&do=add&srchthreadsubmit=yes&replies=$r_replies");
+								$query = $db->query("SELECT * FROM {$tablepre}threads WHERE replies>'$r_replies' LIMIT $limit_start, 2");
+								$have = 0;
+								while($thread = $db->fetch_array($query)) {
+									if(getstatus($thread['status'], 1)) continue;
+									$have = 1;
+									showtablerow('', array('class="td25"'), array(
+										"<input type=\"checkbox\" class=\"checkbox\" name=\"delete[]\" value=\"$thread[tid]\">",
+										$thread['tid'],
+										"<a href=\"viewthread.php?tid=$thread[tid]\" target=\"_blank\">$thread[subject]</a>",
+										'<a href="forumdisplay.php?fid='.$thread['fid'].'" target="_blank">'.$_DCACHE['forums'][$thread['fid']]['name'].'</a>',
+										$thread['replies'],
+										dgmdate("$dateformat $timeformat", $thread['dateline'] + $timeoffset * 3600)
+									));
+								}
+								if($have == 0) {
+									dheader("Location: $BASESCRIPT?action=threads&operation=postposition&do=add&srchthreadsubmit=yes&replies=$r_replies&page=".($page+1));
+								}
+							}
+
+						}
+					}
+				}
+				showsubmit('addpositionsubmit', 'addposition', 'select_all', '', $multipage);
+				showtablefooter();
+				showformfooter();
+			}
+		}
 	}
 
 	$tids && deletethreadcaches($tids);
 	$cpmsg = $cpmsg ? "alert('$cpmsg');" : '';
 
-	echo '<script type="text/JavaScript">'.$cpmsg.'parent.$(\'threadforum\').searchsubmit.click();</script>';
+	echo '<script type="text/JavaScript">'.$cpmsg.'if(parent.$(\'threadforum\')) parent.$(\'threadforum\').searchsubmit.click();</script>';
+}
 
+function delete_position($select) {
+	global $db, $tablepre;
+	if(empty($select) || !is_array($select)) {
+		cpmsg('select_thread_empty');
+	}
+	$tids = implodeids($select);
+	$db->query("DELETE FROM {$tablepre}postposition WHERE tid IN($tids)");
+	$db->query("UPDATE {$tablepre}threads SET status=status & '1111111111111110' WHERE tid IN ($tids)");
+}
+
+function create_position(&$select, $lastpid = 0) {
+	global $db, $tablepre;
+	if(empty($select) || !is_array($select)) {
+		return 0;
+	}
+	$round = 500;
+	$tid = $select[0];
+	$query = $db->query("SELECT pid FROM {$tablepre}posts WHERE tid='$tid' AND pid>'$lastpid' ORDER BY pid ASC LIMIT 0, $round");
+	while($post = $db->fetch_array($query)) {
+		if(empty($post) || empty($post['pid'])) continue;
+		savepostposition($tid, $post['pid']);
+	}
+	if($db->num_rows($query) < $round) {
+		$db->query("UPDATE {$tablepre}threads SET status=status | '1' WHERE tid='$tid'");
+		unset($select[0]);
+		return 0;
+	} else {
+		return $post['pid'];
+	}
 }
 
 ?>

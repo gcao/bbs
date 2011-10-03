@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: editpost.inc.php 20378 2009-09-25 01:47:01Z monkey $
+	$Id: editpost.inc.php 21308 2009-11-26 01:08:59Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -34,8 +34,6 @@ if(empty($orig)) {
 } elseif($isorigauthor && !$forum['ismoderator']) {
 	if($edittimelimit && $timestamp - $orig['dateline'] > $edittimelimit * 60) {
 		showmessage('post_edit_timelimit', NULL, 'HALTED');
-	} elseif(($isfirstpost && $modnewthreads) || (!$isfirstpost && $modnewreplies)) {
-		showmessage('post_edit_moderate');
 	}
 }
 
@@ -62,7 +60,13 @@ if($special == 5) {
 	}
 }
 
+$rushreply = getstatus($thread['status'], 3);
+
+$savepostposition = getstatus($thread['status'], 1);
+
 if(!submitcheck('editsubmit')) {
+
+	$hiddenreplies = getstatus($thread['status'], 2);
 
 
 	$icons = '';
@@ -125,7 +129,7 @@ if(!submitcheck('editsubmit')) {
 		}
 	}
 
-	if($thread['special'] == 2 && $allowposttrade) {
+	if($thread['special'] == 2 && ($thread['authorid'] == $discuz_uid && $allowposttrade || $allowedittrade)) {
 		$query = $db->query("SELECT * FROM {$tablepre}trades WHERE pid='$pid'");
 		$tradetypeselect = '';
 		if($db->num_rows($query)) {
@@ -267,11 +271,6 @@ if(!submitcheck('editsubmit')) {
 			$polladd = '';
 			if($thread['special'] == 1 && ($alloweditpoll || $isorigauthor) && !empty($polls)) {
 				$pollarray = '';
-				foreach($polloption as $key => $value) {
-					if($value === '') {
-						unset($polloption[$key], $displayorder[$key]);
-					}
-				}
 				$pollarray['options'] = $polloption;
 				if($pollarray['options']) {
 					if(count($pollarray['options']) > $maxpolloptions) {
@@ -323,6 +322,7 @@ if(!submitcheck('editsubmit')) {
 					while($tempoptid = $db->fetch_array($query)) {
 						$optid[] = $tempoptid['polloptionid'];
 					}
+
 					foreach($pollarray['options'] as $key => $value) {
 						$value = dhtmlspecialchars(trim($value));
 						if(in_array($polloptionid[$key], $optid)) {
@@ -444,6 +444,7 @@ if(!submitcheck('editsubmit')) {
 			}
 
 			if($forum['threadsorts']['types'][$sortid] && $optiondata && is_array($optiondata)) {
+				$sql = $separator = '';
 				foreach($optiondata as $optionid => $value) {
 					if($_DTYPE[$optionid]['type'] == 'image') {
 						$oldvalue = $db->result_first("SELECT value FROM {$tablepre}typeoptionvars WHERE tid='$tid' AND optionid='$optionid'");
@@ -455,11 +456,23 @@ if(!submitcheck('editsubmit')) {
 							}
 						}
 					}
+					if(($_DTYPE[$optionid]['search'] || in_array($_DTYPE[$optionid]['type'], array('radio', 'select', 'number'))) && $value) {
+						$sql .= $separator.$_DTYPE[$optionid]['identifier']."='$value'";
+						$separator = ' ,';
+					}
 					$db->query("UPDATE {$tablepre}typeoptionvars SET value='$value', sortid='$sortid' WHERE tid='$tid' AND optionid='$optionid'");
+				}
+
+				if($sql) {
+					$db->query("UPDATE {$tablepre}optionvalue$sortid SET $sql WHERE tid='$tid' AND fid='$fid'");
 				}
 			}
 
-			$db->query("UPDATE {$tablepre}threads SET iconid='$iconid', typeid='$typeid', sortid='$sortid', subject='$subject', readperm='$readperm', price='$price' $authoradd $polladd ".($auditstatuson && $audit == 1 ? ",displayorder='0', moderated='1'" : '')." WHERE tid='$tid'", 'UNBUFFERED');
+			$thread['status'] = setstatus(4, $ordertype, $thread['status']);
+
+			$thread['status'] = setstatus(2, $hiddenreplies, $thread['status']);
+
+			$db->query("UPDATE {$tablepre}threads SET iconid='$iconid', typeid='$typeid', sortid='$sortid', subject='$subject', readperm='$readperm', price='$price' $authoradd $polladd ".($auditstatuson && $audit == 1 ? ",displayorder='0', moderated='1'" : '').", status='$thread[status]' WHERE tid='$tid'", 'UNBUFFERED');
 
 			if($tagstatus) {
 				$tags = str_replace(array(chr(0xa3).chr(0xac), chr(0xa1).chr(0x41), chr(0xef).chr(0xbc).chr(0x8c)), ',', censor($tags));
@@ -544,7 +557,7 @@ if(!submitcheck('editsubmit')) {
 							filesize=\''.$uattachments[$paid]['size'].'\',
 							attachment=\''.$uattachments[$paid]['attachment'].'\',
 							thumb=\''.$uattachments[$paid]['thumb'].'\',
-							isimage=\''.$uattachments[$paid]['isimage'].'\',
+							isimage=\'-'.$uattachments[$paid]['isimage'].'\',
 							remote=\''.$uattachments[$paid]['remote'].'\',
 							width=\''.$uattachments[$paid]['width'].'\'';
 					unset($uattachments[$paid]);
@@ -667,15 +680,31 @@ if(!submitcheck('editsubmit')) {
 			updatemodlog($tid, 'MOD');
 		}
 
+		$displayorder = $pinvisible = 0;
+		if($isfirstpost) {
+			$displayorder = $modnewthreads ? -2 : $thread['displayorder'];
+			$pinvisible = $modnewthreads ? -2 : 0;
+		} else {
+			$pinvisible = $modnewreplies ? -2 : 0;
+		}
+
 		$message = preg_replace('/\[attachimg\](\d+)\[\/attachimg\]/is', '[attach]\1[/attach]', $message);
 		$db->query("UPDATE {$tablepre}posts SET message='$message', usesig='$usesig', htmlon='$htmlon', bbcodeoff='$bbcodeoff', parseurloff='$parseurloff',
-			smileyoff='$smileyoff', subject='$subject' ".($db->result_first("SELECT aid FROM {$tablepre}attachments WHERE pid='$pid' LIMIT 1") ? ", attachment='1'" : '')." $anonymousadd ".($auditstatuson && $audit == 1 ? ",invisible='0'" : '')." WHERE pid='$pid'");
+			smileyoff='$smileyoff', subject='$subject' ".($db->result_first("SELECT aid FROM {$tablepre}attachments WHERE pid='$pid' LIMIT 1") ? ", attachment='1'" : '')." $anonymousadd ".($auditstatuson && $audit == 1 ? ",invisible='0'" : ", invisible='$pinvisible'")." WHERE pid='$pid'");
 
 		$forum['lastpost'] = explode("\t", $forum['lastpost']);
 
 		if($orig['dateline'] == $forum['lastpost'][2] && ($orig['author'] == $forum['lastpost'][3] || ($forum['lastpost'][3] == '' && $orig['anonymous']))) {
 			$lastpost = "$tid\t".($isfirstpost ? $subject : addslashes($thread['subject']))."\t$orig[dateline]\t".($isanonymous ? '' : addslashes($orig['author']));
 			$db->query("UPDATE {$tablepre}forums SET lastpost='$lastpost' WHERE fid='$fid'", 'UNBUFFERED');
+		}
+
+		if(!$auditstatuson || $audit != 1) {
+			if($isfirstpost && $modnewthreads) {
+				$db->query("UPDATE {$tablepre}threads SET displayorder='-2' WHERE tid='$tid'");
+			} elseif(!$isfirstpost && $modnewreplies) {
+				$db->query("UPDATE {$tablepre}threads SET replies=replies-'1' WHERE tid='$tid'");
+			}
 		}
 
 		if($thread['lastpost'] == $orig['dateline'] && ((!$orig['anonymous'] && $thread['lastposter'] == $orig['author']) || ($orig['anonymous'] && $thread['lastposter'] == '')) && $orig['anonymous'] != $isanonymous) {
@@ -695,13 +724,7 @@ if(!submitcheck('editsubmit')) {
 				$db->query("DELETE FROM {$tablepre}favoritethreads WHERE tid='$tid' AND uid='$discuz_uid'", 'UNBUFFERED');
 			}
 			if($stataction) {
-				//统计各类通知条数
-				$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log';
-				if($fp = @fopen($statlogfile, 'a')) {
-					@flock($fp, 2);
-					fwrite($fp, stat_query('', 'item=attention&action=editpost_'.$stataction, '', '', 'my.php')."\n");
-					fclose($fp);
-				}			
+				write_statlog('', 'item=attention&action=editpost_'.$stataction, '', '', 'my.php');
 			}
 		}
 
@@ -711,7 +734,7 @@ if(!submitcheck('editsubmit')) {
 			modlog($thread, 'EDT');
 		}
 
-		if($thread['special'] == 3 && $isfirstpost) {
+		if($thread['special'] == 3 && $isfirstpost && $thread['price'] > 0) {
 			$pricediff = $rewardprice - $thread['price'];
 			$db->query("UPDATE {$tablepre}members SET extcredits$creditstransextra[2]=extcredits$creditstransextra[2]-$pricediff WHERE uid='$orig[authorid]'", 'UNBUFFERED');
 		}
@@ -726,6 +749,10 @@ if(!submitcheck('editsubmit')) {
 			if($thread['price'] < 0 && ($thread['dateline'] + 1 == $orig['dateline'])) {
 				showmessage('post_edit_reward_nopermission', NULL, 'HALTED');
 			}
+		}
+
+		if($rushreply) {
+			showmessage('post_edit_delete_rushreply_nopermission', NULL, 'HALTED');
 		}
 
 		updatepostcredits('-', $orig['authorid'], ($isfirstpost ? $postcredits : $replycredits));
@@ -768,6 +795,7 @@ if(!submitcheck('editsubmit')) {
 				updatecache('globalstick');
 			}
 		} else {
+			$savepostposition && $db->query("DELETE FROM {$tablepre}postposition WHERE pid='$pid'");
 			$forumadd = 'posts=posts-\'1\'';
 			$query = $db->query("SELECT author, dateline, anonymous FROM {$tablepre}posts WHERE tid='$tid' AND invisible='0' ORDER BY dateline DESC LIMIT 1");
 			$lastpost = $db->fetch_array($query);
@@ -820,7 +848,13 @@ if(!submitcheck('editsubmit')) {
 		} elseif(!empty($delete)) {
 			showmessage('post_edit_delete_succeed', "viewthread.php?tid=$tid&page=$page&extra=$extra".($vid && $isfirstpost ? "&vid=$vid" : ''));
 		} else {
-			showmessage('post_edit_succeed', $redirecturl);
+			if($isfirstpost && $modnewthreads) {
+				showmessage('edit_newthread_mod_succeed', "forumdisplay.php?fid=$fid");
+			} elseif(!$isfirstpost && $modnewreplies) {
+				showmessage('edit_reply_mod_succeed', "forumdisplay.php?fid=$fid");
+			} else {
+				showmessage('post_edit_succeed', $redirecturl);
+			}
 		}
 	}
 

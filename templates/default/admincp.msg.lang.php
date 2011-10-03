@@ -6,10 +6,10 @@
 $msglang = array
 (
 	'undefined_action' => ' 未定义操作。',
-	'noaccess' => '您没有权限访问系统设置。',
+	'noaccess' => '您没有权限访问管理中心。',
 	'noaccess_isfounder' => '您没有权限访问该设置，出于安全考虑此设置只有论坛创始人可以使用，请检查论坛的 config.inc.php 文件内创始人的设置。',
-	'noaccess_ip' => '对不起，管理员设定了只有特定 IP 地址范围才能访问系统设置，您的地址不在被允许的范围内。',
-	'action_noaccess' => '对不起，管理员设定了您没有权限使用本功能。',
+	'noaccess_ip' => '对不起，管理员设定了只有特定 IP 地址范围才能访问管理中心，您的地址不在被允许的范围内。',
+	'action_noaccess' => '对不起，管理员限制您无权使用本功能。',
 	'action_noaccess_config' => '对不起，出于系统安全考虑，论坛管理员关闭了该功能，如需要打开请自行修改论坛的 config.inc.php 文件内对应的相关安全配置信息。',
 	'action_access_noexists' => '论坛缺少安全设置，请对照标准程序的 config.inc.php 仔细修改您的配置文件。否则无法使用本功能。',
 	'import_data_invalid' => '数据无法识别，请返回。',
@@ -49,6 +49,7 @@ $msglang = array
 	'forums_nonexistence' => '指定的版块不存在，请返回修改',
 	'forums_threadtypes_duplicate' => '新增主题分类与现有重复，请返回修改。',
 	'forums_threadtypes_succeed' => '主题分类成功更新。',
+	'forums_threadsorts_duplicate' => '不允许发表多种分类信息，请返回修改。',
 	'forums_rules_nopermission' => '对不起，管理员设置了版主无法编辑版块规则。',
 	'forums_rules_succeed' => '版块规则成功编辑。',
 	'forums_noparent' => '对不起，您没有选择该版块的分类或者上级版块，请返回修改。',
@@ -56,6 +57,7 @@ $msglang = array
 	'forums_formulaperm_error' => '权限表达式无效，请返回修改。',
 	'forums_delete_alarm' => '本操作不可恢复，正在删除版块数据... ...',
 	'forums_edit_nonexistence' => '请先选择您要进行操作的版块：',
+	'forums_edit_threadsort_nonexistence' => '没有选择默认的分类信息，请返回修改。',
 
 	'announce_nonexistence' => '指定的公告不存在或无权编辑，请返回。',
 	'announce_time_invalid' => '对不起，您没有输入起始时间或您输入的终止时间不正确，请返回修改。',
@@ -137,8 +139,14 @@ $msglang = array
 	'moderate_posts_no_access_all' => '您没有审核任何栏目帖子的权利，请返回。',
 	'moderate_posts_no_access_this' => '您没有审核此栏目的权限，请返回。',
 	'threads_move_invalid' => '您没有选择或选择的目标版块/分类不存在，请返回。',
+	'threads_forumstick_del_succeed' => '置顶主题列表更新成功',
+	'threads_forumstick_edit_succeed' => '目标版块更改成功',
+	'threads_forumstick_add_succeed' => '主题添加成功',
+	'threads_forumstick_targets_empty' => '请选择一个或多个目标版块',
+	'threads_forumstick_url_invalid' => '您输入的URL无效',
 
 	'recyclebin_succeed' => '回收站更新成功，共 $threadsdel 个主题被删除，$threadsundel 个主题被恢复。',
+	'recyclebin_none_selected' => '没有选择要操作的帖子。',
 
 	'google_succeed' => 'Google 搜索设置成功更新。',
 
@@ -198,6 +206,7 @@ $msglang = array
 	'counter_thread_succeed' => '主题帖数重建完成。',
 	'counter_moved_thread_succeed' => '移动标记清理完成。',
 	'counter_moved_favorites_logs_succeed' => '清理收藏夹和日志数据完成。',
+	'counter_special_arrange_succeed' => '分类信息数据整理完成。',
 
 	'database_export_custom_invalid' => '您至少需要选择一个数据表进行备份，请返回修改。',
 	'database_export_file_invalid' => '数据文件无法保存到服务器，请检查目录属性。',
@@ -254,6 +263,7 @@ $msglang = array
 	'smilies_update_succeed' => '更新成功，在 $smurl 目录中共搜索到 $num 个尚未启用的表情，已自动添加到表情分类“$smtype[name]”。',
 	'smilies_update_error' => '目录 $smurl 中没有找到尚未使用的表情图片，请返回。<br />添加表情请通过 FTP 上传表情图片到 $smurl 目录，然后刷新本页。',
 	'thread_icon_succeed' => '主题图标成功更新。',
+	'thread_stamp_succeed' => '主题图章成功更新。',
 	'attachtypes_duplicate' => '新增扩展名与现有重复，请返回修改。',
 	'attachtypes_succeed' => '附件类型成功更新。',
 
@@ -318,7 +328,7 @@ $msglang = array
 	'plugins_edit_succeed' => '插件配置成功更新。',
 	'plugins_add_succeed' => '插件已成功添加，请继续进行详细设置。',
 	'plugins_import_version_invalid' => '本插件适用于 Discuz! $pluginarray[version] 与当前版本($version)不一致，请返回。',
-	'plugins_import_version_invalid_confirm' => '本插件适用于 Discuz! $pluginarray[version] 与当前版本($version)不一致，您确定要安装吗？',
+	'plugins_import_version_invalid_confirm' => '本插件适用于 Discuz! $pluginarray[version] 与当前版本($version)不一致，您确定要安装吗？<br />如果本插件的安装说明中不包含修改文件的内容则说明此插件为绿色插件，您可放心安装。',
 	'plugins_import_identifier_duplicated' => '您要导入的插件($plugin[name])已经安装，请返回。',
 	'plugins_import_succeed' => '插件数据成功导入！<br />为了正常使用此插件，您可能还需要上传或修改相应的文件或模板，详情请查看本插件的安装说明',
 	'plugins_import_hooks_title_invalid' => '插件的钩子名称不合法，无法导入。',
@@ -425,6 +435,12 @@ $msglang = array
 	'focus_topic_exists' => '添加的站长推荐已存在。',
 	'focus_edit_succeed' => '站长推荐编辑成功。',
 	'focus_conf_succeed' => '站长推荐设置成功。',
+
+	'delete_position_succeed' => '删除帖子索引成功。',
+	'select_thread_empty' => '没有选择主题，请返回重新选择。',
+	'add_postposition_succeed' => '添加帖子索引成功。',
+	'addpostposition_continue' => '正在添加帖子索引，切勿关闭浏览器！',
+	'delete_position_gotu_add' => '已经删除了帖子索引，正转向重新创建帖子索引，切勿关闭浏览器！',
 
 );
 

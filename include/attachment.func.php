@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: attachment.func.php 20049 2009-09-17 08:34:39Z monkey $
+	$Id: attachment.func.php 21262 2009-11-24 02:05:34Z liulanbo $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -38,7 +38,7 @@ function attachtype($type, $returnval = 'html') {
 			$typeid = 12;
 		} elseif(preg_match("/image|^(jpg|gif|png|bmp)\t/", $type)) {
 			$typeid = 11;
-		} elseif(preg_match("/flash|^(swf|fla|swi)\t/", $type)) {
+		} elseif(preg_match("/flash|^(swf|fla|flv|swi)\t/", $type)) {
 			$typeid = 10;
 		} elseif(preg_match("/audio|video|^(wav|mid|mp3|m3u|wma|asf|asx|vqf|mpg|mpeg|avi|wmv)\t/", $type)) {
 			$typeid = 9;
@@ -83,7 +83,7 @@ function sizecount($filesize) {
 }
 
 function parseattach($attachpids, $attachtags, &$postlist, $showimages = 1, $skipaids = array()) {
-	global $db, $tablepre, $discuz_uid, $readaccess, $attachlist, $attachimgpost, $maxchargespan, $timestamp, $forum, $ftp, $attachurl, $dateformat, $timeformat, $timeoffset, $hideattach, $thread, $tradesaids, $trades, $exthtml, $tagstatus, $sid, $authkey;
+	global $db, $tablepre, $discuz_uid, $skipaidlist, $readaccess, $attachlist, $attachimgpost, $maxchargespan, $timestamp, $forum, $ftp, $attachurl, $dateformat, $timeformat, $timeoffset, $hideattach, $thread, $tradesaids, $trades, $exthtml, $tagstatus, $sid, $authkey, $exempt;
 
 	$query = $db->query("SELECT a.*, af.description, ap.aid AS payed FROM {$tablepre}attachments a LEFT JOIN {$tablepre}attachmentfields af ON a.aid=af.aid LEFT JOIN {$tablepre}attachpaymentlog ap ON ap.aid=a.aid AND ap.uid='$discuz_uid' WHERE a.pid IN ($attachpids)");
 
@@ -110,6 +110,7 @@ function parseattach($attachpids, $attachtags, &$postlist, $showimages = 1, $ski
 				}
 			}
 		}
+		$exemptattachpay = $exempt & 8 ? 1 : 0;
 		$attach['payed'] = $attach['payed'] || $forum['ismoderator'] || $attach['uid'] == $discuz_uid ? 1 : 0;
 		$attach['url'] = $attach['remote'] ? $ftp['attachurl'] : $attachurl;
 		$attach['dateline'] = dgmdate("$dateformat $timeformat", $attach['dateline'] + $timeoffset * 3600);
@@ -124,7 +125,9 @@ function parseattach($attachpids, $attachtags, &$postlist, $showimages = 1, $ski
 			if($attach['isimage']) {
 				$postlist[$attach['pid']]['imagelist'] .= attachlist($attach);
 			} else {
-				$postlist[$attach['pid']]['attachlist'] .= attachlist($attach);
+				if(!$skipaidlist || !in_array($attach['aid'], $skipaidlist)) {
+					$postlist[$attach['pid']]['attachlist'] .= attachlist($attach);
+				}
 			}
 		}
 	}
@@ -144,7 +147,7 @@ function parseattach($attachpids, $attachtags, &$postlist, $showimages = 1, $ski
 function attachwidth($width) {
 	global $imagemaxwidth;
 	if($imagemaxwidth && $width) {
-		return 'width="'.($width > $imagemaxwidth ? $imagemaxwidth.'" class="zoom" onclick="zoom(this, this.src)"' : $width.'"');		
+		return 'width="'.($width > $imagemaxwidth ? $imagemaxwidth.'" class="zoom" onclick="zoom(this, this.src)"' : $width.'"');
 	} else {
 		return 'thumbImg="1"';
 	}

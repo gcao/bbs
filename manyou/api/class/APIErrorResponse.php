@@ -4,14 +4,13 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: APIErrorResponse.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: APIErrorResponse.php 21053 2009-11-09 10:29:02Z wangjinbo $
 */
 
 if(!defined('IN_DISCUZ')) {
 	exit('Access Denied');
 }
 
-// 服务器返回结果对象
 class APIErrorResponse {
 	var $errCode = 0;
 	

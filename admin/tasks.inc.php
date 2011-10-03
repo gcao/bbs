@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: tasks.inc.php 20695 2009-10-15 02:32:12Z liuqiang $
+	$Id: tasks.inc.php 21301 2009-11-25 15:02:22Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -376,8 +376,9 @@ if(!($operation)) {
 			if(is_array($task_conditions) && $task_conditions) {
 				foreach($task_conditions as $taskvars) {
 					if($taskvars['name']) {
+						$variable = is_array($taskvars['variable']) ? $taskvars['variable'][0] : $taskvars['variable'];
 						$db->query("INSERT INTO {$tablepre}taskvars (taskid, sort, name, description, variable, value, type, extra)
-							VALUES ('$taskid', '$taskvars[sort]', '$taskvars[name]', '$taskvars[description]', '$taskvars[variable]', '${$taskvars[variable]}', '$taskvars[type]', '$taskvars[extra]')");
+							VALUES ('$taskid', '$taskvars[sort]', '$taskvars[name]', '$taskvars[description]', '{$variable}', '${$variable}', '$taskvars[type]', '$taskvars[extra]')");
 					}
 				}
 			}
@@ -398,6 +399,17 @@ if(!($operation)) {
 } elseif($operation == 'edit' && $id) {
 
 	$task = $db->fetch_first("SELECT * FROM {$tablepre}tasks WHERE taskid='$id'");
+
+	include language('tasks');
+	@include DISCUZ_ROOT.'./include/tasks/'.$task['scriptname'].'.cfg.php';
+	$task_condition_variable = array();
+	if(is_array($task_conditions) && $task_conditions) {
+		foreach($task_conditions as $task_condition) {
+			if($task_condition['variable']) {
+				$task_condition_variable[$task_condition['variable'][0]] = $task_condition['variable'];
+			}
+		}
+	}
 
 	if(!submitcheck('editsubmit')) {
 
@@ -548,7 +560,7 @@ if(!($operation)) {
 							$author = $taskvars['complete']['authorid']['value'] && ($author = $db->result_first("SELECT username FROM {$tablepre}members WHERE uid='{$taskvars[complete][authorid][value]}'")) ? $author : '';
 							showsetting($taskvar['name'], 'author', $author, 'text', '', 0, $taskvar['description']);
 						} else {
-							showsetting($taskvar['name'], $taskvar['variable'], $taskvar['value'], $taskvar['type'], '', 0, $taskvar['description']);
+							showsetting($taskvar['name'], !empty($task_condition_variable[$taskvar['variable']]) ? $task_condition_variable[$taskvar['variable']] : $taskvar['variable'], $taskvar['value'], $taskvar['type'], '', 0, $taskvar['description']);
 						}
 					} else {
 						showsetting($taskvar['name'], $taskvar['variable'], $taskvar['value'], $taskvar['description']);

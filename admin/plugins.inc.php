@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: plugins.inc.php 20693 2009-10-15 02:30:16Z monkey $
+	$Id: plugins.inc.php 21070 2009-11-10 06:59:40Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -506,8 +506,10 @@ if(!$operation) {
 			} else {
 				$sql = $comma = '';
 				foreach($config as $key => $val) {
-					$sql .= $comma.$key.'=\''.$val.'\'';
-					$comma = ',';
+					if($key != 'value') {
+						$sql .= $comma.$key.'=\''.$val.'\'';
+						$comma = ',';
+					}
 				}
 				if($sql) {
 					$db->query("UPDATE {$tablepre}pluginvars SET $sql WHERE pluginid='$pluginid' AND variable='$config[variable]'");
@@ -546,6 +548,9 @@ if(!$operation) {
 	$modulenew = $pluginarray['modules'];
 
 	$db->query("UPDATE {$tablepre}plugins SET version='{$pluginarray[plugin][version]}', modules='{$pluginarray[plugin][modules]}' WHERE pluginid='$pluginid'");
+
+	updatecache('plugins');
+	updatecache('settings');
 
 	if(!empty($plugin['directory']) && !empty($pluginarray['upgradefile']) && preg_match('/^[\w\.]+$/', $pluginarray['upgradefile'])) {
 		dheader('location: '.$BASESCRIPT.'?action=plugins&operation=pluginupgrade&dir='.$plugin['directory'].'&xmlfile='.rawurlencode($xmlfile).'&fromversion='.$plugin['version']);
@@ -664,13 +669,15 @@ if(!$operation) {
 						}
 						$var['value'] = is_array($var['value']) ? $var['value'] : array($var['value']);
 
-						$query = $db->query("SELECT type, groupid, grouptitle FROM {$tablepre}usergroups ORDER BY (creditshigher<>'0' || creditslower<>'0'), creditslower, groupid");
+						$query = $db->query("SELECT type, groupid, grouptitle, radminid FROM {$tablepre}usergroups ORDER BY (creditshigher<>'0' || creditslower<>'0'), creditslower, groupid");
 						$groupselect = array();
 						while($group = $db->fetch_array($query)) {
+							$group['type'] = $group['type'] == 'special' && $group['radminid'] ? 'specialadmin' : $group['type'];
 							$groupselect[$group['type']] .= '<option value="'.$group['groupid'].'"'.(@in_array($group['groupid'], $var['value']) ? ' selected' : '').'>'.$group['grouptitle'].'</option>';
 						}
 						$var['type'] .= '<optgroup label="'.$lang['usergroups_member'].'">'.$groupselect['member'].'</optgroup>'.
 							($groupselect['special'] ? '<optgroup label="'.$lang['usergroups_special'].'">'.$groupselect['special'].'</optgroup>' : '').
+							($groupselect['specialadmin'] ? '<optgroup label="'.$lang['usergroups_specialadmin'].'">'.$groupselect['specialadmin'].'</optgroup>' : '').
 							'<optgroup label="'.$lang['usergroups_system'].'">'.$groupselect['system'].'</optgroup></select>';
 						$var['variable'] = $var['value'] = '';
 					} elseif($var['type'] == 'extcredit') {

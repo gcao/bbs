@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: index.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: index.php 20890 2009-10-29 01:12:33Z zhaoxiongfei $
 */
 
 $kw_spiders		= 'Bot|Crawl|Spider';
@@ -207,4 +207,8 @@ function showfooter() {
 EOT;
 }
 
+function getstatus($status, $position) {
+	$t = $status & pow(2, $position - 1) ? 1 : 0;
+	return $t;
+}
 ?>

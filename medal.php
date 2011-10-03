@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: medal.php 20268 2009-09-23 02:45:37Z monkey $
+	$Id: medal.php 20267 2009-09-23 02:42:03Z monkey $
 */
 
 define('CURSCRIPT', 'medal');

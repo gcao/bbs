@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: my.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: my.inc.php 19081 2009-08-12 09:26:57Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {

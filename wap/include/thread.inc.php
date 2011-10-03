@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: thread.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: thread.inc.php 21035 2009-11-09 02:07:45Z zhaoxiongfei $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -23,6 +23,8 @@ $thread = $sdb->fetch_first("SELECT * FROM {$tablepre}threads WHERE tid='$tid' A
 if(!$thread) {
 	wapmsg('thread_nonexistence');
 }
+
+$hiddenreplies = getstatus($thread['status'], 2);
 
 if(($thread['readperm'] && $thread['readperm'] > $readaccess && !$forum['ismoderator'] && $thread['authorid'] != $discuz_uid) || (empty($forum['allowview']) && ((!$forum['viewperm'] && !$readaccess) || ($forum['viewperm'] && !forumperm($forum['viewperm'])))) || $forum['password'] || $forum['redirect']) {
 	wapmsg('thread_nopermission');
@@ -50,13 +52,22 @@ if(empty($do)) {
 		$end_limit = $wapppp;
 	}
 
-	$query = $sdb->query("SELECT * FROM {$tablepre}posts
-		WHERE tid='$tid' AND invisible='0'
-		ORDER BY dateline LIMIT $start_limit, $end_limit");
+	$query = $sdb->query("SELECT p.*, m.groupid
+		FROM {$tablepre}posts p
+		LEFT JOIN {$tablepre}members m ON p.authorid=m.uid
+		WHERE p.tid='$tid' AND p.invisible='0'
+		ORDER BY p.dateline LIMIT $start_limit, $end_limit");
 	while($post = $sdb->fetch_array($query)) {
+		$needhiddenreply = ($hiddenreplies && $discuz_uid != $post['authorid'] && $discuz_uid != $thread['authorid'] && !$post['first'] && !$forum['ismoderator']);
 		if($post['status'] & 1) {
 			$post['message'] = $lang['thread_banned'];
-			continue;
+		}
+		if(in_array($post['groupid'], array(4, 5, 6))) {
+			$post['message'] = $lang['thread_banned'];
+		}
+		if($needhiddenreply) {
+			$post['needhiddenreply'] = $needhiddenreply;
+			$post['message'] = $lang['message_ishidden_hiddenreplies'];
 		}
 		$post['message'] = wapcode($post['message']);
 		if($post['first']) {
@@ -86,7 +97,7 @@ if(empty($do)) {
 					$post['message'] = '<p>' . $lang['admin_message_single_banned'] . '</p>' . $post['message'];
 				}
 			}
-			
+
 			$post['author'] = !$post['anonymous'] ? $post['author'] : $lang['anonymous'];
 			$threadposts .= nl2br(trim($post['message']));
 		} else {
@@ -102,22 +113,29 @@ if(empty($do)) {
 		echo "<br /><br />$lang[thread_replylist] ($thread[replies])<br />";
 		foreach($postlist as $post) {
 			$waptlength = 30;
-			echo "<a href=\"index.php?action=thread&amp;do=reply&amp;tid=$post[tid]&amp;pid=$post[pid]\">#".++$number." ".wapcutstr(trim($post['message']), $waptlength)."</a>".
-			"<br />[".(!$post['anonymous'] ? $post['author'].' ' : $lang['anonymous'].' ').gmdate("$wapdateformat $timeformat", $post['dateline'] + $timeoffset * 3600)."]<br />";
+			if(isset($post['needhiddenreply']) && $post['needhiddenreply']) {
+				echo "#".++$number." ".wapcutstr(trim($post['message']), $waptlength);
+			} else {
+				echo "<a href=\"index.php?action=thread&amp;do=reply&amp;tid=$post[tid]&amp;pid=$post[pid]\">#".++$number." ".wapcutstr(trim($post['message']), $waptlength)."</a>";
+			}
+			echo "<br />[".(!$post['anonymous'] ? $post['author'].' ' : $lang['anonymous'].' ').gmdate("$wapdateformat $timeformat", $post['dateline'] + $timeoffset * 3600)."]<br />";
 		}
 		echo wapmulti($thread['replies'], $wapppp, $page, "index.php?action=thread&amp;tid=$thread[tid]");
 	}
 
 } elseif($do == 'reply') {
 
-	echo "<p>$lang[thread_reply]<a href=\"index.php?action=thread&amp;tid=$thread[tid]\">$thread[subject]</a><br />";
-
 	$post = $db->fetch_first("SELECT * FROM {$tablepre}posts WHERE pid='$pid' AND invisible='0'");
 
 	if($post['status'] & 1) {
 		$post['message'] = $lang['thread_banned'];
 	}
-		
+
+	$needhiddenreply = ($hiddenreplies && $discuz_uid != $post['authorid'] && $discuz_uid != $thread['authorid'] && !$post['first'] && !$forum['ismoderator']);
+	if($needhiddenreply) {
+		wapmsg('message_ishidden_hiddenreplies');
+	}
+
 	if($offset > 0) {
 		$post['message'] = '..'.substr($post['message'], $offset - 4);
 	}
@@ -130,6 +148,8 @@ if(empty($do)) {
 	}
 	$post['author'] = !$post['anonymous'] ? $post['author'] : $lang['anonymous'];
 	$post['message'] = wapcode($post['message']);
+
+	echo "<p>$lang[thread_reply]<a href=\"index.php?action=thread&amp;tid=$thread[tid]\">$thread[subject]</a><br />";
 
 	echo $lang['author'].(!$post['anonymous'] ? "<a href=\"index.php?action=my&amp;uid=$post[authorid]\">$post[author]</a>" : $lang['anonymous'])."<br />\n".
 		"<br />".nl2br(trim($post['message']))."\n";

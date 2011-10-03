@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: moderate.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: moderate.inc.php 20913 2009-10-29 08:51:23Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -138,7 +138,7 @@ if($operation == 'members') {
 							$member['regdate'] = gmdate($_DCACHE['settings']['dateformat'].' '.$_DCACHE['settings']['timeformat'], $member['regdate'] + $_DCACHE['settings']['timeoffset'] * 3600);
 							$member['submitdate'] = gmdate($_DCACHE['settings']['dateformat'].' '.$_DCACHE['settings']['timeformat'], $member['submitdate'] + $_DCACHE['settings']['timeoffset'] * 3600);
 							$member['moddate'] = gmdate($_DCACHE['settings']['dateformat'].' '.$_DCACHE['settings']['timeformat'], $timestamp + $_DCACHE['settings']['timeoffset'] * 3600);
-							$member['operation'] = $lang[$o];
+							$member['operation'] = $o;
 							$member['remark'] = $remark[$uid] ? dhtmlspecialchars($remark[$uid]) : $lang['none'];
 
 							sendmail("$member[username] <$member[email]>", 'moderate_member_subject', 'moderate_member_message');
@@ -310,7 +310,7 @@ if($operation == 'threads') {
 		showhiddenfields(array('ignore' => $ignore, 'filter' => $filter, 'modfid' => $modfid));
 		showtableheader("$lang[select]: <select style=\"margin: 0px;\" onchange=\"if(this.options[this.selectedIndex].value != '') {window.location='$BASESCRIPT?action=moderate&operation=threads&modfid=$modfid&filter='+this.options[this.selectedIndex].value;}\">$filteroptions</select>
 		<select style=\"margin: 0px;\" onchange=\"if(this.options[this.selectedIndex].value != '') {window.location='$BASESCRIPT?action=moderate&operation=threads&filter=$filter&modfid='+this.options[this.selectedIndex].value;}\">$forumoptions</select>");
-		
+
 		$query = $db->query("SELECT f.name AS forumname, f.allowsmilies, f.allowhtml, f.allowbbcode, f.allowimgcode,
 				t.tid, t.fid, t.sortid, t.author, t.authorid, t.subject, t.dateline, t.attachment,
 				p.pid, p.message, p.useip, p.attachment, p.htmlon, p.smileyoff, p.bbcodeoff
@@ -332,7 +332,7 @@ if($operation == 'threads') {
 
 			$thread['dateline'] = gmdate("$dateformat $timeformat", $thread['dateline'] + $timeoffset * 3600);
 			$thread['message'] = discuzcode($thread['message'], $thread['smileyoff'], $thread['bbcodeoff'], sprintf('%00b', $thread['htmlon']), $thread['allowsmilies'], $thread['allowbbcode'], $thread['allowimgcode'], $thread['allowhtml']);
-			
+
 			$thread['modthreadkey'] = modthreadkey($thread['tid']);
 
 			if($thread['attachment']) {
@@ -427,7 +427,7 @@ if($operation == 'threads') {
 				$pm = 'pm_'.$thread['tid'];
 				if(isset($$pm) && $$pm <> '' && $thread['authorid']) {
 					$pmlist[] = array(
-						'action' => 'modthreads_delete_',
+						'action' => 'modthreads_delete',
 						'authorid' => $thread['authorid'],
 						'thread' =>  $thread['subject'],
 						'reason' => dhtmlspecialchars($$pm)
@@ -483,7 +483,7 @@ if($operation == 'threads') {
 				$pm = 'pm_'.$thread['tid'];
 				if(isset($$pm) && $$pm <> '' && $thread['authorid']) {
 					$pmlist[] = array(
-							'action' => 'modthreads_validate_',
+							'action' => 'modthreads_validate',
 							'authorid' => $thread['authorid'],
 							'tid' => $thread['tid'],
 							'thread' => $thread['subject'],
@@ -653,7 +653,7 @@ if($operation == 'threads') {
 				$pm = 'pm_'.$post['pid'];
 				if(isset($$pm) && $$pm <> '' && $post['authorid']) {
 					$pmlist[] = array(
-						'action' => 'modreplies_delete_',
+						'action' => 'modreplies_delete',
 						'authorid' => $post['authorid'],
 						'tid' => $post['tid'],
 						'post' =>  dhtmlspecialchars(cutstr($post['message'], 30)),
@@ -702,7 +702,7 @@ if($operation == 'threads') {
 				$pm = 'pm_'.$post['pid'];
 				if(isset($$pm) && $$pm <> '' && $post['authorid']) {
 					$pmlist[] = array(
-						'action' => 'modreplies_validate_',
+						'action' => 'modreplies_validate',
 						'authorid' => $post['authorid'],
 						'tid' => $post['tid'],
 						'post' =>  dhtmlspecialchars(cutstr($post['message'], 30)),

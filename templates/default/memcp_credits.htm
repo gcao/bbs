@@ -39,7 +39,9 @@
 										<!--{/loop}-->
 										{eval $i=0;}
 										<!--{loop $outextcredits $id $data}-->{eval $i++;}
+											<!--{if $data[title]}-->
 											<option value="$id" outi="$i">$data[title]</option>
+											<!--{/if}-->
 										<!--{/loop}-->
 										</select>
 										<p class="cre_btn"><button class="submit" type="submit" name="exchangesubmit" id="exchangesubmit" value="true" tabindex="2">{lang memcp_credits_exchange}</button></p>

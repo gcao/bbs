@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: newtrade.inc.php 20100 2009-09-18 10:22:18Z monkey $
+	$Id: newtrade.inc.php 21053 2009-11-09 10:29:02Z wangjinbo $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -165,13 +165,7 @@ if($discuz_uid) {
 		$db->query("REPLACE INTO {$tablepre}favoritethreads (tid, uid, dateline) VALUES ('$tid', '$discuz_uid', '$timestamp')", 'UNBUFFERED');
 	}
 	if($stataction) {
-		//统计各类通知条数
-		$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log';
-		if($fp = @fopen($statlogfile, 'a')) {
-			@flock($fp, 2);
-			fwrite($fp, stat_query('', 'item=attention&action=newtrade_'.$stataction, '', '', 'my.php')."\n");
-			fclose($fp);
-		}			
+		write_statlog('', 'item=attention&action=newtrade_'.$stataction, '', '', 'my.php');		
 	}
 	$db->query("UPDATE {$tablepre}favoriteforums SET newthreads=newthreads+1 WHERE fid='$fid' AND uid<>'$discuz_uid'", 'UNBUFFERED');
 }

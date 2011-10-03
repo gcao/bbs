@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: image.php 20436 2009-09-27 08:10:22Z monkey $
+	$Id: image.php 20757 2009-10-19 01:50:23Z monkey $
 */
 
 
@@ -19,6 +19,7 @@ $aid = intval($_GET['aid']);
 list($w, $h) = explode('x', $_GET['size']);
 $w = intval($w);
 $h = intval($h);
+$thumbfile = '';
 if(!$nocache) {
 	$thumbfile = 'forumdata/imagecaches/'.$aid.'_'.$w.'_'.$h.'.jpg';
 	if(file_exists($thumbfile)) {
@@ -47,8 +48,8 @@ if($attach = $db->fetch_array($db->query("SELECT remote, attachment FROM {$table
 		$filename = $attachdir.'/'.$attach['attachment'];
 	}
 	$img = new Image_Lite($filename, !$nocache ? $thumbfile : '');
-	if($img->Thumb($w, $h) && !$nocache) {
-		dheader('location: '.$boardurl.$thumbfile);
+	if($img->attachinfo === FALSE || $img->Thumb($w, $h) && !$nocache) {
+		dheader('location: '.($thumbfile ? $boardurl.$thumbfile : $filename));
 	}
 	@readfile($filename);
 }

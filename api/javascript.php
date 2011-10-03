@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: javascript.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: javascript.php 18385 2009-04-30 02:25:43Z monkey $
 */
 
 //error_reporting(E_ERROR | E_WARNING | E_PARSE);

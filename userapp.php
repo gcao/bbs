@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: userapp.php 20268 2009-09-23 02:45:37Z monkey $
+	$Id: userapp.php 20822 2009-10-26 10:20:57Z monkey $
 */
 
 define('CURSCRIPT', 'userapp');

@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: notice.php 20445 2009-09-28 01:34:12Z monkey $
+	$Id: notice.php 20815 2009-10-24 09:05:29Z monkey $
 */
 
 define('CURSCRIPT', 'notice');
@@ -38,7 +38,7 @@ while($row = $db->fetch_array($query)) {
 		$actorarray = explode(',', $actors);
 		$actor = $comma = '';
 		foreach($actorarray as $au) {
-			$actor .= $comma.'<a href="space.php?username='.rawurlencode($au).'" target="_blank">'.$au.'</a>';
+			$actor .= $comma.($au != '<i>Anonymous</i>' ? '<a href="space.php?username='.rawurlencode($au).'" target="_blank">'.$au.'</a>' : $au);
 			$comma = ',';
 		}
 		if($actorcount > 5) {

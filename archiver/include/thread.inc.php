@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: thread.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: thread.inc.php 20890 2009-10-29 01:12:33Z zhaoxiongfei $
 */
 
 
@@ -12,7 +12,7 @@ if(!defined('IN_DISCUZ')) {
 	exit('Access Denied');
 }
 
-$thread = $sdb->fetch_first("SELECT * FROM {$tablepre}threads t
+$thread = $sdb->fetch_first("SELECT *, t.status AS threadstatus FROM {$tablepre}threads t
 	LEFT JOIN {$tablepre}forums f ON f.fid=t.fid
 	LEFT JOIN {$tablepre}forumfields ff ON ff.fid=f.fid
 	WHERE t.tid='$tid' AND t.readperm='0' AND t.price<='0' AND t.displayorder>='0'
@@ -37,7 +37,7 @@ if(!$thread || !(!$thread['viewperm'] || ($thread['viewperm'] && forumperm($thre
 	$ppp = $_DCACHE['settings']['postperpage'] * 2;
 	$start = ($page - 1) * $ppp;
 
-	$query = $sdb->query("SELECT p.author, p.dateline, p.subject, p.message, p.anonymous, p.status, m.groupid
+	$query = $sdb->query("SELECT p.author, p.dateline, p.subject, p.message, p.anonymous, p.status, p.first, m.groupid
 		FROM {$tablepre}posts p
 		LEFT JOIN {$tablepre}members m ON p.authorid=m.uid
 		WHERE p.tid='$tid' AND p.invisible='0'
@@ -56,6 +56,8 @@ if(!$thread || !(!$thread['viewperm'] || ($thread['viewperm'] && forumperm($thre
 
 	showheader();
 
+	$needhiddenreply = getstatus($thread['threadstatus'], 2);
+
 	while(($post = $firstpost) || ($post = $sdb->fetch_array($query))) {
 		if(in_array($post['groupid'], array(4, 5, 6))) {
 			include_once language('misc');
@@ -63,6 +65,9 @@ if(!$thread || !(!$thread['viewperm'] || ($thread['viewperm'] && forumperm($thre
 		} elseif($post['status'] & 1) {
 			include_once language('misc');
 			$post['message'] = $language['post_single_banned'];
+		} elseif($needhiddenreply && !$post['first']) {
+			include_once language('misc');
+			$post['message'] = $language['message_ishidden_hiddenreplies'];
 		}
 		if(!empty($firstpost)) $firstpost = array();
 		$post['dateline'] = gmdate($_DCACHE['settings']['dateformat'].' '.$_DCACHE['settings']['timeformat'], $post['dateline'] + $_DCACHE['settings']['timeoffset'] * 3600);

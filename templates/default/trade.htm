@@ -17,13 +17,11 @@
 				<table summary="{lang trade_confirm_buy}" cellspacing="0" cellpadding="0" class="formtable">
 					<tr>
 						<th>
-						<a href="viewthread.php?do=tradeinfo&tid=$tid&pid=$pid">
-							<!--{if $trade['aid']}-->
-								<img src="attachment.php?aid={echo aidencode($trade[aid]);}&noupdate=yes" onload="thumbImg(this, 1)" _width="80" _height="80" alt="$trade[subject]" /></a>
-							<!--{else}-->
-								<img src="{IMGDIR}/trade_nophotosmall.gif" alt="$trade[subject]" />
-							<!--{/if}-->
-						</a>
+						<!--{if $trade['aid']}-->
+							<a href="viewthread.php?do=tradeinfo&tid=$tid&pid=$pid"><img src="attachment.php?aid={echo aidencode($trade[aid]);}&noupdate=yes" onload="thumbImg(this, 1)" _width="80" _height="80" alt="$trade[subject]" /></a>
+						<!--{else}-->
+							<a href="viewthread.php?do=tradeinfo&tid=$tid&pid=$pid"><img src="{IMGDIR}/trade_nophotosmall.gif" alt="$trade[subject]" /></a>
+						<!--{/if}-->
 						</th>
 						<td valign="top">
 							<p>{lang trade_price}:
@@ -77,26 +75,34 @@
 							<!--{/if}-->
 						</td>
 					</tr>
-					<tr>
-						<th><label for="buyername">{lang trade_buyername}</label></th>
-						<td><input type="text" id="buyername" name="buyername" maxlength="50" value="$lastbuyerinfo[buyername]" class="txt" /></td>
-					</tr>
-					<tr>
-						<th><label for="buyercontact">{lang trade_buyercontact}</label></th>
-						<td><input type="text" id="buyercontact" name="buyercontact" maxlength="100" size="80" value="$lastbuyerinfo[buyercontact]" class="txt" /></td>
-					</tr>
-					<tr>
-						<th><label for="buyerzip">{lang trade_buyerzip}</label></th>
-						<td><input type="text" id="buyerzip" name="buyerzip" maxlength="10" value="$lastbuyerinfo[buyerzip]" class="txt" /></td>
-					</tr>
-					<tr>
-						<th><label for="buyerphone">{lang trade_buyerphone}</label></th>
-						<td><input type="text" id="buyerphone" name="buyerphone" maxlength="20" value="$lastbuyerinfo[buyerphone]" class="txt" /></td>
-					</tr>
-					<tr>
-						<th><label for="buyermobile">{lang trade_buyermobile}</label></th>
-						<td><input type="text" id="buyermobile" name="buyermobile" maxlength="20" value="$lastbuyerinfo[buyermobile]" class="txt" /></td>
-					</tr>
+					<!--{if $trade['transport'] != 3}-->
+						<tr>
+							<th><label for="buyername">{lang trade_buyername}</label></th>
+							<td><input type="text" id="buyername" name="buyername" maxlength="50" value="$lastbuyerinfo[buyername]" class="txt" /></td>
+						</tr>
+						<tr>
+							<th><label for="buyercontact">{lang trade_buyercontact}</label></th>
+							<td><input type="text" id="buyercontact" name="buyercontact" maxlength="100" size="80" value="$lastbuyerinfo[buyercontact]" class="txt" /></td>
+						</tr>
+						<tr>
+							<th><label for="buyerzip">{lang trade_buyerzip}</label></th>
+							<td><input type="text" id="buyerzip" name="buyerzip" maxlength="10" value="$lastbuyerinfo[buyerzip]" class="txt" /></td>
+						</tr>
+						<tr>
+							<th><label for="buyerphone">{lang trade_buyerphone}</label></th>
+							<td><input type="text" id="buyerphone" name="buyerphone" maxlength="20" value="$lastbuyerinfo[buyerphone]" class="txt" /></td>
+						</tr>
+						<tr>
+							<th><label for="buyermobile">{lang trade_buyermobile}</label></th>
+							<td><input type="text" id="buyermobile" name="buyermobile" maxlength="20" value="$lastbuyerinfo[buyermobile]" class="txt" /></td>
+						</tr>
+					<!--{else}-->
+						<input type="hidden" name="buyername" value="" />
+						<input type="hidden" name="buyercontact" value="" />
+						<input type="hidden" name="buyerzip" value="" />
+						<input type="hidden" name="buyerphone" value="" />
+						<input type="hidden" name="buyermobile" value="" />
+					<!--{/if}-->
 					<tr>
 						<th valign="top"><label for="buyermsg">{lang trade_seller_remark}</label><div class="tips">{lang trade_seller_remark_comment}</div></th>
 						<td>

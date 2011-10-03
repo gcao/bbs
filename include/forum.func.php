@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: forum.func.php 20100 2009-09-18 10:22:18Z monkey $
+	$Id: forum.func.php 20900 2009-10-29 02:49:38Z tiger $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -78,14 +78,14 @@ function forumselect($groupselectable = FALSE, $tableformat = 0, $selectedfid = 
 
 	$forumlist = $tableformat ? '<dl><dd><ul>' : '<optgroup label="&nbsp;">';
 	foreach($forumcache as $forum) {
-		if(!$forum['status'] && !$showhide) {
+		if((!$forum['status'] || $forum['status'] == 2) && !$showhide) {
 			continue;
 		}
 		if($forum['type'] == 'group') {
 			if($tableformat) {
 				$forumlist .= '</ul></dd></dl><dl><dt><a href="'.$indexname.'?gid='.$forum['fid'].'">'.$forum['name'].'</a></dt><dd><ul>';
 			} else {
-				$forumlist .= $groupselectable ? '<option value="'.$forum['fid'].'">'.$forum['name'].'</option>' : '</optgroup><optgroup label="--'.$forum['name'].'">';
+				$forumlist .= $groupselectable ? '<option value="'.$forum['fid'].'" class="bold">--'.$forum['name'].'</option>' : '</optgroup><optgroup label="--'.$forum['name'].'">';
 			}
 			$visible[$forum['fid']] = true;
 		} elseif($forum['type'] == 'forum' && isset($visible[$forum['fup']]) && (!$forum['viewperm'] || ($forum['viewperm'] && forumperm($forum['viewperm'])) || strstr($forum['users'], "\t$discuz_uid\t"))) {

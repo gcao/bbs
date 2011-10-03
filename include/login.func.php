@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: login.func.php 19885 2009-09-14 06:29:27Z wangjinbo $
+	$Id: login.func.php 20894 2009-10-29 02:06:08Z zhaoxiongfei $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -15,7 +15,15 @@ function userlogin() {
 	global $db, $tablepre, $_DCACHE, $ucresult, $username, $password, $questionid, $answer, $loginfield;
 	require_once DISCUZ_ROOT.'./uc_client/client.php';
 
-	$ucresult = uc_user_login($username, $password, $loginfield == 'uid', 1, $questionid, $answer);
+	if($loginfield == 'uid') {
+		$isuid = 1;
+	} elseif($loginfield == 'email') {
+		$isuid = 2;
+	} else {
+		$isuid = 0;
+	}
+
+	$ucresult = uc_user_login($username, $password, $isuid, 1, $questionid, $answer);
 	list($tmp['uid'], $tmp['username'], $tmp['password'], $tmp['email'], $duplicate) = daddslashes($ucresult, 1);
 	$ucresult = $tmp;
 
@@ -34,7 +42,7 @@ function userlogin() {
 	}
 
 	$member = $db->fetch_first("SELECT m.uid AS discuz_uid, m.username AS discuz_user, m.password AS discuz_pw, m.secques AS discuz_secques,
-		m.email, m.adminid, m.groupid, m.styleid AS styleidmem, m.lastvisit, m.lastpost, u.allowinvisible
+		m.email, m.adminid, m.groupid, m.styleid, m.lastvisit, m.lastpost, u.allowinvisible
 		FROM {$tablepre}members m LEFT JOIN {$tablepre}usergroups u USING (groupid)
 		WHERE m.uid='$ucresult[uid]'");
 
@@ -57,7 +65,7 @@ function userlogin() {
 		$db->query("UPDATE {$tablepre}members SET secques='$GLOBALS[discuz_secques]' WHERE uid='$ucresult[uid]'");
 	}
 
-	$GLOBALS['styleid'] = intval(empty($_POST['styleid']) ? ($styleidmem ? $styleidmem : $_DCACHE['settings']['styleid']) : $_POST['styleid']);
+	$GLOBALS['styleid'] = $member['styleid'] ? $member['styleid'] : $_DCACHE['settings']['styleid'];
 
 	$cookietime = intval(isset($_POST['cookietime']) ? $_POST['cookietime'] : 0);
 

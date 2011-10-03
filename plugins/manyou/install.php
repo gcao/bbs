@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: install.php 20657 2009-10-13 08:48:36Z liulanbo $
+	$Id: install.php 20822 2009-10-26 10:20:57Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -108,9 +108,9 @@ function getstatinfo($mark, $version, $siteid, $key) {
 	$hash = md5($hash.$members.$threads.$email.$siteid.md5($key).'install');
 	$q = "bbname=$bbname&url=$url&mark=$mark&version=$version&dz_ver=".DISCUZ_RELEASE."&posts=$posts&members=$members&threads=$threads&email=$email&siteid=$siteid&key=".md5($key)."&ip=$onlineip&time=".time()."&hash=$hash";
 	$q=rawurlencode(base64_encode($q));
-	$siteinfo = @implode('',@file($funcurl."?action=install&q=$q"));
+	$siteinfo = dfopen($funcurl."?action=install&q=$q");
 	if(empty($siteinfo)) {
-		$siteinfo = @implode('',@file($funcurl."?action=install&q=$q"));
+		$siteinfo = dfopen($funcurl."?action=install&q=$q");
 	}
 	if($siteinfo && preg_match("/^[a-zA-Z0-9_]+,[A-Z]+$/i", $siteinfo)) {
 		include_once DISCUZ_ROOT.'./include/cache.func.php';

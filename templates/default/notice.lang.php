@@ -26,6 +26,12 @@ $language = array
 	'reason_copy' => '<div class=\"f_manage\">您的主题 <a href=\"{boardurl}viewthread.php?from=notice&tid={$thread[tid]}\">{$thread[subject]}</a> 被 <a href=\"{boardurl}space.php?from=notice&uid={$discuz_uid}\">{$discuz_userss}</a> 复制为 <a href=\"{boardurl}viewthread.php?from=notice&tid=$threadid\">{$thread[subject]}</a> {time}
 <fieldset><ins>{$reason}</ins></fieldset></div>',
 
+	'reason_stamp_update' => '<div class=\"f_manage\">您的主题 <a href=\"{boardurl}viewthread.php?from=notice&tid={$thread[tid]}\">{$thread[subject]}</a> 被 <a href=\"{boardurl}space.php?from=notice&uid={$discuz_uid}\">{$discuz_userss}</a> 添加了图章 {$_DCACHE[stamps][$stamp][text]} {time}
+<fieldset><ins>{$reason}</ins></fieldset></div>',
+
+	'reason_stamp_delete' => '<div class=\"f_manage\">您的主题 <a href=\"{boardurl}viewthread.php?from=notice&tid={$thread[tid]}\">{$thread[subject]}</a> 被 <a href=\"{boardurl}space.php?from=notice&uid={$discuz_uid}\">{$discuz_userss}</a> 撤销了图章 {time}
+<fieldset><ins>{$reason}</ins></fieldset></div>',
+
 	'modthreads_delete' => '<div class=\"f_manage\">您发表的主题 {$threadsubject} 没有通过审核，现已被删除！ {time}
 <fieldset><ins>{$reason}</ins></fieldset></div>',
 

@@ -4,7 +4,7 @@
 [Discuz!] (C)2001-2009 Comsenz Inc.
 This is NOT a freeware, use is subject to license terms
 
-$Id: moderate.inc.php 19605 2009-09-07 06:18:45Z monkey $
+$Id: moderate.inc.php 20987 2009-11-05 05:19:56Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_MODCP')) {
@@ -13,10 +13,6 @@ if(!defined('IN_DISCUZ') || !defined('IN_MODCP')) {
 
 if($op == 'members') {
 
-
-	if(!$allowmoduser) {
-		showmessage('modcp_moduser_invite_nopermission');
-	}
 
 	$filter = isset($filter) ? intval($filter) : 0;
 	$filtercheck = array( $filter => 'selected');
@@ -78,7 +74,7 @@ if($op == 'members') {
 						$member['regdate'] = gmdate($_DCACHE['settings']['dateformat'].' '.$_DCACHE['settings']['timeformat'], $member['regdate'] + $_DCACHE['settings']['timeoffset'] * 3600);
 						$member['submitdate'] = gmdate($_DCACHE['settings']['dateformat'].' '.$_DCACHE['settings']['timeformat'], $member['submitdate'] + $_DCACHE['settings']['timeoffset'] * 3600);
 						$member['moddate'] = gmdate($_DCACHE['settings']['dateformat'].' '.$_DCACHE['settings']['timeformat'], $timestamp + $_DCACHE['settings']['timeoffset'] * 3600);
-						$member['operation'] = 'moderate_member_'.$mod;
+						$member['operation'] = $mod;
 						$member['remark'] = $reason ? $reason : 'N/A';
 						sendmail("$member[username] <$member[email]>", 'moderate_member_subject', 'moderate_member_message');
 					}
@@ -165,6 +161,8 @@ $postlist = array();
 $modpost = array('validate' => 0, 'delete' => 0, 'ignore' => 0);
 $moderation = array('validate' => array(), 'delete' => array(), 'ignore' => array());
 
+require_once DISCUZ_ROOT.'./include/post.func.php';
+
 if(submitcheck('dosubmit', 1) || submitcheck('modsubmit')) {
 
 	$list = array();
@@ -184,8 +182,6 @@ if(submitcheck('dosubmit', 1) || submitcheck('modsubmit')) {
 		dexit();
 
 	} else {
-
-		require_once DISCUZ_ROOT.'./include/post.func.php';
 
 		$updatestat = $op == 'replies' ? 1 : 2;
 		$modpost = array(
@@ -210,14 +206,12 @@ if($op == 'replies') {
 			$pids = '0';
 			while($post = $db->fetch_array($query)) {
 				$pids .= ','.$post['pid'];
-				$pm = 'pm_'.$post['pid'];
-				if(isset($$pm) && $$pm <> '' && $post['authorid']) {
+				if($reason != '' && $post['authorid'] && $post['authorid'] != $discuz_uid) {
 					$pmlist[] = array(
-						'act' => 'modreplies_delete_',
+						'act' => 'modreplies_delete',
 						'authorid' => $post['authorid'],
 						'tid' => $post['tid'],
-						'post' =>  dhtmlspecialchars(cutstr($post['message'], 30)),
-						'reason' => dhtmlspecialchars($$pm)
+						'post' =>  messagecutstr($post['message'], 30)
 					);
 				}
 			}
@@ -260,13 +254,12 @@ if($op == 'replies') {
 				$threads[$post['tid']]['attachadd'] = $threads[$post['tid']]['attachadd'] || $post['attachment'] ? ', attachment=\'1\'' : '';
 
 				$pm = 'pm_'.$post['pid'];
-				if(isset($$pm) && $$pm <> '' && $post['authorid']) {
+				if($reason != '' && $post['authorid'] && $post['authorid'] != $discuz_uid) {
 					$pmlist[] = array(
-					'act' => 'modreplies_validate_',
-					'authorid' => $post['authorid'],
-					'tid' => $post['tid'],
-					'post' =>  dhtmlspecialchars(cutstr($post['message'], 30)),
-					'reason' => dhtmlspecialchars($$pm)
+						'act' => 'modreplies_validate',
+						'authorid' => $post['authorid'],
+						'tid' => $post['tid'],
+						'post' =>  messagecutstr($post['message'], 30)
 					);
 				}
 			}
@@ -297,8 +290,8 @@ if($op == 'replies') {
 		}
 
 		if($pmlist) {
+			$reason = dhtmlspecialchars($reason);
 			foreach($pmlist as $pm) {
-				$reason = $pm['reason'];
 				$post = $pm['post'];
 				$tid = intval($pm['tid']);
 				sendnotice($pm['authorid'], $pm['act'], 'systempm');
@@ -374,12 +367,11 @@ if($op == 'replies') {
 					$deletetids .= ','.$thread['tid'];
 				}
 
-				if($reason != '' && $thread['authorid']) {
+				if($reason != '' && $thread['authorid'] && $thread['authorid'] != $discuz_uid) {
 					$pmlist[] = array(
-						'act' => 'modthreads_delete_',
+						'act' => 'modthreads_delete',
 						'authorid' => $thread['authorid'],
-						'thread' => $thread['subject'],
-						'reason' => dhtmlspecialchars($reason)
+						'thread' => $thread['subject']
 					);
 				}
 			}
@@ -424,13 +416,12 @@ if($op == 'replies') {
 
 				$validatedthreads[] = $thread;
 
-				if($reason != '' && $thread['authorid']) {
+				if($reason != '' && $thread['authorid'] && $thread['authorid'] != $discuz_uid) {
 					$pmlist[] = array(
-						'act' => 'modthreads_validate_',
+						'act' => 'modthreads_validate',
 						'authorid' => $thread['authorid'],
 						'tid' => $thread['tid'],
-						'thread' => $thread['subject'],
-						'reason' => dhtmlspecialchars($reason)
+						'thread' => $thread['subject']
 					);
 				}
 			}
@@ -444,7 +435,7 @@ if($op == 'replies') {
 				$db->query("UPDATE {$tablepre}posts SET invisible='0' WHERE tid IN ($tids)");
 				$db->query("UPDATE {$tablepre}threads SET displayorder='0', moderated='1' WHERE tid IN ($tids)");
 				$threadsmod = $db->affected_rows();
-				
+
 				if($fid) {
 					updateforumcount($fid);
 				} else {
@@ -460,8 +451,8 @@ if($op == 'replies') {
 		}
 
 		if($pmlist) {
+			$reason = dhtmlspecialchars($reason);
 			foreach($pmlist as $pm) {
-				$reason = $pm['reason'];
 				$threadsubject = $pm['thread'];
 				$tid = intval($pm['tid']);
 				sendnotice($pm['authorid'], $pm['act'], 'systempm');

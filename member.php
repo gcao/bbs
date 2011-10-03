@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: member.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: member.php 19359 2009-08-26 09:50:42Z monkey $
 */
 
 define('CURSCRIPT', 'member');

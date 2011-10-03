@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: threadexpiries_hourly.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: threadexpiries_hourly.inc.php 21052 2009-11-09 10:12:34Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -24,6 +24,7 @@ while($expiry = $db->fetch_array($query)) {
 		case 'TOK':	$actionarray['UES'][] = $expiry['tid']; break;
 		case 'CCK':	$actionarray['UEH'][] = $expiry['tid'];	break;
 		case 'CLK':	$actionarray['UEC'][] = $expiry['tid']; break;
+		case 'SPA':	$actionarray['SPD'][] = $expiry['tid']; break;
 	}
 }
 
@@ -69,6 +70,11 @@ if($actionarray) {
 					updatecredits(implode('\',\'', $authorids), $creditspolicy['digest'], 0 - $digest);
 				}
 				$db->query("UPDATE {$tablepre}threads SET digest='0' WHERE tid IN ($tids)", 'UNBUFFERED');
+				break;
+
+			case 'SPD':
+				$db->query("UPDATE {$tablepre}threads SET ".buildbitsql('status', 5, FALSE)." WHERE tid IN ($tids)", 'UNBUFFERED');
+				$db->query("UPDATE {$tablepre}threadsmod SET status='0' WHERE tid IN ($tids) AND action IN ('SPA')", 'UNBUFFERED');
 				break;
 
 		}

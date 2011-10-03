@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: faq.php 20373 2009-09-25 01:05:29Z monkey $
+	$Id: faq.php 20957 2009-11-04 01:44:48Z monkey $
 */
 
 define('CURSCRIPT', 'faq');
@@ -148,12 +148,16 @@ if($action == 'faq') {
 } elseif($action == 'grouppermission') {
 
 	require_once './include/forum.func.php';
+	require_once language('misc');
+	$permlang = $language;
+	unset($language);
 
 	$searchgroupid = isset($searchgroupid) ? intval($searchgroupid) : $groupid;
 	$groups = $grouplist = array();
-	$query = $db->query("SELECT groupid, type, grouptitle FROM {$tablepre}usergroups ORDER BY (creditshigher<>'0' || creditslower<>'0'), creditslower");
+	$query = $db->query("SELECT groupid, type, grouptitle, radminid FROM {$tablepre}usergroups ORDER BY (creditshigher<>'0' || creditslower<>'0'), creditslower");
 	$cgdata = $nextgid = '';
 	while($group = $db->fetch_array($query)) {
+		$group['type'] = $group['type'] == 'special' && $group['radminid'] ? 'specialadmin' : $group['type'];
 		$groups[$group['type']][] = array($group['groupid'], $group['grouptitle']);
 		$grouplist[$group['type']] .= '<option value="'.$group['groupid'].'"'.($searchgroupid == $group['groupid'] ? ' selected="selected"' : '').'>'.$group['grouptitle'].($groupid == $group['groupid'] ? ' &larr;' : '').'</option>';
 		if($group['groupid'] == $searchgroupid) {

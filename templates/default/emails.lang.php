@@ -239,7 +239,7 @@ $member[username] ，
 提交次数: $member[submittimes]
 注册原因: $member[message]
 
-审核结果: {$member[operation]}
+审核结果: {$language[\'moderate_member_\'.$member[operation]]}
 审核时间: $member[moddate]
 审核管理员: $discuz_userss
 管理员留言: $member[remark]

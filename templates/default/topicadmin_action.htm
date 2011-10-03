@@ -9,7 +9,7 @@
 	<h3 class="float_ctrl">
 		<em id="return_mods"><!--{if in_array($action, array('delpost', 'banpost', 'warn'))}-->{lang admin_select_piece}<!--{else}-->{lang admin_select_one_piece}<!--{/if}--></em>
 		<span>
-			<a href="javascript:;" class="float_close" onclick="hideWindow('mods')" title="{lang close}">{lang close}</a>
+			<a href="javascript:;" class="float_close" onclick="{if $action == 'stamp'}if ($('threadstamp')) $('threadstamp').innerHTML = oldthreadstamp;{/if}hideWindow('mods')" title="{lang close}">{lang close}</a>
 		</span>
 	</h3>
 	<form id="topicadminform" method="post" action="topicadmin.php?action=$action&modsubmit=yes&infloat=yes&modclick=yes" onsubmit="ajaxpost('topicadminform', 'return_mods', 'return_mods', 'onerror');return false;">
@@ -95,6 +95,30 @@
 						<td><textarea name="split" id="split" class="txtarea" style="width: 212px; height:120px" /></textarea></td>
 					</tr>
 				</table>
+			<!--{elseif $action == 'stamp'}-->
+				<p>{lang admin_stamp_select}:</p>
+				<p class="tah_body">
+					<select name="stamp" id="stamp" onchange="updatestampimg()">
+					<option value="">{lang admin_stamp_none}</option>
+					<!--{loop $_DCACHE['stamps'] $stampid $stamp}-->
+						<option value="$stampid">$stamp[text]</option>
+					<!--{/loop}-->
+					</select>
+				</p>
+				<script type="text/javascript" reload="1">
+				if($('threadstamp')) {
+					var oldthreadstamp = $('threadstamp').innerHTML;
+				}
+				var stampurls = new Array();
+				{loop $_DCACHE['stamps'] $stampid $stamp}
+				stampurls[$stampid] = '$stamp[url]';
+				{/loop}
+				function updatestampimg() {
+					if($('threadstamp')) {
+						$('threadstamp').innerHTML = $('stamp').value ? '<img src="images/stamps/' + stampurls[$('stamp').value] + '">' : '<img src="images/common/none.gif">';
+					}
+				}
+				</script>
 			<!--{/if}-->
 			</div>
 

@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: logs.inc.php 20465 2009-09-28 05:24:30Z monkey $
+	$Id: logs.inc.php 21053 2009-11-09 10:29:02Z wangjinbo $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -17,7 +17,7 @@ $lpp = empty($lpp) ? 20 : $lpp;
 $checklpp = array();
 $checklpp[$lpp] = 'selected="selected"';
 
-if(!in_array($operation, array('illegal', 'rate', 'credit', 'mods', 'medal', 'ban', 'cp', 'magic', 'error', 'invite'))) {
+if(!in_array($operation, array('illegal', 'rate', 'credit', 'mods', 'medal', 'ban', 'cp', 'magic', 'error', 'invite', 'payment'))) {
 	cpmsg('undefined_action', '', 'error');
 }
 $logdir = DISCUZ_ROOT.'./forumdata/logs/';
@@ -81,7 +81,8 @@ showsubmenu('nav_logs', array(
 		array('nav_logs_magic', 'logs&operation=magic'),
 		array('nav_logs_medal', 'logs&operation=medal'),
 		array('nav_logs_invite', 'logs&operation=invite'),
-	)), '', in_array($operation, array('rate', 'credit', 'magic', 'medal', 'invite')))
+		array('nav_logs_payment', 'logs&operation=payment'),
+	)), '', in_array($operation, array('rate', 'credit', 'magic', 'medal', 'invite', 'payment')))
 ), $sel);
 showformheader("logs&operation=$operation");
 showtableheader('', 'fixpadding');
@@ -559,6 +560,51 @@ if($operation == 'illegal') {
 		));
 	}
 
+} elseif($operation == 'payment') {
+
+	showtablerow('class="header"', array('width="30%"','class="td23"','class="td23"','class="td24"','class="td23"','class="td24"','class="td24"'), array(
+		lang('subject'),
+		lang('logs_payment_amount'),
+		lang('logs_payment_netamount'),
+		lang('logs_payment_seller'),
+		lang('logs_payment_buyer'),
+		lang('logs_payment_dateline'),
+		lang('logs_payment_buydateline'),
+	));
+
+	$tpp = $lpp ? intval($lpp) : $tpp;
+	$page = max(1, intval($page));
+	$start_limit = ($page - 1) * $tpp;
+
+	$threadcount = $db->result_first("SELECT COUNT(*) FROM {$tablepre}paymentlog");
+	$multipage = multi($threadcount, $tpp, $page, "$BASESCRIPT?action=logs&operation=payment&lpp=$lpp", 0, 3);
+	$paythreadlist = array();
+
+	$query = $db->query("SELECT p.*, m.username, t.subject, t.dateline AS postdateline, t.author, t.authorid AS tauthorid
+			FROM {$tablepre}paymentlog p
+			LEFT JOIN {$tablepre}members m ON m.uid=p.uid
+			LEFT JOIN {$tablepre}threads t ON t.tid=p.tid
+			ORDER BY p.dateline LIMIT $start_limit,$tpp");
+	while($paythread = $db->fetch_array($query)) {
+		$paythread['seller'] = $paythread['tauthorid'] ? "<a href=\"space.php?uid=$paythread[tauthorid]\">$paythread[author]</a>" : lang('logs_payment_del')."(<a href=\"space.php?uid=$paythread[authorid]\">".lang('logs_payment_view')."</a>)";;
+		$paythread['buyer'] = "<a href=\"space.php?uid=$paythread[uid]\">$paythread[username]</a>";
+		$paythread['subject'] = $paythread['subject'] ? "<a href=\"viewthread.php?tid=$paythread[tid]\">$paythread[subject]</a>" : lang('logs_payment_del');
+		$paythread['dateline'] = gmdate('Y-n-j H:i', $paythread['dateline'] + $timeoffset * 3600);
+		$paythread['postdateline'] = $paythread['postdateline'] ? gmdate('Y-n-j H:i', $paythread['postdateline'] + $timeoffset * 3600) : lang('logs_payment_del');
+		$paythreadlist[] = $paythread;
+	}
+
+	foreach($paythreadlist as $paythread) {
+		showtablerow('', array('', 'class="bold"'), array(
+			$paythread['subject'],
+			$paythread['amount'],
+			$paythread['netamount'],
+			$paythread['seller'],
+			$paythread['buyer'],
+			$paythread['postdateline'],
+			$paythread['dateline']
+		));
+	}
 }
 
 function get_log_files($logdir = '', $action = 'action') {

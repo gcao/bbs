@@ -4,7 +4,7 @@
 [Discuz!] (C)2001-2009 Comsenz Inc.
 This is NOT a freeware, use is subject to license terms
 
-$Id: search.php 20689 2009-10-14 09:42:41Z monkey $
+$Id: search.php 20900 2009-10-29 02:49:38Z tiger $
 */
 
 define('NOROBOT', TRUE);
@@ -46,7 +46,7 @@ if($srchtype == 'threadsort') {
 	}
 }
 
-$forumselect = forumselect();
+$forumselect = forumselect('', '', '', TRUE);
 if(!empty($srchfid) && !is_numeric($srchfid)) {
 	$forumselect = str_replace('<option value="'.$srchfid.'">', '<option value="'.$srchfid.'" selected="selected">', $forumselect);
 }
@@ -174,7 +174,7 @@ if(!submitcheck('searchsubmit', 1)) {
 			if($index['indexvalid'] && $index['dateline'] > $searchindex['dateline']) {
 				$searchindex = array('id' => $index['searchid'], 'dateline' => $index['dateline']);
 				break;
-			} elseif($index['flood']) {
+			} elseif($adminid != '1' && $index['flood']) {
 				showmessage('search_ctrl', 'search.php');
 			}
 		}
@@ -193,7 +193,7 @@ if(!submitcheck('searchsubmit', 1)) {
 				showmessage('group_nopermission', NULL, 'NOPERM');
 			}
 
-			if($maxspm) {
+			if($adminid != '1' && $maxspm) {
 				if(($sdb->result_first("SELECT COUNT(*) FROM {$tablepre}searchindex WHERE dateline>'$timestamp'-60")) >= $maxspm) {
 					showmessage('search_toomany', 'search.php');
 				}

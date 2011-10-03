@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: task.func.php 20689 2009-10-14 09:42:41Z monkey $
+	$Id: task.func.php 21053 2009-11-09 10:29:02Z wangjinbo $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -142,17 +142,11 @@ function task_newbie_complete() {
 			$db->query("UPDATE {$tablepre}members SET prompt=prompt^8, newbietaskid='0' WHERE uid='$discuz_uid'", 'UNBUFFERED');
 		}
 
-		//统计各任务完成次数
-		$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log';
 		$taskmsg = $newbietasks['task'][$newbietaskid]['scriptname'];
 		if(!$nextnewbietaskid) {
 			$taskmsg .= '_complete';
 		}
-		if($fp = @fopen($statlogfile, 'a')) {
-			@flock($fp, 2);
-			fwrite($fp, stat_query('', 'action=newbie&from='.$taskmsg, '', '', 'task.php')."\n");
-			fclose($fp);
-		}
+		write_statlog('', 'action=newbie&from='.$taskmsg, '', '', 'task.php');
 	}
 
 }

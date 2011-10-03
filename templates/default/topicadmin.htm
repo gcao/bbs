@@ -59,6 +59,7 @@
 						</table>
 					</li>
 					<!--{/if}-->
+					<!--{if $allowdigestthread}-->
 					<li id="itemcp_digest">
 						<table cellspacing="0" cellpadding="5">
 							<tr>
@@ -69,8 +70,12 @@
 									<select name="digestlevel">
 										<option value="0">{lang admin_digest_remove}</option>
 										<option value="1" $digestcheck[1]>{lang thread_digest} 1</option>
-										<option value="2" $digestcheck[2]>{lang thread_digest} 2</option>
-										<option value="3" $digestcheck[3]>{lang thread_digest} 3</option>
+										<!--{if $allowdigestthread >= 2}-->
+											<option value="2" $digestcheck[2]>{lang thread_digest} 2</option>
+											<!--{if $allowdigestthread == 3}-->
+												<option value="3" $digestcheck[3]>{lang thread_digest} 3</option>
+											<!--{/if}-->
+										<!--{/if}-->
 									</select>
 								</div>
 							</td>
@@ -87,6 +92,8 @@
 							</tr>
 						</table>
 					</li>
+					<!--{/if}-->
+					<!--{if $allowbumpthread}-->
 					<li>
 						<table cellspacing="0" cellpadding="5">
 							<tr>
@@ -95,6 +102,8 @@
 							</tr>
 						</table>
 					</li>
+					<!--{/if}-->
+					<!--{if $allowhighlightthread}-->
 					<li id="itemcp_highlight">
 						<table cellspacing="0" cellpadding="5">
 							<tr>
@@ -129,8 +138,9 @@
 							</tr>
 						</table>
 					</li>
+					<!--{/if}-->
 				<!--{/if}-->
-				<!--{if $forum['modrecommend']['open'] && $forum['modrecommend']['sort'] != 1}-->
+				<!--{if $allowrecommendthread && $forum['modrecommend']['open'] && $forum['modrecommend']['sort'] != 1}-->
 					<li id="itemcp_recommend">
 						<table cellspacing="0" cellpadding="5">
 							<tr>

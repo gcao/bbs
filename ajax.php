@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: ajax.php 20234 2009-09-22 08:06:36Z liuqiang $
+	$Id: ajax.php 21155 2009-11-18 00:36:45Z monkey $
 */
 
 define('CURSCRIPT', 'ajax');
@@ -145,13 +145,13 @@ if($action == 'updatesecqaa') {
 		$query = $db->query("SELECT m.username FROM {$tablepre}invites i, {$tablepre}members m WHERE invitecode='".trim($invitecode)."' AND i.uid=m.uid");
 		$inviteuser = $db->fetch_array($query);
 		$inviteuser = $inviteuser['username'];
-		showmessage('invite_send', '', 1);
+		showmessage('invite_send');
 	}
 
 } elseif($action == 'attachlist') {
 
 	require_once DISCUZ_ROOT.'./include/post.func.php';
-	$attachlist = getattach();
+	$attachlist = getattach(intval($posttime));
 	$attachlist = $attachlist['attachs']['unused'];
 
 	include template('header_ajax');
@@ -170,6 +170,9 @@ if($action == 'updatesecqaa') {
 	include template('footer_ajax');
 	dexit();
 
+} elseif($action == 'displaysearch_adv') {
+	$display = $display == 1 ? 1 : '';
+	dsetcookie('displaysearch_adv', $display);
 }
 
 showmessage($reglinkname, '', 2);

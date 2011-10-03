@@ -4,7 +4,7 @@
 [Discuz!] (C)2001-2009 Comsenz Inc.
 This is NOT a freeware, use is subject to license terms
 
-$Id: threads.inc.php 19605 2009-09-07 06:18:45Z monkey $
+$Id: threads.inc.php 21059 2009-11-10 01:28:17Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_MODCP')) {
@@ -146,11 +146,11 @@ if($op == 'threads') {
 if($op == 'posts') {
 
 	$error = 0;
-	
+
 	$result = array();
 	$result['threadoption'] = intval($threadoption);
 
-	$starttime = !preg_match("/^(0|\d{4}\-\d{1,2}\-\d{1,2})$/", $starttime) ? gmdate('Y-n-j', $timestamp + $timeoffset * 3600 - 86400 * 7) : $starttime;
+	$starttime = !preg_match("/^(0|\d{4}\-\d{1,2}\-\d{1,2})$/", $starttime) ? gmdate('Y-n-j', $timestamp + $timeoffset * 3600 - 86400 * ($adminid == 2 ? 13 : ($adminid == 3 ? 6 : 60))) : $starttime;
 	$endtime = $adminid == 3 || !preg_match("/^(0|\d{4}\-\d{1,2}\-\d{1,2})$/", $endtime) ? gmdate('Y-n-j', $timestamp + $timeoffset * 3600) : $endtime;
 
 	foreach (array('starttime', 'endtime', 'keywords', 'users', 'useip') as $key) {
@@ -174,7 +174,7 @@ if($op == 'posts') {
 	}
 
 	if($do == 'delete' && submitcheck('deletesubmit')) {
-		
+
 		if(!$allowmassprune) {
 			$error = 4;
 			return;
@@ -182,9 +182,8 @@ if($op == 'posts') {
 
 		$tidsdelete = $pidsdelete = '0';
 		$prune = array();
-		
-		if($pids = implodeids($delete)) {
 
+		if($pids = implodeids($delete)) {
 			$tidsdelete = $pidsdelete = '0';
 			$query = $db->query("SELECT fid, tid, pid, first, authorid FROM {$tablepre}posts WHERE pid IN ($pids) $fidadd");
 			while($post = $db->fetch_array($query)) {
@@ -271,7 +270,7 @@ if($op == 'posts') {
 		$do = 'list';
 	}
 
-	if($do == 'search' &&  submitcheck('searchsubmit')) {
+	if($do == 'search' && submitcheck('searchsubmit', 1)) {
 
 		if(($starttime == '0' && $endtime == '0') || ($keywords == '' && $useip == '' && $users == '')) {
 			$error = 1;
@@ -300,7 +299,7 @@ if($op == 'posts') {
 			$endtime = $timestamp;
 		}
 
-		if(($adminid == 2 && $endtime - $starttime > 86400 * 16) || ($adminid == 3 && $endtime - $starttime > 86400 * 8)) {
+		if(($adminid == 2 && $endtime - $starttime > 86400 * 14) || ($adminid == 3 && $endtime - $starttime > 86400 * 7)) {
 			$error = '2';
 			return;
 		}
@@ -386,10 +385,12 @@ if($op == 'posts') {
 	}
 
 	$postlist = array();
+
 	if($query) {
+		require_once DISCUZ_ROOT.'./include/post.func.php';
 		while ($post = $db->fetch_array($query)) {
 			$post['dateline'] = gmdate("$dateformat $timeformat", $post['dateline'] + $timeoffset * 3600);
-			$post['message'] = dhtmlspecialchars(cutstr($post['message'], 200), 200);
+			$post['message'] = messagecutstr($post['message'], 200);
 			$post['forum'] = $modforums['list'][$post[fid]];
 			$post['modthreadkey'] = modthreadkey($post['tid']);
 			$postlist[] = $post;

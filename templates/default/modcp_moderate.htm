@@ -43,9 +43,13 @@
 <div class="itemtitle s_clear">
 	<h1>{lang mod_option_subject_mod}</h1>
 	<ul>
-		<li {if $op == 'threads'} class="current" {/if}><a href="{$cpscript}?action=moderate&op=threads{$forcefid}" hidefocus="true"><span>{lang mod_option_subject_modthreads}</span></a></li>
-		<li {if $op == 'replies'} class="current" {/if}><a href="{$cpscript}?action=moderate&op=replies{$forcefid}" hidefocus="true"><span>{lang mod_option_subject_modreplies}</span></a></li>
-		<li {if $op == 'members'} class="current" {/if}><a href="{$cpscript}?action=moderate&op=members" hidefocus="true"><span>{lang mod_option_moduser}</span></a></li>
+		<!--{if $allowmodpost}-->
+			<li {if $op == 'threads'} class="current" {/if}><a href="{$cpscript}?action=moderate&op=threads{$forcefid}" hidefocus="true"><span>{lang mod_option_subject_modthreads}</span></a></li>
+			<li {if $op == 'replies'} class="current" {/if}><a href="{$cpscript}?action=moderate&op=replies{$forcefid}" hidefocus="true"><span>{lang mod_option_subject_modreplies}</span></a></li>
+		<!--{/if}-->
+		<!--{if $allowmoduser}-->
+			<li {if $op == 'members'} class="current" {/if}><a href="{$cpscript}?action=moderate&op=members" hidefocus="true"><span>{lang mod_option_moduser}</span></a></li>
+		<!--{/if}-->
 	</ul>
 </div>
 
@@ -101,7 +105,7 @@
 		<!--{loop $postlist $post}-->
 			<table id="pid_$post[id]" cellpadding="3" cellspacing="0" style="margin:9px 0;width:100%;" class="{echo swapclass('notelistbg');}">
 				<thead>
-					<td width="5%"><input type="checkbox" value="$post[id]" name="moderate[]" class="checkbox" onclick="recountobj()" style="margin: 0 8px;" /></td>
+					<td width="5%"><input type="checkbox" id="pidcheck_{$post[id]}" value="$post[id]" name="moderate[]" class="checkbox" onclick="recountobj()" style="margin: 0 8px;" /></td>
 					<td>
 						<h5><a href="forumdisplay.php?fid={$post[fid]}" target="_blank">{$modforums[list][$post[fid]]}</a> &raquo; $post[tsubject]<!--{if $post[subject]}-->&raquo; $post[subject]<!--{/if}--></h5>
 					</td>
@@ -185,7 +189,7 @@
 					</thead>
 					<!--{loop $memberlist $member}-->
 						<tr id="pid_{$member[uid]}" class="{echo swapclass('colplural')}">
-							<td><input type="checkbox" value="$member[uid]" name="moderate[]" class="checkbox" onclick="recountobj()" /></td>
+							<td><input type="checkbox" id="pidcheck_{$member[uid]}" value="$member[uid]" name="moderate[]" class="checkbox" onclick="recountobj()" /></td>
 							<td valign="top">
 								<h5>$member[username]</h5>
 								<p>{lang mod_moderate_member_register_dateline}: $member[regdate]</p>

@@ -2,7 +2,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: common.js 20560 2009-10-09 05:29:36Z monkey $
+	$Id: common.js 20980 2009-11-05 02:06:19Z monkey $
 */
 
 var BROWSER = {};
@@ -270,7 +270,8 @@ function getClipboardData() {
 	window.document.clipboardswf.SetVariable('str', clipboardswfdata);
 }
 
-function saveData() {
+function saveData(ignoreempty) {
+	var ignoreempty = isUndefined(ignoreempty) ? 0 : ignoreempty;
 	var obj = $('postform') && (($('fwin_newthread') && $('fwin_newthread').style.display == '') || ($('fwin_reply') && $('fwin_reply').style.display == '')) ? $('postform') : ($('fastpostform') ? $('fastpostform') : $('postform'));
 	if(!obj) return;
 	var data = subject = message = '';
@@ -295,7 +296,7 @@ function saveData() {
 		}
 	}
 
-	if(!subject && !message) {
+	if(!subject && !message && !ignoreempty) {
 		return;
 	}
 
@@ -1166,6 +1167,7 @@ function ajaxpost(formid, showid, waitid, showidclass, submitbtn, recall) {
 			if(BROWSER.ie) {
 				s = $(ajaxframeid).contentWindow.document.XMLDocument.text;
 			} else {
+				/* Cao(5/17/2011): s = $(ajaxframeid).contentWindow.document.documentElement.firstChild.nodeValue; */
 				s = $(ajaxframeid).contentWindow.document.documentElement.firstChild.wholeText;
 			}
 		} catch(e) {
@@ -1329,7 +1331,7 @@ function AC_GetArgs(args, classid, mimeType) {
 		switch (currArg){
 			case "classid":break;
 			case "pluginspage":ret.embedAttrs[args[i]] = 'http://www.macromedia.com/go/getflashplayer';break;
-			case "src":args[i+1] += (args[i+1].indexOf('?') != -1 ? '&' : '?') + VERHASH;ret.embedAttrs[args[i]] = args[i+1];ret.params["movie"] = args[i+1];break;
+			case "src":ret.embedAttrs[args[i]] = args[i+1];ret.params["movie"] = args[i+1];break;
 			case "codebase":ret.objAttrs[args[i]] = 'http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,0,0';break;
 			case "onafterupdate":case "onbeforeupdate":case "onblur":case "oncellchange":case "onclick":case "ondblclick":case "ondrag":case "ondragend":
 			case "ondragenter":case "ondragleave":case "ondragover":case "ondrop":case "onfinish":case "onfocus":case "onhelp":case "onmousedown":

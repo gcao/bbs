@@ -1,12 +1,14 @@
 <!--{if $fid && $forum['ismoderator']}-->
 <div class="itemtitle s_clear">
 	<h1><!--{if $op == 'editforum'}-->{lang mod_option_forum_edit}<!--{elseif $op == 'recommend'}-->{lang mod_option_forum_recommend}<!--{/if}--> - <a href="forumdisplay.php?fid=$fid" target="_blank">$forum[name]</a></h1>
-	<ul>
-		<li {if $show == 'all'} class="current" {/if}><a href="{$cpscript}?action=forums&op=recommend&show=all{$forcefid}" hidefocus="true"><span>{lang forum_recommend_position_all}</span></a></li>		
-		<li {if $show == 'forumdisplay'} class="current" {/if}><a href="{$cpscript}?action=forums&op=recommend&show=forumdisplay{$forcefid}" hidefocus="true"><span>{lang forum_recommend_position_forumdisplay}</span></a></li>
-		<li {if $show == 'viewthread'} class="current" {/if}><a href="{$cpscript}?action=forums&op=recommend&show=viewthread{$forcefid}" hidefocus="true"><span>{lang forum_recommend_position_viewthread}</span></a></li>		
-		<li {if $show == 'unlimited'} class="current" {/if}><a href="{$cpscript}?action=forums&op=recommend&show=unlimited{$forcefid}" hidefocus="true"><span>{lang forum_recommend_position_both}</span></a></li>
-	</ul>
+	<!--{if $op == 'recommend'}-->
+		<ul>
+			<li {if $show == 'all'} class="current" {/if}><a href="{$cpscript}?action=forums&op=recommend&show=all{$forcefid}" hidefocus="true"><span>{lang forum_recommend_position_all}</span></a></li>		
+			<li {if $show == 'forumdisplay'} class="current" {/if}><a href="{$cpscript}?action=forums&op=recommend&show=forumdisplay{$forcefid}" hidefocus="true"><span>{lang forum_recommend_position_forumdisplay}</span></a></li>
+			<li {if $show == 'viewthread'} class="current" {/if}><a href="{$cpscript}?action=forums&op=recommend&show=viewthread{$forcefid}" hidefocus="true"><span>{lang forum_recommend_position_viewthread}</span></a></li>		
+			<li {if $show == 'unlimited'} class="current" {/if}><a href="{$cpscript}?action=forums&op=recommend&show=unlimited{$forcefid}" hidefocus="true"><span>{lang forum_recommend_position_both}</span></a></li>
+		</ul>
+	<!--{/if}-->
 </div>
 <!--{/if}-->
 

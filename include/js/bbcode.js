@@ -2,7 +2,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: bbcode.js 20143 2009-09-20 07:08:19Z liuqiang $
+	$Id: bbcode.js 21030 2009-11-09 00:37:07Z monkey $
 */
 
 var re;
@@ -32,7 +32,7 @@ function bbcode2html(str) {
 	}
 
 	if(!fetchCheckbox('bbcodeoff') && allowbbcode) {
-		str = str.replace(/\s*\[code\]([\s\S]+?)\[\/code\]\s*/ig, function($1, $2) {return parsecode($2);});
+		str = str.replace(/\[code\]([\s\S]+?)\[\/code\]/ig, function($1, $2) {return parsecode($2);});
 	}
 
 	if(!forumallowhtml || !allowhtml || !fetchCheckbox('htmlon')) {
@@ -58,7 +58,7 @@ function bbcode2html(str) {
 
 	if(!fetchCheckbox('bbcodeoff') && allowbbcode) {
 		str= str.replace(/\[url\]\s*((https?|ftp|gopher|news|telnet|rtsp|mms|callto|bctp|ed2k|thunder|synacast){1}:\/\/|www\.)([^\[\"']+?)\s*\[\/url\]/ig, function($1, $2, $3, $4) {return cuturl($2 + $4);});
-		str= str.replace(/\[url=((https?|ftp|gopher|news|telnet|rtsp|mms|callto|bctp|ed2k|thunder|synacast){1}:\/\/|www\.|mailto:)([^\[\"']+?)\]([\s\S]+?)\[\/url\]/ig, '<a href="$1$3" target="_blank">$4</a>');
+		str= str.replace(/\[url=((https?|ftp|gopher|news|telnet|rtsp|mms|callto|bctp|ed2k|thunder|synacast){1}:\/\/|www\.|mailto:)([^\s\[\"']+?)\]([\s\S]+?)\[\/url\]/ig, '<a href="$1$3" target="_blank">$4</a>');
 		str= str.replace(/\[email\](.*?)\[\/email\]/ig, '<a href="mailto:$1">$1</a>');
 		str= str.replace(/\[email=(.[^\[]*)\](.*?)\[\/email\]/ig, '<a href="mailto:$1" target="_blank">$2</a>');
 		str = str.replace(/\[color=([^\[\<]+?)\]/ig, '<font color="$1">');
@@ -232,7 +232,7 @@ function html2bbcode(str) {
 		return str;
 	}
 
-	str= str.replace(/\s*\[code\]([\s\S]+?)\[\/code\]\s*/ig, function($1, $2) {return codetag($2);});
+	str= str.replace(/\[code\]([\s\S]+?)\[\/code\]/ig, function($1, $2) {return codetag($2);});
 
 	str = preg_replace(['<style.*?>[\\\s\\\S]*?<\/style>', '<script.*?>[\\\s\\\S]*?<\/script>', '<noscript.*?>[\\\s\\\S]*?<\/noscript>', '<select.*?>[\s\S]*?<\/select>', '<object.*?>[\s\S]*?<\/object>', '<!--[\\\s\\\S]*?-->', ' on[a-zA-Z]{3,16}\\\s?=\\\s?"[\\\s\\\S]*?"'], '', str);
 
@@ -248,7 +248,7 @@ function html2bbcode(str) {
 	str = str.replace(/<br[^\>]*>/ig, "\n");
 
 	if(!fetchCheckbox('bbcodeoff') && allowbbcode) {
-		str = preg_replace(['<table([^>]*(width|background|background-color|bgcolor)[^>]*)>', '<table[^>]*>', '<tr[^>]*(?:background|background-color|bgcolor)[:=]\\\s*(["\']?)([\(\)%,#\\\w]+)(\\1)[^>]*>', '<tr[^>]*>', '<t[dh]([^>]*(width|colspan|rowspan)[^>]*)>', '<t[dh][^>]*>', '<\/t[dh]>', '<\/tr>', '<\/table>'], [function($1, $2) {return tabletag($2);}, '[table]', function($1, $2, $3) {return '[tr=' + $3 + ']';}, '[tr]', function($1, $2) {return tdtag($2);}, '[td]', '[/td]', '[/tr]', '[/table]'], str);
+		str = preg_replace(['<table([^>]*(width|background|background-color|bgcolor)[^>]*)>', '<table[^>]*>', '<tr[^>]*(?:background|background-color|bgcolor)[:=]\\\s*(["\']?)([\(\)%,#\\\w]+)(\\1)[^>]*>', '<tr[^>]*>', '<t[dh]([^>]*(width|colspan|rowspan)[^>]*)>', '<t[dh][^>]*>', '<\/t[dh]>', '<\/tr>', '<\/table>'], [function($1, $2) {return tabletag($2);}, '[table]\n', function($1, $2, $3) {return '[tr=' + $3 + ']';}, '[tr]', function($1, $2) {return tdtag($2);}, '[td]', '[/td]', '[/tr]\n', '[/table]'], str);
 
 		str = str.replace(/<h([0-9]+)[^>]*>(.*)<\/h\\1>/ig, "[size=$1]$2[/size]\n\n");
 		str = str.replace(/<hr[^>]*>/ig, "[hr]");
@@ -409,7 +409,7 @@ function parsetable(width, bgcolor, str) {
 	str = str.replace(/\[\/td\]\s*\[td(?:=(\d{1,2}),(\d{1,2})(?:,(\d{1,4}%?))?)?\]/ig, function($1, $2, $3, $4) {
 		return '</td><td' + ($2 ? ' colspan="' + $2 + '"' : '') + ($3 ? ' rowspan="' + $3 + '"' : '') + ($4 ? ' width="' + $4 + '"' : '') + '>';
 	});
-	str = str.replace(/\[\/td\]\s*\[\/tr\]/ig, '</td></tr>');
+	str = str.replace(/\[\/td\]\s*\[\/tr\]\s*/ig, '</td></tr>');
 
 	return '<table ' + (width == '' ? '' : 'width="' + width + '" ') + 'class="t_table"' + (isUndefined(bgcolor) ? '' : ' style="background: ' + bgcolor + '"') + '>' + str + '</table>';
 }
@@ -538,14 +538,14 @@ function smileycode(smileyid) {
 	}
 }
 
-function strpos(haystack, needle, offset) {
-	if(isUndefined(offset)) {
-		offset = 0;
+function strpos(haystack, needle, _offset) {
+	if(isUndefined(_offset)) {
+		_offset = 0;
 	}
 
-	index = haystack.toLowerCase().indexOf(needle.toLowerCase(), offset);
+	var _index = haystack.toLowerCase().indexOf(needle.toLowerCase(), _offset);
 
-	return index == -1 ? false : index;
+	return _index == -1 ? false : _index;
 }
 
 function tabletag(attributes) {
@@ -573,7 +573,7 @@ function tabletag(attributes) {
 		width = width ? width : '98%';
 	}
 
-	return bgcolor ? '[table=' + width + ',' + bgcolor + ']' : (width ? '[table=' + width + ']' : '[table]');
+	return bgcolor ? '[table=' + width + ',' + bgcolor + ']\n' : (width ? '[table=' + width + ']\n' : '[table]\n');
 }
 
 function tdtag(attributes) {

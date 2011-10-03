@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: viewthread_reward.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: viewthread_reward.inc.php 16854 2008-11-24 14:15:05Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {

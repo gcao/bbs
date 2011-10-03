@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <root>
 	<item id="Title"><![CDATA[Discuz! Plugin]]></item>
-	<item id="Version"><![CDATA[7.1]]></item>
+	<item id="Version"><![CDATA[7.2]]></item>
 	<item id="Data">
 		<item id="plugin">
 			<item id="available"><![CDATA[1]]></item>
@@ -29,7 +29,7 @@
 				</item>
 			</item>
 		</item>
-		<item id="version"><![CDATA[7.1]]></item>
+		<item id="version"><![CDATA[7.2]]></item>
 		<item id="intro"><![CDATA[通过 UCenter Home，建站者可以轻松构建一个以好友关系为核心的交流网络，让站点用户可以用迷你博客一句话记录生活中的点点滴滴；方便快捷地发布日志、上传图片；更可以十分方便的与其好友们一起分享信息、讨论感兴趣的话题；轻松快捷地了解好友最新动态。]]></item>
 		<item id="language">
 			<item id="scriptlang">

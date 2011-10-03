@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: importdata.func.php 20029 2009-09-17 03:01:06Z monkey $
+	$Id: importdata.func.php 20026 2009-09-17 02:39:58Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {

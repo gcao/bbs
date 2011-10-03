@@ -136,26 +136,34 @@
 						{lang payment_unit}
 					</td>
 				</tr>
-				<tr>
-					<th><label for="newbuyername">{lang trade_buyername}</label></th>
-					<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><input type="text" id="newbuyername" name="newbuyername" value="$tradelog[buyername]" maxlength="50" class="txt" /><!--{else}-->$tradelog[buyername]<!--{/if}--></td>
-				</tr>
-				<tr>
-					<th><label for="newbuyercontact">{lang trade_buyercontact}</label></th>
-					<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><input type="text" id="newbuyercontact" name="newbuyercontact" value="$tradelog[buyercontact]" maxlength="100" size="80" class="txt" /><!--{else}-->$tradelog[buyercontact]<!--{/if}--></td>
-				</tr>
-				<tr>
-					<th><label for="newbuyerzip">{lang trade_buyerzip}</label></th>
-					<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><input type="text" id="newbuyerzip" name="newbuyerzip" value="$tradelog[buyerzip]" maxlength="10" class="txt" /><!--{else}-->$tradelog[buyerzip]<!--{/if}--></td>
-				</tr>
-				<tr>
-					<th><label for="newbuyerphone">{lang trade_buyerphone}</label></th>
-					<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><input type="text" id="newbuyerphone" name="newbuyerphone" value="$tradelog[buyerphone]" maxlength="20" class="txt" /><!--{else}-->$tradelog[buyerphone]<!--{/if}--></td>
-				</tr>
-				<tr>
-					<th><label for="newbuyermobile">{lang trade_buyermobile}</label></th>
-					<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><input type="text" id="newbuyermobile" name="newbuyermobile" value="$tradelog[buyermobile]" maxlength="20" class="txt" /><!--{else}-->$tradelog[buyermobile]<!--{/if}--></td>
-				</tr>
+				<!--{if $tradelog['transport'] != 3}-->
+					<tr>
+						<th><label for="newbuyername">{lang trade_buyername}</label></th>
+						<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><input type="text" id="newbuyername" name="newbuyername" value="$tradelog[buyername]" maxlength="50" class="txt" /><!--{else}-->$tradelog[buyername]<!--{/if}--></td>
+					</tr>
+					<tr>
+						<th><label for="newbuyercontact">{lang trade_buyercontact}</label></th>
+						<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><input type="text" id="newbuyercontact" name="newbuyercontact" value="$tradelog[buyercontact]" maxlength="100" size="80" class="txt" /><!--{else}-->$tradelog[buyercontact]<!--{/if}--></td>
+					</tr>
+					<tr>
+						<th><label for="newbuyerzip">{lang trade_buyerzip}</label></th>
+						<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><input type="text" id="newbuyerzip" name="newbuyerzip" value="$tradelog[buyerzip]" maxlength="10" class="txt" /><!--{else}-->$tradelog[buyerzip]<!--{/if}--></td>
+					</tr>
+					<tr>
+						<th><label for="newbuyerphone">{lang trade_buyerphone}</label></th>
+						<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><input type="text" id="newbuyerphone" name="newbuyerphone" value="$tradelog[buyerphone]" maxlength="20" class="txt" /><!--{else}-->$tradelog[buyerphone]<!--{/if}--></td>
+					</tr>
+					<tr>
+						<th><label for="newbuyermobile">{lang trade_buyermobile}</label></th>
+						<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><input type="text" id="newbuyermobile" name="newbuyermobile" value="$tradelog[buyermobile]" maxlength="20" class="txt" /><!--{else}-->$tradelog[buyermobile]<!--{/if}--></td>
+					</tr>
+				<!--{else}-->
+					<input type="hidden" name="newbuyername" value="" />
+					<input type="hidden" name="newbuyercontact" value="" />
+					<input type="hidden" name="newbuyerzip" value="" />
+					<input type="hidden" name="newbuyerphone" value="" />
+					<input type="hidden" name="newbuyermobile" value="" />
+				<!--{/if}-->
 				<tr>
 					<th valign="top"><label for="newbuyermsg">{lang trade_seller_remark}</label></th>
 					<td><!--{if $tradelog[status] == 0 && $tradelog[buyerid] == $discuz_uid}--><textarea id="newbuyermsg" name="newbuyermsg" rows="3" class="txtarea">$tradelog[buyermsg]</textarea><!--{else}-->$tradelog[buyermsg]<!--{/if}--></td>

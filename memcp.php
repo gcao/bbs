@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: memcp.php 20689 2009-10-14 09:42:41Z monkey $
+	$Id: memcp.php 21344 2010-01-06 09:39:22Z zhaoxiongfei $
 */
 define('CURSCRIPT', 'memcp');
 define('NOROBOT', TRUE);
@@ -773,7 +773,8 @@ if(!$action || $action == 'profile') {
 		}
 
 		$query = $db->query("SELECT * FROM {$tablepre}usergroups WHERE type!='system' ORDER BY type, creditshigher");
-		while ($group = $db->fetch_array($query)) {
+		while($group = $db->fetch_array($query)) {
+			$group['type'] = $group['type'] == 'special' && $group['radminid'] ? 'specialadmin' : $group['type'];
 			$grouplist[$group['type']][] = $group;
 		}
 

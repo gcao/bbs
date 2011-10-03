@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: misc.inc.php 20579 2009-10-10 02:18:26Z monkey $
+	$Id: misc.inc.php 21184 2009-11-19 07:00:04Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -475,7 +475,7 @@ var rowtypedata = [
 		if(!$newid) {
 			showtablerow('', array('class="td25"', 'colspan="3"'), array('', lang('misc_icon_tips')));
 		} else {
-			showsubmit('iconsubmit', 'submit', '<input type="checkbox" class="checkbox" name="chkall2" onclick="checkAll(\'prefix\', this.form, \'addcheck\', \'chkall2\')">'.lang('enable'));
+			showsubmit('iconsubmit', 'submit', '<input type="checkbox" class="checkbox" name="chkall2" onclick="checkAll(\'prefix\', this.form, \'addcheck\', \'chkall2\')">'.lang('select_all'));
 		}
 
 		showtablefooter();
@@ -507,6 +507,124 @@ var rowtypedata = [
 		updatecache('icons');
 
 		cpmsg('thread_icon_succeed', "$BASESCRIPT?action=misc&operation=icon", 'succeed');
+	}
+
+} elseif($operation == 'stamp') {
+
+	if(!submitcheck('stampsubmit')) {
+
+		$anchor = in_array($anchor, array('list', 'add')) ? $anchor : 'list';
+		shownav('style', 'nav_thread_stamp');
+		showsubmenuanchors('nav_thread_stamp', array(
+			array('admin', 'list', $anchor == 'list'),
+			array('add', 'add', $anchor == 'add')
+		));
+
+		showtagheader('div', 'list', $anchor == 'list');
+		showtips('misc_stamp_listtips');
+		showformheader('misc&operation=stamp');
+		showtableheader();
+		showsubtitle(array('', 'misc_stamp_id', 'misc_stamp_name', 'smilies_edit_image', 'smilies_edit_filename', 'misc_stamp_option'));
+
+		$imgfilter = array();
+		$tselect = '<select><option value="0">'.lang('none').'</option><option value="1">'.lang('misc_stamp_option_stick').'</option><option value="2">'.lang('misc_stamp_option_digest').'</option><option value="3">'.lang('misc_stamp_option_recommend').'</option></select>';
+		$query = $db->query("SELECT * FROM {$tablepre}smilies WHERE type='stamp' ORDER BY displayorder");
+		while($smiley =	$db->fetch_array($query)) {
+			$s = $r = array();
+			$s[] = '<select>';
+			$r[] = '<select name="typeidnew['.$smiley['id'].']">';
+			if($smiley['typeid']) {
+				$s[] = '<option value="'.$smiley['typeid'].'">';
+				$r[] = '<option value="'.$smiley['typeid'].'" selected="selected">';
+				$s[] = '<option value="0">';
+				$r[] = '<option value="-1">';
+			}
+			$tselectrow = str_replace($s, $r, $tselect);
+			showtablerow('', array('class="td25"', 'class="td28 td24"', 'class="td23"'), array(
+				"<input class=\"checkbox\" type=\"checkbox\" name=\"delete[]\" value=\"$smiley[id]\">",
+				"<input type=\"text\" class=\"txt\" size=\"2\" name=\"displayorder[$smiley[id]]\" value=\"$smiley[displayorder]\">",
+				"<input type=\"text\" class=\"txt\" size=\"2\" name=\"code[$smiley[id]]\" value=\"$smiley[code]\">",
+				"<img src=\"images/stamps/$smiley[url]\">",
+				$smiley['url'],
+				$tselectrow,
+			));
+			$imgfilter[] = $smiley['url'];
+		}
+
+		showsubmit('stampsubmit', 'submit', 'del');
+		showtablefooter();
+		showformfooter();
+		showtagfooter('div');
+
+		showtagheader('div', 'add', $anchor == 'add');
+		showformheader('misc&operation=stamp');
+		showtableheader();
+		showsubtitle(array('', 'misc_stamp_id', 'smilies_edit_image', 'smilies_edit_filename'));
+
+		$newid = 0;
+		$imgextarray = array('png', 'gif');
+		$stampsdir = dir(DISCUZ_ROOT.'./images/stamps');
+		while($entry = $stampsdir->read()) {
+			if(in_array(strtolower(fileext($entry)), $imgextarray) && !in_array($entry, $imgfilter) && is_file(DISCUZ_ROOT.'./images/stamps/'.$entry)) {
+				showtablerow('', array('class="td25"', 'class="td28 td24"', 'class="td23"'), array(
+					"<input type=\"checkbox\" name=\"addcheck[$newid]\" class=\"checkbox\">",
+					"<input type=\"text\" class=\"txt\" size=\"2\" name=\"adddisplayorder[$newid]\" value=\"0\">",
+					"<img src=\"images/stamps/$entry\">",
+					"<input type=\"text\" class=\"txt\" size=\"35\" name=\"addurl[$newid]\" value=\"$entry\" readonly>"
+				));
+				$newid ++;
+			}
+		}
+		$stampsdir->close();
+		if(!$newid) {
+			showtablerow('', array('class="td25"', 'colspan="3"'), array('', lang('misc_stamp_tips')));
+		} else {
+			showsubmit('stampsubmit', 'submit', '<input type="checkbox" class="checkbox" name="chkall2" onclick="checkAll(\'prefix\', this.form, \'addcheck\', \'chkall2\')">'.lang('select_all'));
+		}
+
+		showtablefooter();
+		showformfooter();
+		showtagfooter('div');
+
+	} else {
+
+		if($ids = implodeids($delete)) {
+			$db->query("DELETE FROM	{$tablepre}smilies WHERE id IN ($ids)");
+		}
+
+		if(is_array($displayorder)) {
+			$typeidset = array();
+			foreach($displayorder as $id => $val) {
+				$displayorder[$id] = intval($displayorder[$id]);
+				if($displayorder[$id] >= 0 && $displayorder[$id] < 100) {
+					$typeidadd = '';
+					if($typeidnew[$id] && !isset($typeidset[$typeidnew[$id]])) {
+						$typeidnew[$id] = $typeidnew[$id] > 0 ? $typeidnew[$id] : 0;
+						$typeidadd = ",typeid='$typeidnew[$id]'";
+						$typeidset[$typeidnew[$id]] = TRUE;
+					}
+					$db->query("UPDATE {$tablepre}smilies SET displayorder='$displayorder[$id]',code='$code[$id]'$typeidadd WHERE id='$id'");
+				}
+			}
+		}
+
+		if(is_array($addurl)) {
+			$count = $db->result_first("SELECT COUNT(*) FROM {$tablepre}smilies WHERE type='stamp'");
+			if($count < 100) {
+				foreach($addurl as $k => $v) {
+					if($addcheck[$k]) {
+						$count++;
+						$query = $db->query("INSERT INTO {$tablepre}smilies (displayorder, type, url)
+							VALUES ('0', 'stamp', '$addurl[$k]')");
+					}
+				}
+			}
+		}
+
+		updatecache('stamps');
+		updatecache('stamptypeid');
+
+		cpmsg('thread_stamp_succeed', "$BASESCRIPT?action=misc&operation=stamp", 'succeed');
 	}
 
 } elseif($operation == 'attachtype') {
@@ -1693,7 +1811,7 @@ EOT;
 			$db->query("REPLACE {$tablepre}settings SET variable='statdisable', value='$newstatdisable'");
 			require_once DISCUZ_ROOT.'./include/cache.func.php';
 			updatecache('settings');
-		}			
+		}
 	}
 }
 ?>

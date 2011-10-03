@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: leftmenu.php 20371 2009-09-25 00:46:14Z monkey $
+	$Id: leftmenu.php 20368 2009-09-25 00:34:58Z monkey $
 */
 
 define('NOROBOT', TRUE);

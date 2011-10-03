@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: invite.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: invite.php 16708 2008-11-17 01:34:55Z tiger $
 */
 
 define('CURSCRIPT', 'invite');

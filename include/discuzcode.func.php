@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: discuzcode.func.php 20732 2009-10-16 06:46:01Z monkey $
+	$Id: discuzcode.func.php 21257 2009-11-23 08:21:38Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -95,18 +95,15 @@ function karmaimg($rate, $ratetimes) {
 }
 
 function discuzcode($message, $smileyoff, $bbcodeoff, $htmlon = 0, $allowsmilies = 1, $allowbbcode = 1, $allowimgcode = 1, $allowhtml = 0, $jammer = 0, $parsetype = '0', $authorid = '0', $allowmediacode = '0', $pid = 0) {
-	global $discuzcodes, $credits, $tid, $discuz_uid, $highlight, $maxsmilies, $db, $tablepre, $hideattach;
+	global $discuzcodes, $credits, $tid, $discuz_uid, $highlight, $maxsmilies, $db, $tablepre, $hideattach, $allowattachurl;
 
 	if($parsetype != 1 && !$bbcodeoff && $allowbbcode && (strpos($message, '[/code]') || strpos($message, '[/CODE]')) !== FALSE) {
-		$message = preg_replace("/\s*\[code\](.+?)\[\/code\]\s*/ies", "codedisp('\\1')", $message);
+		$message = preg_replace("/\s?\[code\](.+?)\[\/code\]\s?/ies", "codedisp('\\1')", $message);
 	}
 
 	$msglower = strtolower($message);
 
-	$htmlrule = 0;
-	if($htmlrule) {
-		$htmlon = $htmlon && $allowhtml ? 1 : 0;
-	}
+	//$htmlon = $htmlon && $allowhtml ? 1 : 0;
 
 	if(!$htmlon) {
 		$message = $jammer ? preg_replace("/\r\n|\n|\r/e", "jammer()", dhtmlspecialchars($message)) : dhtmlspecialchars($message);
@@ -122,9 +119,13 @@ function discuzcode($message, $smileyoff, $bbcodeoff, $htmlon = 0, $allowsmilies
 		$message = preg_replace($GLOBALS['_DCACHE']['smilies']['searcharray'], $GLOBALS['_DCACHE']['smilies']['replacearray'], $message, $maxsmilies);
 	}
 
+	if($allowattachurl && strpos($msglower, 'attach://') !== FALSE) {
+		$message = preg_replace("/attach:\/\/(\d+)\.?(\w*)/ie", "parseattachurl('\\1', '\\2')", $message);
+	}
+
 	if(!$bbcodeoff && $allowbbcode) {
 		if(strpos($msglower, '[/url]') !== FALSE) {
-			$message = preg_replace("/\[url(=((https?|ftp|gopher|news|telnet|rtsp|mms|callto|bctp|ed2k|thunder|synacast){1}:\/\/|www\.|mailto:)([^\[\"']+?))?\](.+?)\[\/url\]/ies", "parseurl('\\1', '\\5')", $message);
+			$message = preg_replace("/\[url(=((https?|ftp|gopher|news|telnet|rtsp|mms|callto|bctp|ed2k|thunder|synacast){1}:\/\/|www\.|mailto:)([^\s\[\"']+?))?\](.+?)\[\/url\]/ies", "parseurl('\\1', '\\5')", $message);
 		}
 		if(strpos($msglower, '[/email]') !== FALSE) {
 			$message = preg_replace("/\[email(=([a-z0-9\-_.+]+)@([a-z0-9\-_]+[.][a-z0-9\-_.]+))?\](.+?)\[\/email\]/ies", "parseemail('\\1', '\\4')", $message);
@@ -163,7 +164,7 @@ function discuzcode($message, $smileyoff, $bbcodeoff, $htmlon = 0, $allowsmilies
 
 		if($parsetype != 1) {
 			if(strpos($msglower, '[/quote]') !== FALSE) {
-				$message = preg_replace("/\s*\[quote\][\n\r]*(.+?)[\n\r]*\[\/quote\]\s*/is", tpl_quote(), $message);
+				$message = preg_replace("/\s?\[quote\][\n\r]*(.+?)[\n\r]*\[\/quote\]\s?/is", tpl_quote(), $message);
 			}
 			if(strpos($msglower, '[/free]') !== FALSE) {
 				$message = preg_replace("/\s*\[free\][\n\r]*(.+?)[\n\r]*\[\/free\]\s*/is", tpl_free(), $message);
@@ -176,7 +177,7 @@ function discuzcode($message, $smileyoff, $bbcodeoff, $htmlon = 0, $allowsmilies
 			$message = preg_replace("/\[audio\]\s*([^\[\<\r\n]+?)\s*\[\/audio\]/ies", "parseaudio('\\1')", $message);
 		}
 		if($allowmediacode && strpos($msglower, '[/flash]') !== FALSE) {
-			$message = preg_replace("/\[flash\]\s*([^\[\<\r\n]+?)\s*\[\/flash\]/is", "<script type=\"text/javascript\" reload=\"1\">document.write(AC_FL_RunContent('width', '550', 'height', '400', 'allowScriptAccess', 'sameDomain', 'src', '\\1', 'quality', 'high', 'bgcolor', '#ffffff', 'wmode', 'transparent'));</script>", $message);
+			$message = preg_replace("/\[flash\]\s*([^\[\<\r\n]+?)\s*\[\/flash\]/is", "<script type=\"text/javascript\" reload=\"1\">document.write(AC_FL_RunContent('width', '550', 'height', '400', 'allowNetworking', 'internal', 'allowScriptAccess', 'never', 'src', '\\1', 'quality', 'high', 'bgcolor', '#ffffff', 'wmode', 'transparent', 'allowfullscreen', 'true'));</script>", $message);
 		}
 		if($parsetype != 1 && $allowbbcode == 2 && $GLOBALS['_DCACHE']['bbcodes']) {
 			$message = preg_replace($GLOBALS['_DCACHE']['bbcodes']['searcharray'], $GLOBALS['_DCACHE']['bbcodes']['replacearray'], $message);
@@ -223,7 +224,15 @@ function discuzcode($message, $smileyoff, $bbcodeoff, $htmlon = 0, $allowsmilies
 
 	if($highlight) {
 		$highlightarray = explode('+', $highlight);
+		$sppos = strrpos($message, chr(0).chr(0).chr(0));
+		if($sppos !== FALSE) {
+			$specialextra = substr($postlist[$firstpid]['message'], $sppos + 3);
+			$message = substr($message, 0, $sppos);
+		}
 		$message = preg_replace(array("/(^|>)([^<]+)(?=<|$)/sUe", "/<highlight>(.*)<\/highlight>/siU"), array("highlight('\\2', \$highlightarray, '\\1')", "<strong><font color=\"#FF0000\">\\1</font></strong>"), $message);
+		if($sppos !== FALSE) {
+			$message = $message.chr(0).chr(0).chr(0).$specialextra;
+		}
 	}
 
 	unset($msglower);
@@ -246,6 +255,11 @@ function parseurl($url, $text) {
 		}
 		return '<a href="'.$url.'" target="_blank">'.$text.'</a>';
 	}
+}
+
+function parseattachurl($aid, $ext) {
+	$GLOBALS['skipaidlist'][] = $aid;
+	return $GLOBALS['boardurl'].'attachment.php?aid='.aidencode($aid).($ext ? '&request=yes&_f=.'.$ext : '');
 }
 
 function parseemail($email, $text) {
@@ -273,7 +287,7 @@ function parsetable($width, $bgcolor, $message) {
 		str_replace('\\"', '"', preg_replace(array(
 				"/\[tr(?:=([\(\)%,#\w]+))?\]\s*\[td(?:=(\d{1,2}),(\d{1,2})(?:,(\d{1,4}%?))?)?\]/ie",
 				"/\[\/td\]\s*\[td(?:=(\d{1,2}),(\d{1,2})(?:,(\d{1,4}%?))?)?\]/ie",
-				"/\[\/td\]\s*\[\/tr\]/i"
+				"/\[\/td\]\s*\[\/tr\]\s*/i"
 			), array(
 				"parsetrtd('\\1', '\\2', '\\3', '\\4')",
 				"parsetrtd('td', '\\1', '\\2', '\\3')",
@@ -286,18 +300,33 @@ function parsetrtd($bgcolor, $colspan, $rowspan, $width) {
 	return ($bgcolor == 'td' ? '</td>' : '<tr'.($bgcolor ? ' bgcolor="'.$bgcolor.'"' : '').'>').'<td'.($colspan > 1 ? ' colspan="'.$colspan.'"' : '').($rowspan > 1 ? ' rowspan="'.$rowspan.'"' : '').($width ? ' width="'.$width.'"' : '').'>';
 }
 
+function parseaudio($url, $width = 400, $autostart = 0) {
+	$ext = strtolower(substr(strrchr($url, '.'), 1, 5));
+	switch($ext) {
+		case 'mp3':
+		case 'wma':
+		case 'mid':
+		case 'wav':
+			return '<object classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" width="'.$width.'" height="64"><param name="invokeURLs" value="0"><param name="autostart" value="'.$autostart.'" /><param name="url" value="'.$url.'" /><embed src="'.$url.'" autostart="'.$autostart.'" type="application/x-mplayer2" width="'.$width.'" height="64"></embed></object>';
+		case 'ra':
+		case 'rm':
+		case 'ram':
+			$mediaid = 'media_'.random(3);
+			return '<object classid="clsid:CFCDAA03-8BE4-11CF-B84B-0020AFBBCCFA" width="'.$width.'" height="32"><param name="autostart" value="'.$autostart.'" /><param name="src" value="'.$url.'" /><param name="controls" value="controlpanel" /><param name="console" value="'.$mediaid.'_" /><embed src="'.$url.'" type="audio/x-pn-realaudio-plugin" controls="ControlPanel" console="'.$mediaid.'_" width="'.$width.'" height="32"></embed></object>';
+	}
+}
+
 function parsemedia($params, $url) {
 	$params = explode(',', $params);
 	$width = intval($params[1]) > 800 ? 800 : intval($params[1]);
 	$height = intval($params[2]) > 600 ? 600 : intval($params[2]);
+	$autostart = !empty($params[3]) ? 1 : 0;
 	if($flv = parseflv($url, $width, $height)) {
 		return $flv;
 	}
 	if(in_array(count($params), array(3, 4))) {
 		$type = $params[0];
-		$autostart = 0;
 		$url = str_replace(array('<', '>'), '', str_replace('\\"', '\"', $url));
-		$mediaid = 'media_'.random(3);
 		switch($type) {
 			case 'mp3':
 			case 'wma':
@@ -305,24 +334,28 @@ function parsemedia($params, $url) {
 			case 'ram':
 			case 'wav':
 			case 'mid':
-				return parseaudio($url);
-			case 'wmv':
-				return '<object classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" width="'.$width.'" height="'.$height.'"><param name="autostart" value="'.$autostart.'" /><param name="url" value="'.$url.'" /><embed src="'.$url.'" autostart="'.$autostart.'" type="video/x-ms-wmv" width="'.$width.'" height="'.$height.'"></embed></object>';
+				return parseaudio($url, $width, $autostart);
 			case 'rm':
 			case 'rmvb':
-				return '<object classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" width="'.$width.'" height="'.$height.'"><param name="autostart" value="'.$autostart.'" /><param name="src" value="'.$url.'" /><param name="controls" value="imagewindow" /><param name="console" value="'.$mediaid.'_" /><embed src="'.$url.'" type="audio/x-pn-realaudio-plugin" controls="IMAGEWINDOW" console="'.$mediaid.'_" width="'.$width.'" height="'.$height.'"></embed></object><br /><object classid="clsid:CFCDAA03-8BE4-11CF-B84B-0020AFBBCCFA" width="'.$width.'" height="32"><param name="src" value="'.$url.'" /><param name="controls" value="controlpanel" /><param name="console" value="'.$mediaid.'_" /><embed src="'.$url.'" type="audio/x-pn-realaudio-plugin" controls="ControlPanel" '.($autostart ? 'autostart="true"' : '').' console="'.$mediaid.'_" width="'.$width.'" height="32"></embed></object>';
+			case 'rtsp':
+				$mediaid = 'media_'.random(3);
+				return '<object classid="clsid:CFCDAA03-8BE4-11cf-B84B-0020AFBBCCFA" width="'.$width.'" height="'.$height.'"><param name="autostart" value="'.$autostart.'" /><param name="src" value="'.$url.'" /><param name="controls" value="imagewindow" /><param name="console" value="'.$mediaid.'_" /><embed src="'.$url.'" type="audio/x-pn-realaudio-plugin" controls="imagewindow" console="'.$mediaid.'_" width="'.$width.'" height="'.$height.'"></embed></object><br /><object classid="clsid:CFCDAA03-8BE4-11CF-B84B-0020AFBBCCFA" width="'.$width.'" height="32"><param name="src" value="'.$url.'" /><param name="controls" value="controlpanel" /><param name="console" value="'.$mediaid.'_" /><embed src="'.$url.'" type="audio/x-pn-realaudio-plugin" controls="controlpanel" console="'.$mediaid.'_" width="'.$width.'" height="32"'.($autostart ? ' autostart="true"' : '').'></embed></object>';
 			case 'flv':
+				return '<script type="text/javascript" reload="1">document.write(AC_FL_RunContent(\'width\', \''.$width.'\', \'height\', \''.$height.'\', \'allowNetworking\', \'internal\', \'allowScriptAccess\', \'never\', \'src\', \'images/common/flvplayer.swf\', \'flashvars\', \'file='.rawurlencode($url).'\', \'quality\', \'high\', \'wmode\', \'transparent\', \'allowfullscreen\', \'true\'));</script>';
 			case 'swf':
-				return '<script type="text/javascript" reload="1">document.write(AC_FL_RunContent(\'width\', \''.$width.'\', \'height\', \''.$height.'\', \'allowScriptAccess\', \'sameDomain\', \'src\', \''.$url.'\', \'quality\', \'high\', \'bgcolor\', \'#ffffff\', \'wmode\', \'transparent\'));</script>';
-			case 'avi':
+				return '<script type="text/javascript" reload="1">document.write(AC_FL_RunContent(\'width\', \''.$width.'\', \'height\', \''.$height.'\', \'allowNetworking\', \'internal\', \'allowScriptAccess\', \'never\', \'src\', \''.$url.'\', \'quality\', \'high\', \'bgcolor\', \'#ffffff\', \'wmode\', \'transparent\', \'allowfullscreen\', \'true\'));</script>';
 			case 'asf':
+			case 'asx':
+			case 'wmv':
+			case 'mms':
+			case 'avi':
 			case 'mpg':
 			case 'mpeg':
-				return '<object align="middle" classid="CLSID:22d6f312-b0f6-11d0-94ab-0080c74c7e95" class="OBJECT" id="MediaPlayer"><param name="ShowStatusBar" value="-1" /><param name="Filename" value="'.$url.'" /><embed type="application/x-oleobject" codebase="http://activex.microsoft.com/activex/controls/mplayer/en/nsmp2inf.cab#Version=5,1,52,701" flename="mp" src="'.$url.'" width="480" height="360"></embed></object><br>';
+				return '<object classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" width="'.$width.'" height="'.$height.'"><param name="invokeURLs" value="0"><param name="autostart" value="'.$autostart.'" /><param name="url" value="'.$url.'" /><embed src="'.$url.'" autostart="'.$autostart.'" type="application/x-mplayer2" width="'.$width.'" height="'.$height.'"></embed></object>';
 			case 'mov':
-				return '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" width="'.$width.'" height="'.$height.'"><param name="autostart" value="'.($autostart ? 'true' : 'false').'" /><param name="src" value="'.$url.'" /><embed controller="true" width="'.$width.'" height="'.$height.'" src="'.$url.'" autostart="'.($autostart ? 'true' : 'false').'"></embed></object>';
+				return '<object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" width="'.$width.'" height="'.$height.'"><param name="autostart" value="'.($autostart ? '' : 'false').'" /><param name="src" value="'.$url.'" /><embed src="'.$url.'" autostart="'.($autostart ? 'true' : 'false').'" type="video/quicktime" controller="true" width="'.$width.'" height="'.$height.'"></embed></object>';
 			default:
-				return;
+				return '<a href="'.$url.'" target="_blank">'.$url.'</a>';
 		}
 	}
 	return;
@@ -380,26 +413,9 @@ function parseflv($url, $width, $height) {
 		}
 	}
 	if($flv) {
-		return '<script type="text/javascript" reload="1">document.write(AC_FL_RunContent(\'width\', \''.$width.'\', \'height\', \''.$height.'\', \'allowScriptAccess\', \'sameDomain\', \'src\', \''.$flv.'\', \'quality\', \'high\', \'bgcolor\', \'#ffffff\', \'wmode\', \'transparent\'));</script>';
+		return '<script type="text/javascript" reload="1">document.write(AC_FL_RunContent(\'width\', \''.$width.'\', \'height\', \''.$height.'\', \'allowNetworking\', \'internal\', \'allowScriptAccess\', \'never\', \'src\', \''.$flv.'\', \'quality\', \'high\', \'bgcolor\', \'#ffffff\', \'wmode\', \'transparent\', \'allowfullscreen\', \'true\'));</script>';
 	} else {
 		return FALSE;
-	}
-}
-
-function parseaudio($url) {
-	$ext = strtolower(substr(strrchr($url, '.'), 1, 5));
-	switch($ext) {
-		case 'mp3':
-		case 'wma':
-			return '<object classid="clsid:6BF52A52-394A-11d3-B153-00C04F79FAA6" width="400" height="64"><param name="autostart" value="0" /><param name="url" value="'.$url.'" /><embed src="'.$url.'" autostart="0" type="audio/x-ms-wma" width="400" height="64"></embed></object>';
-		case 'ra':
-		case 'rm':
-		case 'ram':
-			$mediaid = 'media_'.random(3);
-			return '<object classid="clsid:CFCDAA03-8BE4-11CF-B84B-0020AFBBCCFA" width="400" height="32"><param name="autostart" value="0" /><param name="src" value="'.$url.'" /><param name="controls" value="controlpanel" /><param name="console" value="'.$mediaid.'_" /><embed src="'.$url.'" type="audio/x-pn-realaudio-plugin" controls="ControlPanel" console="'.$mediaid.'_" width="400" height="32"></embed></object>';
-		case 'mid':
-		case 'wav':
-			return '<object classid="CLSID:22d6f312-b0f6-11d0-94ab-0080c74c7e95" width="320" height="65"><param name="ShowStatusBar" value="-1" /><param name="Filename" value="'.$url.'" /><embed src="'.$url.'" width="320" height="65"></embed></object>';
 	}
 }
 

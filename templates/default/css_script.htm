@@ -81,7 +81,7 @@
 				#hot dt { padding-top: 8px; background-position: 0 15px; }
 				#hot dd { padding-bottom: 8px; border-bottom: 1px dashed {COMMONBORDER}; color: {MIDTEXT}; }
 		#hot ul {  padding: 8px 0; border-bottom: 1px dashed {COMMONBORDER}; }
-			#hot li { float: left; width: 50%; line-height: 22px; height: 22px; text-indent: 10px; white-space: nowrap; overflow: hidden; text-overflow:  ellipsis; }
+			#hot li { float: left; width: 49.5%; line-height: 22px; height: 22px; text-indent: 10px; white-space: nowrap; overflow: hidden; text-overflow:  ellipsis; }
 			#hot .deloption { position: absolute; right: 0; margin: 0; border: 3px solid {WRAPBG}; background-color: {WRAPBG}; }
 [/CURSCRIPT]
 
@@ -120,6 +120,14 @@
 		.threadtype a, .threadtype strong { margin-right: 6px; padding-right: 6px; border-right: 1px solid {COMMONBORDER}; white-space: nowrap; }
 			.threadtype .popupmenu_popup a { margin-right: 0; padding-right: 0; border: none; }
 			.threadtype strong { font-weight: 700; color: {HIGHLIGHTLINK}; white-space: nowrap; }
+	.dtypeoption { overflow: hidden; margin-bottom: 6px; }
+		.dtypeoption li { float: left; padding: 4px 0; margin-right: 14px; }
+			.dtypeoption li strong { margin-right: 4px; font-weight: 700; color: {MIDTEXT}; }
+
+	.dtypeqsearch { margin-bottom: 10px; border-top: 1px solid {COMMONBORDER}; padding-top: 4px; clear: both; }
+		.dtypeqsearch h5{ height: 1.8em; line-height: 1.8em; color: {NOTICETEXT}; font-weight: 700; }
+		.dtypeqsearch li { height: 22px; margin-bottom: 8px;  }
+		.dtypeqsearch a { color: {HIGHLIGHTLINK}; }
 
 	.rule { margin: 0 8px; }
 	#modarea, #subforum { margin: 1em 0; }
@@ -179,6 +187,12 @@
 			.profile_side li { margin: 5px 0; background-position: 0 50%; background-repeat: no-repeat; text-indent: 22px; }
 				.profile_side li.pm { background-image: url({IMGDIR}/pmto.gif); }
 				.profile_side li.buddy { background-image: url({IMGDIR}/addbuddy.gif); }
+	.extralist { border: solid {INPUTBORDER}; border-width: 2px 0;  }
+		.extralist td, .extralist th { height: 2.2em; padding-left: 14px; line-height: 2.2em; border: solid {COMMONBORDER}; border-width: 1px 0; }
+		.extralist th { width: 120px; background: {INTERLEAVECOLOR}; font-weight: 700; }
+		.extralist td em { font-weight: 700; color: {HIGHLIGHTLINK};}
+		.extralist td span, .extralist td strong { color: {NOTICETEXT}; font-size: 14px; margin-right: 4px; }
+		.extralist td strong {font-weight: 700; }
 
 	/* Notice Ìø×ª */
 	#ntc_jp { margin-left: -9px; margin-top: -33px; width: 460px; height: 43px; background: url({IMGDIR}/notice_jump.png) no-repeat 0 0; line-height: 35px; position: absolute; }
@@ -195,6 +209,7 @@
 		.viewthread table, #pmprompt table, #forumlinks, #pmlist, #specialpost, #newpost, #editpost { table-layout: fixed; }
 			.viewthread td.postcontent, .viewthread td.postauthor { vertical-align: top; padding: 0 1px; border: none; overflow: hidden; }
 				.viewthread td.postcontent { padding: 0 15px; }
+				.viewthread td.postbottom { vertical-align:bottom; }
 			.mainbox td.postauthor { padding: 0; width: 170px; background: {SPECIALBG}; overflow: hidden; }
 				.postauthor .avatar { margin: 10px 20px; }
 				.postauthor p, .postauthor dl.profile { margin: 5px 10px 5px 20px; }
@@ -206,11 +221,16 @@
 					.postauthor .shadowline { margin: 9px 20px 4px; *margin: 0 20px -5px; }
 
 				.posterinfo, .postmessage, .postact { max-width: {CONTENTWIDTH}; }
+				#threadstamp { position:absolute;margin-top: -70px;margin-left:170px; }
 				* html .postmessage { width: {CONTENTWIDTH}; }
 
 				.postinfo { color: {MIDTEXT}; margin-bottom: 10px; border-bottom: 1px dashed {COMMONBORDER}; line-height: 36px; height: 36px; overflow: hidden; }
 					.postinfo strong a { float: right; height: 24px; font-weight: 100; color: {TABLETEXT}; line-height: 24px; padding: 0 6px; margin-top: 4px; border: 1px solid {WRAPBG}; }
 						.posterinfo a.posterlink { color: {HIGHLIGHTLINK}; }
+					.postinfo strong em.rpostno { float: right; font-weight: 100; color: {TABLETEXT}; margin-left: 20px; }
+						.postinfo strong em.rpostno input { border: 1px solid {HIGHLIGHTLINK}; }
+						.postinfo #rpostnobtn { cursor: pointer; }
+						* html .postinfo strong em.rpostno { margin-top: 6px; }
 						.postinfo strong a:hover { border: 1px solid {HIGHLIGHTLINK}; text-decoration: none; }
 						.msgfontsize img { vertical-align: middle; }
 						* html .msgfontsize { margin-top: 8px; }
@@ -396,6 +416,13 @@
 				.newrate dt strong a,.newrate dt strong a em { line-height: 48px; height: 48px; color: {NOTICETEXT}; }
 		.newrate dd { margin-left: 80px; }
 			.newrate dd ul li { float: left; list-style: none; width: 67px; height: 84px; overflow: hidden; margin:0 4px; text-align: center; }
+
+			.newrate dd ul.ratelist { float: none; padding-top: 1px; }
+			.newrate dd ul.ratelist li { height: 24px; width: auto; line-height: 24px; margin: 4px 0; color:{LIGHTTEXT}; text-align: left; float: none;  }
+			.ratelist img { height: 24px; width: 24px; vertical-align: middle }
+			.ratelist em { margin-left: 10px; color: {NOTICETEXT}; }
+			.ratelist a { margin-right: 6px; }
+			.ratelist span { margin: 0 4px; color: {LIGHTTEXT};}
 				.rateavatar { padding: 8px 0; }
 					.rateavatar img { margin: auto; }
 
@@ -639,6 +666,7 @@
 		.profile_side li.pm { background-image: url({IMGDIR}/pmto.gif); }
 		.profile_side li.buddy { background-image: url({IMGDIR}/addbuddy.gif); }
 		.profile_side li.space { background-image: url({IMGDIR}/home.gif); }
+		.profile_side li.searchthread { background-image: url({IMGDIR}/folder_new.gif); }
 		.profile_side li.searchpost { background-image: url({IMGDIR}/fastreply.gif); }
 		.profile_side li.magic { background-image: url({IMGDIR}/magic.gif);}
 	#profile_stats li { text-indent: 0; }
@@ -705,7 +733,8 @@
 					.attachname .lighttxt, .attachname_swf .lighttxt { color: {LIGHTTEXT} !important; }
 				.attachview, .attachpr { width: 40px; text-align: center; }
 					.attachview .txt, .attachpr .txt { width: 25px; }
-				.attachdel { width: 20px; }
+				.attachurl img { height: 20px !important; }
+				.attachdel { width: 20px }
 				*+html .attachdel { width: 40px; }
 				.attachdesc { width: 80px; text-align: center; }
 					.attachdesc .txt { width: 74px; }
@@ -799,9 +828,13 @@
 				.hidebtn_disabled { background-position: 0 -863px !important; }
 					.tblbtn_disabled:hover, .hidebtn_disabled { border-color: {COMMONBG} !important; background-color: {COMMONBG} !important; cursor: default; }
 
-			.maxbtn { float: left; height: 44px; padding: 1px 2px 1px 6px; background:url(../../images/common/editor.gif) no-repeat 0 -286px; }
+			.maxbtn { position: relative; float: left; height: 44px; padding: 1px 2px 1px 6px; background:url(../../images/common/editor.gif) no-repeat 0 -286px; }
 				.maxbtn a { width: 40px; padding-top: 26px; height: 18px; text-indent: 0; font-size: 12px; text-align: center; background: url(../../images/common/bigeditor.gif) no-repeat; }
 				.maxbtn a.oneditor, .maxbtn a:hover { background: {DROPMENUBGCOLOR} url(../../images/common/bigeditor.gif) no-repeat; }
+
+				.haspic, .hasatt { position: absolute; top: 2px; width: 12px; height: 12px; line-height: 12px; text-align: center; background-color: #BBB; color: #FFF; font-weight: 700; font-size: 11px; }
+					.haspic { left: 78px; }
+					.hasatt { left: 120px; }
 
 				#e_cmd_paste { background-position: 4px -315px; }
 

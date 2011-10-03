@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: magic_color.inc.php 19909 2009-09-14 13:14:55Z liuqiang $
+	$Id: magic_color.inc.php 19908 2009-09-14 13:14:41Z liuqiang $
 */
 
 if(!defined('IN_DISCUZ')) {

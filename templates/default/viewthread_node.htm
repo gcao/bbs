@@ -1,3 +1,4 @@
+{eval $needhiddenreply = ($hiddenreplies && $discuz_uid != $post['authorid'] && $discuz_uid != $thread['authorid'] && !$post['first'] && !$forum['ismoderator']);}
 <table id="pid$post[pid]" summary="pid$post[pid]" cellspacing="0" cellpadding="0">
 <!--{if !empty($fav) && $rpid == $post[pid]}-->
 <tr class="threadad">
@@ -107,23 +108,39 @@
 		<!--{if $allowedituser || $allowbanuser || ($forum['ismoderator'] && $allowviewip && ($thread['digest'] >= 0 || !$post['first']))}-->
 			<hr class="shadowline" />
 			<p>
+				{lang admin_member}<br />
 				<!--{if $forum['ismoderator'] && $allowviewip && ($thread['digest'] >= 0 || !$post['first'])}-->
-					<a href="topicadmin.php?action=getip&fid=$fid&tid=$tid&pid=$post[pid]" onclick="ajaxmenu(this, 0, 1, 2);doane(event)" title="{lang admin_getip}" class="lightlink">IP</a>&nbsp;&nbsp;
+					<a href="topicadmin.php?action=getip&fid=$fid&tid=$tid&pid=$post[pid]" onclick="ajaxmenu(this, 0, 1, 2);doane(event)" title="{lang admin_getip}" class="lightlink">IP</a>&nbsp;
 				<!--{/if}-->
 				<!--{if $allowedituser}-->
-					<a href="{if $adminid == 1}admincp.php?action=members&username=$post[usernameenc]&submit=yes&frames=yes{else}modcp.php?action=members&op=edit&uid=$post[authorid]{/if}" target="_blank" class="lightlink">{lang edit_member}</a>&nbsp;&nbsp;
+					<a href="{if $adminid == 1}admincp.php?action=members&username=$post[usernameenc]&submit=yes&frames=yes{else}modcp.php?action=members&op=edit&uid=$post[authorid]{/if}" target="_blank" class="lightlink">{lang edit}</a>&nbsp;
 				<!--{/if}-->
 				<!--{if $allowbanuser}-->
-					{if $adminid == 1}<a href="admincp.php?action=members&operation=ban&username=$post[usernameenc]&frames=yes" target="_blank" class="lightlink">{lang ban_member}</a>
-					{else}<a href="modcp.php?action=members&op=ban&uid=$post[authorid]" target="_blank" class="lightlink">{lang ban_member}</a>
-					{/if}
+					<!--{if $adminid == 1}-->
+						<a href="admincp.php?action=members&operation=ban&username=$post[usernameenc]&frames=yes" target="_blank" class="lightlink">{lang ban_member}</a>&nbsp;
+					<!--{else}-->
+						<a href="modcp.php?action=members&op=ban&uid=$post[authorid]" target="_blank" class="lightlink">{lang ban_member}</a>&nbsp;
+					<!--{/if}-->
 				<!--{/if}-->
+				<a href="modcp.php?action=threads&op=posts&do=search&searchsubmit=1&users=$post[usernameenc]" target="_blank" class="lightlink">{lang posts}</a>
 			</p>
 		<!--{/if}-->
 	</td>
 	<td class="postcontent">
+		<!--{if $post['first']}--><div id="threadstamp"><!--{if $threadstamp}--><img src="images/stamps/$threadstamp[url]" title="$threadstamp[text]" /><!--{/if}--></div><!--{/if}-->
 		<div class="postinfo">
-			<strong><a title="{lang share_url_copy}" id="postnum$post[pid]" href="javascript:;" onclick="setCopy('{$boardurl}viewthread.php?tid=$tid&amp;page=$page$fromuid#pid$post[pid]', '{lang post_copied}')"><!--{if !empty($postno[$post[number]])}-->$postno[$post[number]]<!--{else}--><em>{$post[number]}</em>{$postno[0]}<!--{/if}--></a></strong>
+			<strong><a title="{lang share_url_copy}" id="postnum$post[pid]" href="javascript:;" onclick="setCopy('{$boardurl}{if $post[first]}viewthread.php?tid=$tid$fromuid{else}redirect.php?goto=findpost&amp;ptid=$tid&amp;pid=$post[pid]$fromuid{/if}', '{lang post_copied}')"><!--{if !empty($postno[$post[number]])}-->$postno[$post[number]]<!--{else}--><em>{$post[number]}</em>{$postno[0]}<!--{/if}--></a>
+			<!--{if !$postcount}-->
+				<em class="rpostno" title="{lang thread_redirect_postno_tips}">{lang thread_redirect_postno} <input id="rpostnovalue" size="3" type="text" class="txtarea" onkeydown="if(event.keyCode==13) {$('rpostnobtn').click();return false;}" /><span id="rpostnobtn" onclick="window.location='redirect.php?ptid=$tid&ordertype=$ordertype&postno='+$('rpostnovalue').value">&raquo;</span></em>
+			<!--{/if}-->
+			<!--{if $post['first']}-->
+				<!--{if $ordertype != 1}-->
+					<a href="viewthread.php?tid=$tid&extra=$extra&ordertype=1" class="left">{lang post_descview}</a>
+				<!--{else}-->
+					<a href="viewthread.php?tid=$tid&extra=$extra&ordertype=2" class="left">{lang post_ascview}</a>
+				<!--{/if}-->
+			<!--{/if}-->
+			</strong>
 			<div class="posterinfo">
 				<div class="pagecontrol">
 					<!--{if $post['first']}-->
@@ -201,6 +218,8 @@
 				<div class="locked">{lang message_banned}</div>
 			<!--{elseif $adminid != 1 && $post['status'] & 1}-->
 				<div class="locked">{lang message_single_banned}</div>
+			<!--{elseif $needhiddenreply}-->
+				<div class="locked">{lang message_ishidden_hiddenreplies}</div>
 			<!--{elseif $post['first'] && $threadpay}-->
 				{subtemplate viewthread_pay}
 			<!--{else}-->
@@ -223,7 +242,7 @@
 							<!--{loop $optionlist $option}-->
 								<tr class="{echo swapclass('colplural')}">
 									<th>$option[title]</th>
-									<td><!--{if $option['value']}-->$option[value]<!--{else}-->-<!--{/if}--></td>
+									<td><!--{if $option['value']}-->$option[value] $option[unit]<!--{else}-->-<!--{/if}--></td>
 								</tr>
 							<!--{/loop}-->
 							</table>
@@ -309,24 +328,42 @@
 						<dd>
 							<ul class="s_clear">
 							<div id="post_rate_$post[pid]"></div>
-							<!--{loop $post['ratelog'] $uid $ratelog}-->
-								<li>
-									<div id="rate_{$post[pid]}_{$uid}_menu" class="attach_popup" style="display: none;">
-										<p class="cornerlayger">$ratelog[reason] &nbsp;&nbsp;
-											<!--{loop $ratelog['score'] $id $score}-->
-												<!--{if $score > 0}-->
-													<em>{$extcredits[$id][title]} + $score $extcredits[$id][unit]</em>
-												<!--{else}-->
-													<span>{$extcredits[$id][title]} $score $extcredits[$id][unit]</span>
-												<!--{/if}-->
-											<!--{/loop}-->
-										</p>
-										<p class="minicorner"></p>
-									</div>
-									<p id="rate_{$post[pid]}_{$uid}" onmouseover="showMenu({'ctrlid':this.id,'pos':'12'})" class="rateavatar"><a href="space.php?uid=$uid" target="_blank">{echo discuz_uc_avatar($uid, 'small');}</a></p>
-									<p><a href="space.php?uid=$uid" target="_blank">$ratelog[username]</a></p>
-								</li>
-							<!--{/loop}-->
+							<!--{if $ratelogon}-->
+								<ul class="s_clear ratelist">
+								<!--{loop $post['ratelog'] $uid $ratelog}-->
+									<li id="rate_{$post[pid]}_{$uid}" class="ratelistavatar">
+										<a href="space.php?uid=$uid" target="_blank">{echo discuz_uc_avatar($uid, 'small');}</a><a href="space.php?uid=$uid" target="_blank">$ratelog[username]:</a>
+										$ratelog[reason]
+										<!--{loop $ratelog['score'] $id $score}-->
+											<!--{if $score > 0}-->
+												<em>{$extcredits[$id][title]} + $score $extcredits[$id][unit]</em>
+											<!--{else}-->
+												<span>{$extcredits[$id][title]} $score $extcredits[$id][unit]</span>
+											<!--{/if}-->
+										<!--{/loop}-->
+									</li>
+								<!--{/loop}-->
+							</ul>
+							<!--{else}-->
+								<!--{loop $post['ratelog'] $uid $ratelog}-->
+									<li>
+										<div id="rate_{$post[pid]}_{$uid}_menu" class="attach_popup" style="display: none;">
+											<p class="cornerlayger">$ratelog[reason] &nbsp;&nbsp;
+												<!--{loop $ratelog['score'] $id $score}-->
+													<!--{if $score > 0}-->
+														<em>{$extcredits[$id][title]} + $score $extcredits[$id][unit]</em>
+													<!--{else}-->
+														<span>{$extcredits[$id][title]} $score $extcredits[$id][unit]</span>
+													<!--{/if}-->
+												<!--{/loop}-->
+											</p>
+											<p class="minicorner"></p>
+										</div>
+										<p id="rate_{$post[pid]}_{$uid}" onmouseover="showMenu({'ctrlid':this.id,'pos':'12'})" class="rateavatar"><a href="space.php?uid=$uid" target="_blank">{echo discuz_uc_avatar($uid, 'small');}</a></p>
+										<p><a href="space.php?uid=$uid" target="_blank">$ratelog[username]</a></p>
+									</li>
+								<!--{/loop}-->
+							<!--{/if}-->
 							</ul>
 						</dd>
 					</dl>
@@ -360,7 +397,7 @@
 
 		</div>
 	</td></tr>
-	<tr><td class="postcontent" valign="bottom">
+	<tr><td class="postcontent postbottom">
 		<!--{if $post['signature'] && ($bannedmessages & 4 && (($post['authorid'] && !$post['username']) || ($post['groupid'] == 4 || $post['groupid'] == 5) || ($post['status'] & 1)))}-->
 			<div class="signatures">{lang member_signature_banned}</div>
 		<!--{elseif $post['signature'] && !$post['anonymous'] && $showsignatures}-->
@@ -387,8 +424,12 @@
 			<!--{/if}-->
 			<div class="postact s_clear">
 				<em>
-					<a class="fastreply" href="post.php?action=reply&amp;fid=$fid&amp;tid=$tid&amp;reppost=$post[pid]&amp;extra=$extra&amp;page=$page" onclick="showWindow('reply', this.href);return false;">{lang reply}</a>
-					<a class="repquote" href="post.php?action=reply&amp;fid=$fid&amp;tid=$tid&amp;repquote=$post[pid]&amp;extra=$extra&amp;page=$page" onclick="showWindow('reply', this.href);return false;">{lang reply_quote}</a>
+					<!--{if $allowpostreply}-->
+						<a class="fastreply" href="post.php?action=reply&amp;fid=$fid&amp;tid=$tid&amp;reppost=$post[pid]&amp;extra=$extra&amp;page=$page" onclick="showWindow('reply', this.href);return false;">{lang reply}</a>
+						<!--{if !$needhiddenreply}-->
+							<a class="repquote" href="post.php?action=reply&amp;fid=$fid&amp;tid=$tid&amp;repquote=$post[pid]&amp;extra=$extra&amp;page=$page" onclick="showWindow('reply', this.href);return false;">{lang reply_quote}</a>
+						<!--{/if}-->
+					<!--{/if}-->
 					<!--{if (($forum['ismoderator'] && $alloweditpost && !(in_array($post['adminid'], array(1, 2, 3)) && $adminid > $post['adminid'])) || ($forum['alloweditpost'] && $discuz_uid && $post['authorid'] == $discuz_uid)) && ($thread['digest'] >= 0 || !$post['first'])}-->
 						<a class="editpost" href="post.php?action=edit&amp;fid=$fid&amp;tid=$tid&amp;pid=$post[pid]&amp;page=$page"><!--{if $thread['special'] == 2 && !$post['message']}-->{lang post_add_aboutcounter}<!--{else}-->{lang edit}</a><!--{/if}-->
 					<!--{/if}-->

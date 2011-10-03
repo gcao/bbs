@@ -37,3 +37,4 @@ h2. TODO
 
 h3. Move code from discuzcode.htm to some php file - this will make it not necessary to modify templates to support showing games in different themes.
 NOT NEEDED, discuzcode.htm IS SHARED BETWEEN ALL THEMES!
+

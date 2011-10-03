@@ -13,7 +13,7 @@
 		</span>
 	</h3>
 
-	<form method="post" id="postform" action="misc.php?action=debateumpire&tid=$tid&umpiresubmit=yes&infloat=yes" onsubmit="ajaxpost('postform', 'return_$handlekey', 'return_$handlekey', 'onerror');return false;">
+	<form method="post" id="postform" action="misc.php?action=debateumpire&tid=$tid&umpiresubmit=yes&infloat=yes"{if !empty($infloat)} onsubmit="ajaxpost('postform', 'return_$handlekey', 'return_$handlekey', 'onerror');return false;"{/if}>
 		<input type="hidden" name="formhash" id="formhash" value="{FORMHASH}" />
 		<!--{if !empty($infloat)}--><input type="hidden" name="handlekey" value="$handlekey" /><!--{/if}-->
 		<table class="list" cellspacing="0" cellpadding="0">

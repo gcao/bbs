@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: global.func.php 20602 2009-10-10 09:20:31Z monkey $
+	$Id: global.func.php 21350 2010-01-06 12:23:28Z zhaoxiongfei $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -157,8 +157,8 @@ function shownav($header = '', $menu = '', $nav = '') {
 		($menu ? '&nbsp;&raquo;&nbsp;'.lang($menu) : '').
 		($nav ? '&nbsp;&raquo;&nbsp;'.lang($nav) : '').'\';'.
 		'if(parent.$(\'add2custom\')) parent.$(\'add2custom\').innerHTML='.($customtitle ? '\'<a href="'.$BASESCRIPT.'?action=misc&operation=custommenu&do=add&title='.$customtitle.'&url='.cpurl().'" target="main"><img src="images/admincp/btn_add2menu.gif" title="'.lang('custommenu_add').'" width="19" height="18" /></a>\';' : '\'\';').
-		($customtitle ? 'if(parent.$(\'custombar_add\')) parent.$(\'custombar_add\').innerHTML='.($customtitle ? '\'<span onclick="ajaxget(\\\''.$BASESCRIPT.'?action=misc&operation=custombar&title='.$customtitle.'&url='.cpurl().'\\\', \\\'custombar\\\', \\\'\\\', \\\'\\\', \\\'\\\', function () { parent.custombar_resize();});" title="'.lang('custombar_add_tips').'" />&nbsp;&nbsp;&nbsp;&nbsp;'.lang('custombar_add').'</span>\';' : '\'\';') : '').
-		'parent.custombar_resize();'.
+		($customtitle ? 'if(parent.$(\'custombar_add\')) parent.$(\'custombar_add\').innerHTML='.($customtitle ? '\'<span onclick="ajaxget(\\\''.$BASESCRIPT.'?action=misc&operation=custombar&title='.$customtitle.'&url='.cpurl().'\\\', \\\'custombar\\\', \\\'\\\', \\\'\\\', \\\'\\\', function () { top.custombar_resize();});" title="'.lang('custombar_add_tips').'" />&nbsp;&nbsp;&nbsp;&nbsp;'.lang('custombar_add').'</span>\';' : '\'\';') : '').
+		'top.custombar_resize();'.
 	'</script>';
 }
 
@@ -180,7 +180,7 @@ function cpmsg($message, $url = '', $type = '', $extra = '', $halt = TRUE) {
 	include language('admincp.msg');
 	$vars = explode(':', $message);
 	if(count($vars) == 2 && isset($scriptlang[$vars[0]][$vars[1]])) {
-		@eval("\$message = \"".$scriptlang[$vars[0]][$vars[1]]."\";");
+		@eval("\$message = \"".str_replace('"', '\"', $scriptlang[$vars[0]][$vars[1]])."\";");
 	} else {
 		@eval("\$message = \"".(isset($msglang[$message]) ? $msglang[$message] : $message)."\";");
 	}
@@ -202,7 +202,7 @@ function cpmsg($message, $url = '', $type = '', $extra = '', $halt = TRUE) {
 			"<input type=\"button\" class=\"btn\" value=\"$lang[cancel]\" onClick=\"history.go(-1);\"></p></form><br />";
 	} elseif($type == 'loadingform') {
 		$message = "<form method=\"post\" action=\"$url\" id=\"loadingform\"><input type=\"hidden\" name=\"formhash\" value=\"".FORMHASH."\"><br />$message$extra<img src=\"images/admincp/ajax_loader.gif\" class=\"marginbot\" /><br />".
-			'<p class="marginbot"><a href="###" onclick="$(\'loadingform\').submit();" class="lightlink">'.lang('message_redirect').'</a></p></form><br /><script type="text/JavaScript">setTimeout("$(\'loadingform\').submit();", 2000);</script>';
+			'<p class="marginbot"><a href="###" onclick="$(\'loadingform\').submit();return false;" class="lightlink">'.lang('message_redirect').'</a></p></form><br /><script type="text/JavaScript">setTimeout("$(\'loadingform\').submit();", 2000);</script>';
 	} else {
 		$message .= $extra.($type == 'loading' ? '<img src="images/admincp/ajax_loader.gif" class="marginbot" />' : '');
 		if($url) {
@@ -328,8 +328,8 @@ EOT;
 	$s .= '</div>';
 	echo !empty($menus) ? '<div class="floattop">'.$s.'</div><div class="floattopempty"></div>' : $s;
 	echo '<script type="text/JavaScript">'.
-		'if(parent.$(\'custombar_add\')) parent.$(\'custombar_add\').innerHTML=\'<span onclick="ajaxget(\\\''.$BASESCRIPT.'?action=misc&operation=custombar&title='.rawurlencode($title).'&url='.cpurl().'\\\', \\\'custombar\\\', \\\'\\\', \\\'\\\', \\\'\\\', function () { parent.custombar_resize();});doane(event);" title="'.lang('custombar_add_tips').'" />&nbsp;&nbsp;&nbsp;&nbsp;'.lang('custombar_add').'</span>\';'.
-		'parent.custombar_resize();'.
+		'if(parent.$(\'custombar_add\')) parent.$(\'custombar_add\').innerHTML=\'<span onclick="ajaxget(\\\''.$BASESCRIPT.'?action=misc&operation=custombar&title='.rawurlencode($title).'&url='.cpurl().'\\\', \\\'custombar\\\', \\\'\\\', \\\'\\\', \\\'\\\', function () { top.custombar_resize();});doane(event);" title="'.lang('custombar_add_tips').'" />&nbsp;&nbsp;&nbsp;&nbsp;'.lang('custombar_add').'</span>\';'.
+		'top.custombar_resize();'.
 	'</script>';
 }
 
@@ -622,7 +622,7 @@ function cpfooter() {
 
 <script type="text/javascript">
 var newhtml = '';
-newhtml += '<table class="tb tb2"><tr><th class="partition edited">&#x60A8;&#x5F53;&#x524D;&#x4F7F;&#x7528;&#x7684 Discuz! &#x7A0B;&#x5E8F;&#x7248;&#x672C;&#x6709;&#x91CD;&#x8981;&#x66F4;&#x65B0;&#xFF0C;&#x8BF7;&#x53C2;&#x7167;&#x4EE5;&#x4E0B;&#x63D0;&#x793A;&#x8FDB;&#x884C;&#x53CA;&#x65F6;&#x5347;&#x7EA7</th></tr>';
+newhtml += '<table class="tb tb2"><tr><th class="partition edited">&#x60A8;&#x5F53;&#x524D;&#x4F7F;&#x7528;&#x7684; Discuz! &#x7A0B;&#x5E8F;&#x7248;&#x672C;&#x6709;&#x91CD;&#x8981;&#x66F4;&#x65B0;&#xFF0C;&#x8BF7;&#x53C2;&#x7167;&#x4EE5;&#x4E0B;&#x63D0;&#x793A;&#x8FDB;&#x884C;&#x53CA;&#x65F6;&#x5347;&#x7EA7;</th></tr>';
 newhtml += '<tr><td class="tipsblock"><a href="http://faq.comsenz.com/checkversion.php?product=Discuz&version=<?=DISCUZ_VERSION?>&release=<?=DISCUZ_RELEASE?>&charset=<?=$charset?>&dbcharset=<?=$dbcharset?>" target="_blank"><img src="<?=$newsurl?>" onload="shownews()" /></a></td></tr></table>';
 $('boardnews').style.display = 'none';
 $('boardnews').innerHTML = newhtml;
@@ -660,7 +660,7 @@ function checkacpaction($action, $operation = '', $halt = true) {
 
 	$ret = ($dactionarray && ($radminid != $groupid) && (in_array($action, $dactionarray) || ($operation && in_array($action.'_'.$operation, $dactionarray)))) ? false : true;
 
-	if($halt && !$ret) {
+	if($halt && !$ret || in_array('_readonly', $dactionarray) && !empty($_POST)) {
 		cpheader();
 		cpmsg('action_noaccess');
 	}

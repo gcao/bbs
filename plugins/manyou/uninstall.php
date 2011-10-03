@@ -1,5 +1,12 @@
 <?php
 
+/*
+	[Discuz!] (C)2001-2009 Comsenz Inc.
+	This is NOT a freeware, use is subject to license terms
+
+	$Id: uninstall.php 20527 2009-10-04 07:06:47Z monkey $
+*/
+
 if(!defined('IN_DISCUZ')) {
 	exit('Access Denied');
 }

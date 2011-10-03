@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: thread.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: thread.inc.php 20942 2009-11-02 04:12:16Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -16,6 +16,7 @@ if($requestrun) {
 	if(!defined('TPLDIR')) {
 		@include_once DISCUZ_ROOT.'./forumdata/cache/style_'.$_DCACHE['settings']['styleid'].'.php';
 	}
+	require_once DISCUZ_ROOT.'./include/post.func.php';
 
 	if($tid = intval($settings['tid'])) {
 		$thread = $db->fetch_first("SELECT subject, fid, special, price FROM {$tablepre}threads WHERE tid='$tid'");
@@ -39,19 +40,19 @@ if($requestrun) {
 			$creditstransextra = $_DCACHE['settings']['creditstransextra'];
 			$rewardend = $thread['price'] < 0;
 			$rewardprice = abs($thread['price']);
-			$message = cutmessage($db->result_first("SELECT message FROM {$tablepre}posts WHERE tid='$tid' AND first=1"), 100);
+			$message = messagecutstr($db->result_first("SELECT message FROM {$tablepre}posts WHERE tid='$tid' AND first=1"), 100);
 		} elseif($thread['special'] == 4) {
-			$message = cutmessage($db->result_first("SELECT message FROM {$tablepre}posts WHERE tid='$tid' AND first=1"), 100);
+			$message = messagecutstr($db->result_first("SELECT message FROM {$tablepre}posts WHERE tid='$tid' AND first=1"), 100);
 			$number = $db->result_first("SELECT number FROM {$tablepre}activities WHERE tid='$tid'");
 			$applynumbers = $db->result_first("SELECT COUNT(*) FROM {$tablepre}activityapplies WHERE tid='$tid' AND verified=1");
 			$aboutmembers = $number - $applynumbers;
 		} elseif($thread['special'] == 5) {
-			$message = cutmessage($db->result_first("SELECT message FROM {$tablepre}posts WHERE tid='$tid' AND first=1"), 100);
+			$message = messagecutstr($db->result_first("SELECT message FROM {$tablepre}posts WHERE tid='$tid' AND first=1"), 100);
 			$debate = $db->fetch_first("SELECT affirmdebaters, negadebaters, affirmvotes, negavotes FROM {$tablepre}debates WHERE tid='$tid'");
 			$debate['affirmvoteswidth'] = $debate['affirmvotes']  ? intval(80 * (($debate['affirmvotes'] + 1) / ($debate['affirmvotes'] + $debate['negavotes'] + 1))) : 1;
 			$debate['negavoteswidth'] = $debate['negavotes']  ? intval(80 * (($debate['negavotes'] + 1) / ($debate['affirmvotes'] + $debate['negavotes'] + 1))) : 1;
 		} else {
-			$message = cutmessage($db->result_first("SELECT message FROM {$tablepre}posts WHERE tid='$tid' AND first=1"), 100);
+			$message = messagecutstr($db->result_first("SELECT message FROM {$tablepre}posts WHERE tid='$tid' AND first=1"), 100);
 		}
 
 	}

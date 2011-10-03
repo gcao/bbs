@@ -4,20 +4,20 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: category.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: category.inc.php 21018 2009-11-06 06:57:53Z wangjinbo $
 */
 
 if(!defined('IN_DISCUZ')) {
 	exit('Access Denied');
 }
 
-$gquery = $db->query("SELECT f.fid, f.fup, f.type, f.name, ff.moderators FROM {$tablepre}forums f LEFT JOIN {$tablepre}forumfields ff ON ff.fid=f.fid WHERE f.fid='$gid'");
+$gquery = $db->query("SELECT f.fid, f.fup, f.type, f.name, ff.moderators, ff.extra FROM {$tablepre}forums f LEFT JOIN {$tablepre}forumfields ff ON ff.fid=f.fid WHERE f.fid='$gid'");
 
-$sql = $accessmasks	? "SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, f.inheritedmod, ff.description, ff.moderators, ff.icon, ff.viewperm, a.allowview FROM {$tablepre}forums f
+$sql = $accessmasks	? "SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, f.inheritedmod, ff.description, ff.moderators, ff.icon, ff.viewperm, ff.extra, a.allowview FROM {$tablepre}forums f
 				LEFT JOIN {$tablepre}forumfields ff ON ff.fid=f.fid
 				LEFT JOIN {$tablepre}access a ON a.uid='$discuz_uid' AND a.fid=f.fid
 				WHERE f.fup='$gid' AND f.status='1' AND f.type='forum' ORDER BY f.displayorder"
-			: "SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, f.inheritedmod, ff.description, ff.moderators, ff.icon, ff.viewperm FROM {$tablepre}forums f
+			: "SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, f.inheritedmod, ff.description, ff.moderators, ff.icon, ff.viewperm, ff.extra FROM {$tablepre}forums f
 				LEFT JOIN {$tablepre}forumfields ff USING(fid)
 				WHERE f.fup='$gid' AND f.status='1' AND f.type='forum' ORDER BY f.displayorder";
 
@@ -27,7 +27,10 @@ if(!$db->num_rows($gquery) || !$db->num_rows($query)) {
 }
 
 while(($forum = $db->fetch_array($gquery)) || ($forum = $db->fetch_array($query))) {
-
+	$forum['extra'] = unserialize($forum['extra']);
+	if(!is_array($forum['extra'])) {
+		$forum['extra'] = array();
+	}
 	if($forum['type'] != 'group') {
 		$threads += $forum['threads'];
 		$posts += $forum['posts'];

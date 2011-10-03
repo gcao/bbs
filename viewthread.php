@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: viewthread.php 20723 2009-10-16 05:49:03Z monkey $
+	$Id: viewthread.php 21339 2010-01-06 08:25:41Z zhaoxiongfei $
 */
 
 if(!defined('CURSCRIPT')) {
@@ -28,6 +28,7 @@ $sdb = loadmultiserver('viewthread');
 $thread = $sdb->fetch_first("SELECT * FROM {$tablepre}threads t WHERE tid='$tid'".($auditstatuson ? '' : " AND displayorder>='0'"));
 
 if(!$thread) {
+	header("HTTP/1.0 404 Not Found");
 	showmessage('thread_nonexistence');
 }
 
@@ -66,7 +67,7 @@ $navtitle .= ' - ';
 $forum['typemodels'] = $forum['typemodels'] ? unserialize($forum['typemodels']) : array();
 $threadsort = isset($forum['threadsorts']['types'][$thread['sortid']]) ? 1 : 0;
 $typetemplate = $tagscript = '';
-$optiondata = $optionlist = $skipaids = array();
+$optiondata = $optionlist = $skipaids = $skipaidlist = array();
 if($thread['sortid'] && $threadsort) {
 	if($forum['threadsorts']['types'][$thread['sortid']]) {
 		if(@include_once DISCUZ_ROOT.'./forumdata/cache/threadsort_'.$thread['sortid'].'.php') {
@@ -75,9 +76,10 @@ if($thread['sortid'] && $threadsort) {
 				$optiondata[$option['optionid']] = $option['value'];
 			}
 
-			$searchtitle = $searchvalue = array();
+			$searchtitle = $searchvalue = $searchunit = array();
 			foreach($_DTYPE as $optionid => $option) {
 				$optionlist[$option['identifier']]['title'] = $_DTYPE[$optionid]['title'];
+				$optionlist[$option['identifier']]['unit'] = $_DTYPE[$optionid]['unit'];
 				if($_DTYPE[$optionid]['type'] == 'checkbox') {
 					$optionlist[$option['identifier']]['value'] = '';
 					foreach(explode("\t", $optiondata[$optionid]) as $choiceid) {
@@ -100,13 +102,17 @@ if($thread['sortid'] && $threadsort) {
 				} else {
 					$optionlist[$option['identifier']]['value'] = $optiondata[$optionid];
 				}
-				$searchtitle[] = '/{('.$option['identifier'].')}/e';
-				$searchvalue[] = '/\[('.$option['identifier'].')value\]/e';
 			}
 
 			if($_DTYPETEMPLATE) {
+				foreach($_DTYPE as $option) {
+					$searchtitle[] = '/{('.$option['identifier'].')}/e';
+					$searchvalue[] = '/\[('.$option['identifier'].')value\]/e';
+					$searchunit[] = '/\[('.$option['identifier'].')unit\]/e';
+				}
 				$typetemplate = preg_replace($searchtitle, "showoption('\\1', 'title')", $_DTYPETEMPLATE);
 				$typetemplate = preg_replace($searchvalue, "showoption('\\1', 'value')", $typetemplate);
+				$typetemplate = preg_replace($searchunit, "showoption('\\1', 'unit')", $typetemplate);
 			}
 		}
 	}
@@ -130,7 +136,7 @@ if(empty($forum['allowview'])) {
 	showmessage('forum_access_view_disallow');
 }
 
-if($forum['formulaperm']) {
+if($forum['formulaperm'] && $adminid != 1) {
 	formulaperm($forum['formulaperm']);
 }
 
@@ -157,6 +163,12 @@ if($magicstatus) {
 	}
 }
 
+$hiddenreplies = getstatus($thread['status'], 2);
+
+$rushreply = getstatus($thread['status'], 3);
+
+$savepostposition = getstatus($thread['status'], 1);
+
 $threadpay = FALSE;
 if($thread['price'] > 0 && $thread['special'] == 0) {
 	if($maxchargespan && $timestamp - $thread['dateline'] >= $maxchargespan * 3600) {
@@ -178,23 +190,22 @@ $raterange = $modratelimit && $adminid == 3 && !$forum['ismoderator'] ? array() 
 $extra = rawurlencode($extra);
 
 $allowgetattach = !empty($forum['allowgetattach']) || ($allowgetattach && !$forum['getattachperm']) || forumperm($forum['getattachperm']);
-if(!$_DCACHE['usergroups'][$groupid]['allowgetattach']) {
-	$allowgetattach = 0;
-}
 $attachcredits = '';
 $getattachcredits = $forum['getattachcredits'] ? $forum['getattachcredits'] : $creditspolicy['getattach'];
 if($getattachcredits) {
 	$exemptvalue = $ismoderator ? 32 : 4;
 	if(!($exempt & $exemptvalue)) {
 		foreach($getattachcredits as $creditid => $v) {
-			$attachcredits .= $extcredits[$creditid]['title'].' '.$v.' '.$extcredits[$creditid]['unit'].'&nbsp;';
+			if($v) {
+				$attachcredits .= $extcredits[$creditid]['title'].' '.$v.' '.$extcredits[$creditid]['unit'].'&nbsp;';
+			}
 		}
 	}
 }
 $seccodecheck = ($seccodestatus & 4) && (!$seccodedata['minposts'] || $posts < $seccodedata['minposts']);
 $secqaacheck = $secqaa['status'][2] && (!$secqaa['minposts'] || $posts < $secqaa['minposts']);
 
-$postlist = $attachtags = $attachlist = array();
+$postlist = $attachtags = $attachlist = $threadstamp = array();
 $aimgcount = 0;
 $attachpids = -1;
 
@@ -202,6 +213,17 @@ if(empty($action) && $tid) {
 
 	$thisgid = $forum['type'] == 'forum' ? $forum['fup'] : $_DCACHE['forums'][$forum['fup']]['fup'];
 	$lastmod = $thread['moderated'] ? viewthread_lastmod() : array();
+	if(!$threadstamp && getstatus($thread['status'], 5)) {
+		$query = $db->query("SELECT action, stamp FROM {$tablepre}threadsmod WHERE tid='$tid' ORDER BY dateline DESC");
+		while($stamp = $db->fetch_array($query)) {
+			if($stamp['action'] == 'SPA') {
+				$threadstamp = $_DCACHE['stamps'][$stamp['stamp']];
+				break;
+			} elseif($stamp['action'] == 'SPD') {
+				break;
+			}
+		}
+	}
 
 	$showsettings = str_pad(decbin($showsettings), 3, '0', STR_PAD_LEFT);
 
@@ -339,7 +361,13 @@ if(empty($action) && $tid) {
 	}
 
 	$onlyauthoradd = $threadplughtml = '';
+
+  $extrahead = '<link rel="stylesheet" href="/jsgameviewer/view/default.css"/></script>'.
+    '<script language="JavaScript" type="text/javascript" src="/jsgameviewer/js/jquery-1.3.2.min.js"></script>'.
+    '<script language="JavaScript" type="text/javascript" src="/jsgameviewer/js/all.js"></script>';
+
 	if(empty($viewpid)) {
+		$ordertype = !isset($_GET['ordertype']) && getstatus($thread['status'], 4) ? 1 : intval($ordertype);
 		$authorid = intval($authorid);
 		if($authorid) {
 			$thread['replies'] = $sdb->result_first("SELECT COUNT(*) FROM {$tablepre}posts WHERE tid='$tid' AND invisible='0' AND authorid='$authorid'") - 1;
@@ -374,17 +402,27 @@ if(empty($action) && $tid) {
 			$realpage = $totalpage - $page + 1;
 			$start_limit = max(0, ($realpage - 2) * $ppp + $firstpagesize);
 			$numpost = ($page - 1) * $ppp;
-			$pageadd =  "ORDER BY dateline DESC LIMIT $start_limit, $ppp2";
+			if($ordertype != 1) {
+				$pageadd =  "ORDER BY dateline DESC LIMIT $start_limit, $ppp2";
+			} else {
+				$numpost = $thread['replies'] + 2 - $numpost + ($page > 1 ? 1 : 0);
+				$pageadd = "ORDER BY first ASC,dateline ASC LIMIT $start_limit, $ppp2";
+			}
 		} else {
 			$start_limit = $numpost = ($page - 1) * $ppp;
 			if($start_limit > $thread['replies']) {
 				$start_limit = $numpost = 0;
 				$page = 1;
 			}
-			$pageadd = "ORDER BY dateline LIMIT $start_limit, $ppp";
+			if($ordertype != 1) {
+				$pageadd = "ORDER BY dateline LIMIT $start_limit, $ppp";
+			} else {
+				$numpost = $thread['replies'] + 2 - $numpost + ($page > 1 ? 1 : 0);
+				$pageadd = "ORDER BY first DESC,dateline DESC LIMIT $start_limit, $ppp";
+			}
 		}
 
-		$multipage = multi($thread['replies'] + 1, $ppp, $page, "viewthread.php?tid=$tid&amp;extra=$extra".(isset($highlight) ? "&amp;highlight=".rawurlencode($highlight) : '').(!empty($authorid) ? "&amp;authorid=$authorid" : '').$specialextra);
+		$multipage = multi($thread['replies'] + 1, $ppp, $page, "viewthread.php?tid=$tid&amp;extra=$extra".($ordertype && $ordertype != getstatus($thread['status'], 4) ? "&amp;ordertype=$ordertype" : '').(isset($highlight) ? "&amp;highlight=".rawurlencode($highlight) : '').(!empty($authorid) ? "&amp;authorid=$authorid" : '').$specialextra);
 	} else {
 		$viewpid = intval($viewpid);
 		$pageadd = "AND p.pid='$viewpid'";
@@ -393,6 +431,35 @@ if(empty($action) && $tid) {
 	$newpostanchor = $postcount = $ratelogpids = 0;
 
 	$onlineauthors = array();
+
+
+	$query = "SELECT p.*, m.uid, m.username, m.groupid, m.adminid, m.regdate, m.lastactivity, m.posts, m.threads, m.digestposts, m.oltime,
+		m.pageviews, m.credits, m.extcredits1, m.extcredits2, m.extcredits3, m.extcredits4, m.extcredits5, m.extcredits6,
+		m.extcredits7, m.extcredits8, m.email, m.gender, m.showemail, m.invisible, mf.nickname, mf.site,
+		mf.icq, mf.qq, mf.yahoo, mf.msn, mf.taobao, mf.alipay, mf.location, mf.medals,
+		mf.sightml AS signature, mf.customstatus, mf.spacename $fieldsadd
+		FROM {$tablepre}posts p
+		LEFT JOIN {$tablepre}members m ON m.uid=p.authorid
+		LEFT JOIN {$tablepre}memberfields mf ON mf.uid=m.uid
+		$specialadd1 ";
+
+	$cachepids = $positionlist = array();
+	if($savepostposition && empty($onlyauthoradd) && empty($specialadd2) && empty($viewpid) && $ordertype != 1) {
+		$start = ($page - 1) * $ppp + 1;
+		$end = $start + $ppp;
+		$q2 = $db->query("SELECT pid, position FROM {$tablepre}postposition WHERE tid='$tid' AND position>='$start' AND position < $end ORDER BY position");
+		while ($post = $db->fetch_array($q2)) {
+			$cachepids[] = $post['pid'];
+			$positionlist[$post['pid']] = $post['position'];
+		}
+		$cachepids = implodeids($cachepids);
+		$pagebydesc = false;
+	}
+
+	$query .= $savepostposition && $cachepids ? "WHERE p.pid in($cachepids) ORDER BY pid ".($ordertype !=1 ? 'DESC' : 'ASC') : ("WHERE p.tid='$tid'".($auditstatuson ? '' : " AND p.invisible='0'")." $specialadd2 $onlyauthoradd $pageadd");
+
+/*
+	"WHERE p.tid='$tid'".($auditstatuson ? '' : " AND p.invisible='0'")." $specialadd2 $onlyauthoradd $pageadd");
 	$query = $sdb->query("SELECT p.*, m.uid, m.username, m.groupid, m.adminid, m.regdate, m.lastactivity, m.posts, m.threads, m.digestposts, m.oltime,
 		m.pageviews, m.credits, m.extcredits1, m.extcredits2, m.extcredits3, m.extcredits4, m.extcredits5, m.extcredits6,
 		m.extcredits7, m.extcredits8, m.email, m.gender, m.showemail, m.invisible, mf.nickname, mf.site,
@@ -403,11 +470,17 @@ if(empty($action) && $tid) {
 		LEFT JOIN {$tablepre}memberfields mf ON mf.uid=m.uid
 		$specialadd1
 		WHERE p.tid='$tid'".($auditstatuson ? '' : " AND p.invisible='0'")." $specialadd2 $onlyauthoradd $pageadd");
-
+*/
+	$query = $sdb->query($query);
 	while($post = $sdb->fetch_array($query)) {
 		if(($onlyauthoradd && $post['anonymous'] == 0) || !$onlyauthoradd) {
 			$postlist[$post['pid']] = viewthread_procpost($post);
 		}
+	}
+
+	if($savepostposition && $positionlist) {
+		foreach ($positionlist as $pid => $position)
+		$postlist[$pid]['number'] = $position;
 	}
 
 	if($thread['special'] > 0 && (empty($viewpid) || $viewpid == $firstpid)) {
@@ -494,11 +567,6 @@ if(empty($action) && $tid) {
 		task_newbie_complete();
 	}
 
-	$extrahead = '<link rel="stylesheet" href="/jsgameviewer/build/compressed.css"/>'.
-  	'<script language="JavaScript" type="text/javascript" src="/jsgameviewer/js/zh_cn.js">'.
-  	'</script><script language="JavaScript" type="text/javascript" src="/jsgameviewer/js/jquery-1.3.2.min.js">'.
-  	'</script><script language="JavaScript" type="text/javascript" src="/jsgameviewer/build/compressed.js"></script>';
-	
 	if(empty($viewpid)) {
 		include template('viewthread');
 	} else {
@@ -558,7 +626,7 @@ function viewthread_procpost($post, $special = 0) {
 	global $_DCACHE, $newpostanchor, $numpost, $thisbg, $postcount, $ratelogpids, $onlineauthors, $lastvisit, $thread,
 		$attachpids, $attachtags, $forum, $dateformat, $timeformat, $timeoffset, $userstatusby, $allowgetattach,
 		$ratelogrecord, $showimages, $forum, $discuz_uid, $showavatars, $pagebydesc, $ppp, $ppp2, $ppp3,
-		$firstpid, $threadpay, $sigviewcond;
+		$firstpid, $threadpay, $sigviewcond, $ordertype;
 
 	if(!$newpostanchor && $post['dateline'] > $lastvisit) {
 		$post['newpostanchor'] = '<a name="newpost"></a>';
@@ -567,13 +635,21 @@ function viewthread_procpost($post, $special = 0) {
 		$post['newpostanchor'] = '';
 	}
 
-	$post['lastpostanchor'] = $numpost == $thread['replies'] ? '<a name="lastpost"></a>' : '';
+	$post['lastpostanchor'] = ($ordertype != 1 && $numpost == $thread['replies']) || ($ordertype == 1 && $numpost == $thread['replies'] + 2) ? '<a name="lastpost"></a>' : '';
 
 	if($pagebydesc) {
-		$post['number'] = $numpost + $ppp2--;
+		if($ordertype != 1) {
+			$post['number'] = $numpost + $ppp2--;
+		} else {
+			$post['number'] = $post['first'] == 1 ? 1 : $numpost - $ppp2--;
+		}
 		$post['count'] = $ppp == $ppp3 ? $ppp - $postcount - 1 : $ppp3 - $postcount - 1;
 	} else {
-		$post['number'] = ++$numpost;
+		if($ordertype != 1) {
+			$post['number'] = ++$numpost;
+		} else {
+			$post['number'] = $post['first'] == 1 ? 1 : --$numpost;
+		}
 		$post['count'] = $postcount;
 	}
 
@@ -696,14 +772,15 @@ function viewthread_loadcache() {
 }
 
 function viewthread_lastmod() {
-	global $db, $tablepre, $dateformat, $timeformat, $timeoffset, $tid, $_DCACHE;
-	if($lastmod = $db->fetch_first("SELECT uid AS moduid, username AS modusername, dateline AS moddateline, action AS modaction, magicid
+	global $db, $tablepre, $dateformat, $timeformat, $threadstamp, $timeoffset, $tid, $_DCACHE;
+	if($lastmod = $db->fetch_first("SELECT uid AS moduid, username AS modusername, dateline AS moddateline, action AS modaction, magicid, stamp
 		FROM {$tablepre}threadsmod
 		WHERE tid='$tid' ORDER BY dateline DESC LIMIT 1")) {
 		include language('modactions');
 		$lastmod['modusername'] = $lastmod['modusername'] ? $lastmod['modusername'] : 'System';
 		$lastmod['moddateline'] = dgmdate("$dateformat $timeformat", $lastmod['moddateline'] + $timeoffset * 3600);
-		$lastmod['modaction'] = $modactioncode[$lastmod['modaction']] ? $modactioncode[$lastmod['modaction']] : '';
+		$threadstamp = $lastmod['modaction'] != 'SPA' ? array() : $_DCACHE['stamps'][$lastmod['stamp']];
+		$lastmod['modaction'] = ($modactioncode[$lastmod['modaction']] ? $modactioncode[$lastmod['modaction']] : '').($lastmod['modaction'] != 'SPA' ? '' : ' '.$_DCACHE['stamps'][$lastmod['stamp']]['text']);
 		if($lastmod['magicid']) {
 			require_once DISCUZ_ROOT.'./forumdata/cache/cache_magics.php';
 			$lastmod['magicname'] = $_DCACHE['magics'][$lastmod['magicid']]['name'];

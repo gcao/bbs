@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: admincp.inc.php 20621 2009-10-12 10:11:44Z monkey $
+	$Id: admincp.inc.php 20873 2009-10-28 04:42:10Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -72,7 +72,7 @@ if(!submitcheck('settingsubmit')) {
 		showtablefooter();
 		showformfooter();
 	} else {
-		cpmsg(lang('settings_uc_home_nonexistence'), '', '', '', FALSE);
+		cpmsg('uchome:settings_uc_home_nonexistence', '', '', '', FALSE);
 		exit();
 	}
 
@@ -84,7 +84,9 @@ if(!submitcheck('settingsubmit')) {
 	$db->query("REPLACE INTO {$tablepre}settings (variable, value) VALUES ('uchome', '$settingsnew[uchome]')");
 	$db->query("UPDATE {$tablepre}plugins SET available='1' WHERE identifier='uchome'");
 	$db->query("UPDATE {$tablepre}forums SET allowfeed='0'");
-	$db->query("UPDATE {$tablepre}forums SET allowfeed='1' WHERE fid IN (".implodeids($allowfeedsnew).")");
+	if($allowfeedsnew) {
+		$db->query("UPDATE {$tablepre}forums SET allowfeed='1' WHERE fid IN (".implodeids($allowfeedsnew).")");
+	}
 	updatecache('plugins');
 	updatecache('settings');
 	cpmsg('plugins_settings_succeed', $BASESCRIPT.'?action=plugins&operation=config&identifier=uchome&mod=admincp', 'succeed');

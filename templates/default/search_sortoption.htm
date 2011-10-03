@@ -17,7 +17,7 @@
 						<option value="1">{lang more_than}</option>
 						<option value="2">{lang lower_than}</option>
 					</select>&nbsp;&nbsp;
-					<input type="text" name="searchoption[$optionid][value]" size="45" value="$option[value]" />
+					<input type="text" name="searchoption[$optionid][value]" size="35" value="$option[value]" />
 					<input type="hidden" name="searchoption[$optionid][type]" value="number">
 				<!--{else}-->
 					<input type="text" name="searchoption[$optionid][value]" size="45" value="$option[value]" />
@@ -25,6 +25,7 @@
 			<!--{elseif in_array($option['type'], array('radio', 'checkbox', 'select'))}-->
 				<!--{if $option[type] == 'select'}-->
 					<select name="searchoption[$optionid][value]">
+						<option value="0">{lang unlimited}</option>
 					<!--{loop $option['choices'] $id $value}-->
 						<option value="$id" $option['value'][$id]>$value</option>
 					<!--{/loop}-->
@@ -42,6 +43,7 @@
 					<input type="hidden" name="searchoption[$optionid][type]" value="checkbox">
 				<!--{/if}-->
 			<!--{/if}-->
+		$option[unit]
 		</td></tr>
 	<!--{/if}-->
 <!--{/loop}-->

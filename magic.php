@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: magic.php 20312 2009-09-23 08:04:05Z tiger $
+	$Id: magic.php 21049 2009-11-09 07:05:47Z tiger $
 */
 
 define('CURSCRIPT', 'magic');
@@ -49,7 +49,7 @@ if($action == 'index') {
 
 	$hotmagiclist = $recommendmagiclist = array();
 
-	$query = $db->query("SELECT magicid, name, identifier, description, price FROM {$tablepre}magics WHERE recommend='1' ORDER BY displayorder");
+	$query = $db->query("SELECT magicid, name, identifier, description, price FROM {$tablepre}magics WHERE available='1' AND recommend='1' ORDER BY displayorder");
 	while($recommenmagic = $db->fetch_array($query)) {
 		$recommenmagic['pic'] = strtolower($recommenmagic['identifier']).'.gif';
 		$recommendmagiclist[] = $recommenmagic;

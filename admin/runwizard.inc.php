@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: runwizard.inc.php 19961 2009-09-15 23:35:27Z wangjinbo $
+	$Id: runwizard.inc.php 19960 2009-09-15 23:18:37Z wangjinbo $
 */
 
 

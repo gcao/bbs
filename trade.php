@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: trade.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: trade.php 21135 2009-11-17 02:30:08Z monkey $
 */
 
 define('NOROBOT', TRUE);
@@ -153,7 +153,8 @@ if(!empty($orderid)) {
 					"buyercontact='".dhtmlspecialchars($newbuyercontact)."'",
 					"buyerzip='".dhtmlspecialchars($newbuyerzip)."'",
 					"buyerphone='".dhtmlspecialchars($newbuyerphone)."'",
-					"buyermobile='".dhtmlspecialchars($newbuyermobile)."'"
+					"buyermobile='".dhtmlspecialchars($newbuyermobile)."'",
+					"buyermsg='".dhtmlspecialchars($newbuyermsg)."'",
 				);
 
 			}
@@ -240,7 +241,7 @@ if(!empty($orderid)) {
 		$pay['price'] = $trade['price'];
 		$credit = 0;
 		if($creditstransextra[5] != -1 && $trade['credit']) {
-			$credit = $number * $trade['credit'];			
+			$credit = $number * $trade['credit'];
 		}
 
 		$price = $pay['price'] * $pay['number'];
@@ -267,7 +268,7 @@ if(!empty($orderid)) {
 			('$trade[tid]', '$trade[pid]', '$orderid', '$trade[subject]', '$price', '$trade[quality]', '$trade[itemtype]', '$number', '$tax',
 			 '$trade[locus]', '$trade[sellerid]', '$trade[seller]', '$trade[account]', '$discuz_uid', '$discuz_user', '$buyercontact', 0, '$buyermsg', '$timestamp', '$offline', '$buyerzip', '$buyerphone', '$buyermobile', '$buyername', '$transport', '$transportfee', '$trade[price]', 0, '$credit', '$trade[credit]')");
 
-		$db->query("UPDATE {$tablepre}trades SET amount=amount-'$number' WHERE tid='$trade[tid]' AND pid='$trade[pid]'", 'UNBUFFERED');		
+		$db->query("UPDATE {$tablepre}trades SET amount=amount-'$number' WHERE tid='$trade[tid]' AND pid='$trade[pid]'", 'UNBUFFERED');
 		showmessage('trade_order_created', 'trade.php?orderid='.$orderid);
 	}
 

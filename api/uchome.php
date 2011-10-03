@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: uchome.php 20560 2009-10-09 05:29:36Z monkey $
+	$Id: uchome.php 20555 2009-10-09 03:00:53Z liuqiang $
 */
 
 @chdir('../');

@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: common.inc.php 20689 2009-10-14 09:42:41Z monkey $
+	$Id: common.inc.php 21331 2010-01-06 06:42:22Z cnteacher $
 */
 error_reporting(0);
 set_magic_quotes_runtime(0);
@@ -15,7 +15,7 @@ define('SYS_DEBUG', FALSE);
 define('IN_DISCUZ', TRUE);
 define('DISCUZ_ROOT', substr(dirname(__FILE__), 0, -7));
 define('MAGIC_QUOTES_GPC', get_magic_quotes_gpc());
-!defined('CURSCRIPT') && define('CURSCRIPT', '');
+//!defined('CURSCRIPT') && define('CURSCRIPT', '');
 
 if(PHP_VERSION < '4.1.0') {
 	$_GET = &$HTTP_GET_VARS;
@@ -48,7 +48,7 @@ if (!MAGIC_QUOTES_GPC && $_FILES) {
 }
 
 $charset = $dbs = $dbcharset = $forumfounders = $metakeywords = $extrahead = $seodescription = $mnid = '';
-$plugins = $pluginclasses = $hooks = $admincp = $jsmenu = $forum = $thread = $language = $actioncode = $modactioncode = $lang = array();
+$plugins = $admincp = $scriptlang = $forum = $thread = $language = $jsmenu = $actioncode = $modactioncode = $pluginclasses = $hooks = $lang = array();
 $_DCOOKIE = $_DSESSION = $_DCACHE = $_DPLUGIN = $advlist = array();
 
 require_once DISCUZ_ROOT.'./config.inc.php';
@@ -71,7 +71,7 @@ $inajax = !empty($inajax);
 $handlekey = !empty($handlekey) ? htmlspecialchars($handlekey) : '';
 $timestamp = time();
 
-if($attackevasive && CURSCRIPT != 'seccode') {
+if($attackevasive && (!define('CURSCRIPT') || CURSCRIPT != 'seccode')) {
 	require_once DISCUZ_ROOT.'./include/security.inc.php';
 }
 
@@ -99,6 +99,32 @@ unset($onlineipmatches);
 
 $cachelost = (@include DISCUZ_ROOT.'./forumdata/cache/cache_settings.php') ? '' : 'settings';
 @extract($_DCACHE['settings']);
+
+if(defined('BINDDOMAIN') && BINDDOMAIN && !$cachelost && $binddomains && $forumdomains) {
+	$loadforum = isset($binddomains[$_SERVER['HTTP_HOST']]) ? max(0, intval($binddomains[$_SERVER['HTTP_HOST']])) : 0;
+	if($loadforum) {
+		if(BINDDOMAIN == 'forumdisplay' && $loadforum == $fid) {
+			header("HTTP/1.1 301 Moved Permanently");
+			$query_string = preg_replace('/\??fid='.$fid.'&?/is', '', $_SERVER['QUERY_STRING']);
+			dheader("Location: http://$_SERVER[HTTP_HOST]/{$indexname}".($query_string ? "?{$query_string}" : ''));
+		}
+		if(BINDDOMAIN == 'index') {
+			$fid = $_GET['fid'] = $_REQUEST['fid'] = $loadforum;
+			define('CURSCRIPT', 'forumdisplay');
+		}
+	} else {
+		if(BINDDOMAIN == 'forumdisplay' && isset($forumdomains[$fid])) {
+			$host = $forumdomains[$fid];
+			header("HTTP/1.1 301 Moved Permanently");
+			dheader("Location: http://{$host}/{$indexname}");
+		}
+		define('CURSCRIPT', BINDDOMAIN);
+	}
+}
+if(!defined('CURSCRIPT')) {
+	define('CURSCRIPT', defined('BINDDOMAIN') ? BINDDOMAIN : '');
+}
+
 
 if(!defined('STAT_ID') && isset($statdisable) && empty($statdisable)) {
 	define('STAT_ID', $_DCACHE['settings']['statid']);
@@ -289,9 +315,6 @@ if($discuz_uid && $_DSESSION) {
 	}
 }
 
-$tpp = intval(empty($_DSESSION['tpp']) ? $topicperpage : $_DSESSION['tpp']);
-$ppp = intval(empty($_DSESSION['ppp']) ? $postperpage : $_DSESSION['ppp']);
-
 if(!in_array($adminid, array(1, 2, 3))) {
 	$alloweditpost = $alloweditpoll = $allowstickthread = $allowmodpost = $allowdelpost = $allowmassprune
 		= $allowrefund = $allowcensorword = $allowviewip = $allowbanip = $allowedituser = $allowmoduser
@@ -305,6 +328,8 @@ $page = isset($page) ? max(1, intval($page)) : 1;
 $tid = isset($tid) && is_numeric($tid) ? $tid : 0;
 $fid = isset($fid) && is_numeric($fid) ? $fid : 0;
 $typeid = isset($typeid) ? intval($typeid) : 0;
+$tpp = intval(empty($_DSESSION['tpp']) ? $topicperpage : $_DSESSION['tpp']);
+$ppp = intval(empty($_DSESSION['ppp']) ? $postperpage : $_DSESSION['ppp']);
 
 $modthreadkey = isset($modthreadkey) && $modthreadkey == modthreadkey($tid) ? $modthreadkey : '';
 $auditstatuson = $modthreadkey ? true : false;
@@ -373,6 +398,10 @@ if($cronnextrun && $cronnextrun <= $timestamp) {
 	runcron();
 }
 
+if((!empty($_DCACHE['advs']) || $globaladvs) && !defined('IN_ADMINCP')) {
+	require_once DISCUZ_ROOT.'./include/advertisements.inc.php';
+}
+
 if(isset($plugins['include']) && is_array($plugins['include'])) {
 	foreach($plugins['include'] as $pluginid => $include) {
 		if(!$include['adminid'] || ($include['adminid'] && $adminid > 0 && $include['adminid'] >= $adminid)) {
@@ -382,10 +411,6 @@ if(isset($plugins['include']) && is_array($plugins['include'])) {
 			@include_once DISCUZ_ROOT.'./plugins/'.$include['script'].'.inc.php';
 		}
 	}
-}
-
-if((!empty($_DCACHE['advs']) || $globaladvs) && !defined('IN_ADMINCP')) {
-	require_once DISCUZ_ROOT.'./include/advertisements.inc.php';
 }
 
 if(isset($allowvisit) && $allowvisit == 0 && !(CURSCRIPT == 'member' && ($action == 'groupexpiry' || $action == 'activate'))) {

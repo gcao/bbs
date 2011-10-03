@@ -2,7 +2,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: moderate.js 20062 2009-09-18 02:16:06Z monkey $
+	$Id: moderate.js 20061 2009-09-18 02:07:08Z monkey $
 */
 
 function modaction(action, pid, extra) {

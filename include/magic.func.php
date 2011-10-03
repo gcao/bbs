@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: magic.func.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: magic.func.php 19412 2009-08-29 01:48:51Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {

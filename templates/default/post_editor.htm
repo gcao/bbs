@@ -37,8 +37,10 @@
 			</div>
 			<div class="maxbtn">
 				<a id="{$editorid}_cmd_smilies" title="{lang post_smilies}">{lang post_smilies}</a>
+				<div id="{$editorid}_cmd_image_notice" class="haspic" style="display:none">!</div>
 				<a id="{$editorid}_cmd_image" title="{lang e_image}">{lang e_image}</a>
 				<!--{if $allowpostattach}-->
+					<div id="{$editorid}_cmd_attach_notice" class="hasatt" style="display:none">!</div>
 					<a id="{$editorid}_cmd_attach" title="{lang e_attach}">{lang e_attach}</a>
 				<!--{/if}-->
 				<!--{if $forum['allowmediacode']}-->

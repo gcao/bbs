@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: attach.inc.php 20424 2009-09-27 03:27:28Z monkey $
+	$Id: attach.inc.php 20422 2009-09-27 03:19:30Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {

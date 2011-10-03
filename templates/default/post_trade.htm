@@ -1,4 +1,5 @@
 <input type="hidden" name="trade" value="yes" />
+<input type="hidden" name="item_type" value="1" />
 <div class="specialpost s_clear">
 	<div class="specialinfo">
 		<dl>
@@ -30,28 +31,15 @@
 				<!--{/if}-->
 				</span>
 			</dd>
-			<dt></dt>
-			<dd class="float_postinfo">
+			<dt><label for="item_number">{lang post_trade_number}:</label></dt>
+			<dd class="s_clear">
+				<span class="float_typeid"><input id="item_number" name="item_number" type="text" class="spmediuminput txt" value="$trade[amount]" tabindex="1" /></span>
 				<span class="float_typeid short_select">
 					<select id="item_quality" name="item_quality" tabindex="1">
 					<option value="1" <!--{if $trade['quality'] == 1}-->selected="selected"<!--{/if}-->>{lang trade_new}</option>
 					<option value="2" <!--{if $trade['quality'] == 2}-->selected="selected"<!--{/if}-->>{lang trade_old}</option>
 					</select>
 				</span>
-				<span class="float_typeid short_select">
-					<select id="item_type" name="item_type" tabindex="1">
-					<option value="1" <!--{if $trade['itemtype'] == 1}-->selected<!--{/if}-->>{lang trade_type_buy}</option>
-					<option value="2" <!--{if $trade['itemtype'] == 2}-->selected<!--{/if}-->>{lang trade_type_service}</option>
-					<option value="3" <!--{if $trade['itemtype'] == 3}-->selected<!--{/if}-->>{lang trade_type_auction}</option>
-					<option value="4" <!--{if $trade['itemtype'] == 4}-->selected<!--{/if}-->>{lang trade_type_donate}</option>
-					<option value="5" <!--{if $trade['itemtype'] == 5}-->selected<!--{/if}-->>{lang trade_type_compensate}</option>
-					<option value="6" <!--{if $trade['itemtype'] == 6}-->selected<!--{/if}-->>{lang trade_type_bonus}</option>
-					</select>
-				</span>
-			</dd>
-			<dt><label for="item_number">{lang post_trade_number}:</label></dt>
-			<dd>
-				<input id="item_number" name="item_number" type="text" class="spmediuminput txt" value="$trade[amount]" tabindex="1"  />
 			</dd>
 			<dt>{lang post_trade_price}</dt>
 			<dd>
@@ -117,7 +105,6 @@
 
 <script type="text/javascript" reload="1">
 	simulateSelect('item_quality');
-	simulateSelect('item_type');
 	simulateSelect('paymethod');
 	{if $tradetypes && !empty($forum['tradetypes'])}
 		simulateSelect('tradetypeid');

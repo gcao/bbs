@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: forumselect.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: forumselect.inc.php 20900 2009-10-29 02:49:38Z tiger $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -42,6 +42,9 @@ foreach($commonfids as $fid) {
 }
 
 foreach($_DCACHE['forums'] as $forum) {
+	if(!$forum['status'] || $forum['status'] == 2) {
+		continue;
+	}
 	if($forum['type'] == 'group') {
 		$grouplist .= '<li fid="'.$forum['fid'].'">'.$forum['name'].'</li>';
 		$visible[$forum['fid']] = true;

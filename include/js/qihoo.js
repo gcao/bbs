@@ -2,7 +2,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: qihoo.js 19605 2009-09-07 06:18:45Z monkey $
+	$Id: qihoo.js 17449 2008-12-22 08:58:53Z cnteacher $
 */
 
 var qihoo_num = 0;

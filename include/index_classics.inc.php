@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: index_classics.inc.php 19604 2009-09-07 06:12:35Z monkey $
+	$Id: index_classics.inc.php 21260 2009-11-23 08:33:35Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -101,18 +101,23 @@ if(!$gid) {
 	unset($_DCACHE['announcements']);
 
 	$sql = !empty($accessmasks) ?
-				"SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, f.inheritedmod, f.forumcolumns, f.simple, ff.description, ff.moderators, ff.icon, ff.viewperm, ff.redirect, a.allowview FROM {$tablepre}forums f
+				"SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, f.inheritedmod, f.forumcolumns, f.simple, ff.description, ff.moderators, ff.icon, ff.viewperm, ff.redirect, ff.extra, a.allowview FROM {$tablepre}forums f
 					LEFT JOIN {$tablepre}forumfields ff ON ff.fid=f.fid
 					LEFT JOIN {$tablepre}access a ON a.uid='$discuz_uid' AND a.fid=f.fid
-					WHERE f.status='1' ORDER BY f.type, f.displayorder"
-				: "SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, f.inheritedmod, f.forumcolumns, f.simple, ff.description, ff.moderators, ff.icon, ff.viewperm, ff.redirect FROM {$tablepre}forums f
+					WHERE f.status>'0' ORDER BY f.type, f.displayorder"
+				: "SELECT f.fid, f.fup, f.type, f.name, f.threads, f.posts, f.todayposts, f.lastpost, f.inheritedmod, f.forumcolumns, f.simple, ff.description, ff.moderators, ff.icon, ff.viewperm, ff.redirect, ff.extra FROM {$tablepre}forums f
 					LEFT JOIN {$tablepre}forumfields ff USING(fid)
-					WHERE f.status='1' ORDER BY f.type, f.displayorder";
+					WHERE f.status>'0' ORDER BY f.type, f.displayorder";
 
 	$query = $db->query($sql);
 
 	while($forum = $db->fetch_array($query)) {
 		$forumname[$forum['fid']] = strip_tags($forum['name']);
+		$forum['extra'] = unserialize($forum['extra']);
+		if(!is_array($forum['extra'])) {
+			$forum['extra'] = array();
+		}
+
 		if($forum['type'] != 'group') {
 
 			$threads += $forum['threads'];
@@ -133,7 +138,7 @@ if(!$gid) {
 				$forumlist[$forum['fup']]['posts'] += $forum['posts'];
 				$forumlist[$forum['fup']]['todayposts'] += $forum['todayposts'];
 				if($subforumsindex && $forumlist[$forum['fup']]['permission'] == 2 && !($forumlist[$forum['fup']]['simple'] & 16) || ($forumlist[$forum['fup']]['simple'] & 8)) {
-					$forumlist[$forum['fup']]['subforums'] .= '<a href="forumdisplay.php?fid='.$forum['fid'].'">'.$forum['name'].'</a>&nbsp;&nbsp;';
+					$forumlist[$forum['fup']]['subforums'] .= '<a href="forumdisplay.php?fid='.$forum['fid'].'" '.($forum['extra']['namecolor'] ? ' style="color: ' . $forum['extra']['namecolor'].';"' : '') . '>'.$forum['name'].'</a>&nbsp;&nbsp;';
 				}
 
 			}

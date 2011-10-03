@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <root>
 	<item id="Title"><![CDATA[Discuz! Plugin]]></item>
-	<item id="Version"><![CDATA[7.1]]></item>
+	<item id="Version"><![CDATA[7.2]]></item>
 	<item id="Data">
 		<item id="plugin">
 			<item id="available"><![CDATA[0]]></item>
@@ -12,7 +12,7 @@
 			<item id="datatables"><![CDATA[]]></item>
 			<item id="directory"><![CDATA[manyou/]]></item>
 			<item id="copyright"><![CDATA[Comsenz Inc.]]></item>
-			<item id="version"><![CDATA[1.0.0]]></item>
+			<item id="version"><![CDATA[1.0.1]]></item>
 			<item id="__modules">
 				<item id="0">
 					<item id="name"><![CDATA[plugin]]></item>
@@ -30,7 +30,7 @@
 				</item>
 			</item>
 		</item>
-		<item id="version"><![CDATA[7.1]]></item>
+		<item id="version"><![CDATA[7.2]]></item>
 		<item id="vars">
 			<item id="0">
 				<item id="displayorder"><![CDATA[0]]></item>
@@ -57,7 +57,7 @@ Manyou Open Platform(Manyou开放平台/MYOP)服务是由Comsenz公司为应用�
 		<item id="language">
 			<item id="scriptlang">
 				<item id="nofounder"><![CDATA[只有创始人才可以进入应用管理，请返回。]]></item>
-				<item id="myop_error"><![CDATA[用户应用服务开启失败，失败原因：<br>{$res[errMessage]} (ERRCODE:{$res[errCode]})<br><br><a href=\"http://www.discuz.net/index.php?gid=141\" target=\"_blank\">如果有疑问，请访问我们的技术论坛寻求帮助</a>。]]></item>
+				<item id="myop_error"><![CDATA[用户应用服务开启失败，失败原因：<br>{$res[errMessage]} (ERRCODE:{$res[errCode]})<br><br><a href="http://www.discuz.net/index.php?gid=141" target="_blank">如果有疑问，请访问我们的技术论坛寻求帮助</a>。]]></item>
 				<item id="myop_open"><![CDATA[用户应用服务已开启。]]></item>
 				<item id="myop_close"><![CDATA[用户应用服务已关闭。]]></item>
 				<item id="myop_sync"><![CDATA[站点信息已成功同步。]]></item>

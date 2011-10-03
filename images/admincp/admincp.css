@@ -193,8 +193,8 @@ h3{ margin-bottom:10px; font-size:14px; color:#09C; }
 	.tb2 tr.hover:hover td { background: #F2F9FD; }
 	.tb2.tdhover tr:hover td { background: none; }
 	.tb2.tdhover tr td:hover { background: #F2F9FD; }
-	.tb2 td{ padding:5px 5px 5px 0; border-top: 1px dotted #DEEFFB; }
-	.tb2 th{ padding:5px 5px 5px 0; line-height:21px; font-size: 12px; }
+	.tb2 td{ padding:5px 5px 3px 0; border-top: 1px dotted #DEEFFB; }
+	.tb2 th{ padding:5px 5px 3px 0; line-height:21px; font-size: 12px; }
 	.tb2 .txt, .tb2 .txtnobd{ width:100px; margin-right:10px; }
 	.td21{ width:150px; font-weight:700; }
 	.td22{ width:100px; font-weight:700; }
@@ -204,7 +204,7 @@ h3{ margin-bottom:10px; font-size:14px; color:#09C; }
 		.td25 .txt{ width:40px; }
 	.td26{}
 		.td26 .txt, .td26 .txtnobd{ width:90%; *width:280px; }
-	.tb2 .td27{ padding:10px 0 3px 5px; font-weight:700; }
+	.tb2 .td27{ padding:3px 0 3px 5px; font-weight:700; }
 		.tb2 .td27:hover { background: none; }
 	.td28 .txt{ width:40px; }
 	.td29 .txt{ width:200px; }
@@ -371,7 +371,7 @@ h3{ margin-bottom:10px; font-size:14px; color:#09C; }
 .diff-added{ background:#CFC !important; }
 
 /* calendar */
-#calendar_week .dropmenu{ position:relative; margin-top:0; border:none; text-align:left; text-decoration:underline; }
+#calendar_week .dropmenu{ filter: none; opacity: 1; background: none; margin-left: 0;position:relative; margin-top:0; border:none; text-align:left; text-decoration:underline; }
 .calendar_checked, .calendar_checked a:link, .calendar_checked a:visited{ color:#333; }
 
 /* sub table */

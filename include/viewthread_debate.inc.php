@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: viewthread_debate.inc.php 19963 2009-09-16 00:22:21Z monkey $
+	$Id: viewthread_debate.inc.php 21214 2009-11-20 07:17:05Z liulanbo $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -43,12 +43,12 @@ $debate['umpireurl'] = rawurlencode($debate['umpire']);
 list($debate['bestdebater'], $debate['bestdebateruid'], $debate['bestdebaterstand'], $debate['bestdebatervoters'], $debate['bestdebaterreplies']) = explode("\t", $debate['bestdebater']);
 $debate['bestdebaterurl'] = rawurlencode($debate['bestdebater']);
 
-$query = $sdb->query("SELECT author, authorid FROM {$tablepre}posts p LEFT JOIN {$tablepre}debateposts dp ON p.pid=dp.pid WHERE p.tid='$tid' AND p.invisible='0' AND dp.stand='1' ORDER BY p.dateline DESC LIMIT 5");
+$query = $sdb->query("SELECT author, authorid FROM {$tablepre}posts p LEFT JOIN {$tablepre}debateposts dp ON p.pid=dp.pid WHERE p.tid='$tid' AND p.invisible='0' AND dp.stand='1' GROUP BY dp.uid ORDER BY p.dateline DESC LIMIT 5");
 while($affirmavatar = $sdb->fetch_array($query)) {
 	$debate['affirmavatars'] .= '<a title="'.$affirmavatar['author'].'" target="_blank" href="space.php?uid='.$affirmavatar['authorid'].'">'.discuz_uc_avatar($affirmavatar['authorid'], 'small').'</a>';
 }
 
-$query = $sdb->query("SELECT author, authorid FROM {$tablepre}posts p LEFT JOIN {$tablepre}debateposts dp ON p.pid=dp.pid WHERE p.tid='$tid' AND p.invisible='0' AND dp.stand='2' ORDER BY p.dateline DESC LIMIT 5");
+$query = $sdb->query("SELECT author, authorid FROM {$tablepre}posts p LEFT JOIN {$tablepre}debateposts dp ON p.pid=dp.pid WHERE p.tid='$tid' AND p.invisible='0' AND dp.stand='2' GROUP BY dp.uid ORDER BY p.dateline DESC LIMIT 5");
 while($negaavatar = $sdb->fetch_array($query)) {
 	$debate['negaavatars'] .= '<a title="'.$negaavatar['author'].'" target="_blank" href="space.php?uid='.$negaavatar['authorid'].'">'.discuz_uc_avatar($negaavatar['authorid'], 'small').'</a>';
 }

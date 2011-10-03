@@ -104,8 +104,8 @@
 						{if $member[groupid] == 4 || $member[groupid] == 5}
 							<input type="radio" name="bannew" id="bannew_0" value="0" checked="checked" class="radio" /> <label for="bannew_0">{lang modcp_members_status_normal}</label> 
 						{/if}
-						<input type="radio" name="bannew" id="bannew_4" value="4" {if $member[groupid] != 4 && $member[groupid] != 5}checked="checked"{/if} class="radio" /> <label for="bannew_4">{lang modcp_members_status_banpost}</label> 
-						<input type="radio" name="bannew" id="bannew_5" value="5" class="radio" /> <label for="bannew_5">{lang modcp_members_status_banvisit}</label>
+						{if $member[groupid] != 4}<input type="radio" name="bannew" id="bannew_4" value="4" {if $member[groupid] != 4 && $member[groupid] != 5}checked="checked"{/if} class="radio" /> <label for="bannew_4">{lang modcp_members_status_banpost}</label> {/if}
+						{if $member[groupid] != 5}<input type="radio" name="bannew" id="bannew_5" value="5" class="radio" /> <label for="bannew_5">{lang modcp_members_status_banvisit}</label>{/if}
 					</td>
 				</tr>
 				<tr>

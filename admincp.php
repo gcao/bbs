@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: admincp.php 20569 2009-10-09 09:43:05Z monkey $
+	$Id: admincp.php 20568 2009-10-09 09:38:53Z monkey $
 */
 
 define('IN_ADMINCP', TRUE);

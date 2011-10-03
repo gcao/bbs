@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: rss.php 20151 2009-09-21 01:46:53Z monkey $
+	$Id: rss.php 20150 2009-09-21 01:46:30Z monkey $
 */
 
 

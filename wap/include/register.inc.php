@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: register.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: register.inc.php 21057 2009-11-10 01:05:36Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -36,6 +36,7 @@ if(empty($username)) {
 
 } else {
 
+	@include_once DISCUZ_ROOT.'./forumdata/cache/cache_register.php';
 	require_once DISCUZ_ROOT.'./uc_client/client.php';
 	$email = trim(wapconvert($email));
 	$username = trim(wapconvert($username));
@@ -50,8 +51,8 @@ if(empty($username)) {
 		wapmsg('register_invite');
 	}
 
-	if($ipregctrl) {
-		foreach(explode("\n", $ipregctrl) as $ctrlip) {
+	if($_DCACHE['ipctrl']['ipregctrl']) {
+		foreach(explode("\n", $_DCACHE['ipctrl']['ipregctrl']) as $ctrlip) {
 			if(preg_match("/^(".preg_quote(($ctrlip = trim($ctrlip)), '/').")/", $onlineip)) {
 				$ctrlip = $ctrlip.'%';
 				$regctrl = 72;
@@ -60,6 +61,15 @@ if(empty($username)) {
 		}
 	} else {
 		$ctrlip = $onlineip;
+	}
+
+	if($_DCACHE['ipctrl']['ipverifywhite']) {
+		foreach(explode("\n", $_DCACHE['ipctrl']['ipverifywhite']) as $ctrlip) {
+			if(preg_match("/^(".preg_quote(($ctrlip = trim($ctrlip)), '/').")/", $onlineip)) {
+				$regverify = 0;
+				break;
+			}
+		}
 	}
 
 	if($regctrl) {

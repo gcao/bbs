@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: members.inc.php 20693 2009-10-15 02:30:16Z monkey $
+	$Id: members.inc.php 21170 2009-11-19 01:59:32Z liulanbo $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -23,6 +23,7 @@ if(!$operation) {
 		showsubmenu('nav_members', array(
 			array('search', 'members', 1),
 			array('clean', 'members&operation=clean', 0),
+			array('nav_repeat', 'members&operation=repeat', 0),
 		));
 		showtips('members_admin_tips');
 		searchmembers();
@@ -60,7 +61,9 @@ if(!$operation) {
 				$usergroups[$member['groupid']]['grouptitle'],
 				"<a href=\"$BASESCRIPT?action=members&operation=group&uid=$member[uid]\" class=\"act\">$lang[usergroup]</a><a href=\"$BASESCRIPT?action=members&operation=access&uid=$member[uid]\" class=\"act\">$lang[members_access]</a>".
 				($extcredits ? "<a href=\"$BASESCRIPT?action=members&operation=credit&uid=$member[uid]\" class=\"act\">$lang[credits]</a>" : "<span disabled>$lang[edit]</span>").
-				"<a href=\"$BASESCRIPT?action=members&operation=medal&uid=$member[uid]\" class=\"act\">$lang[medals]</a><a href=\"$BASESCRIPT?action=members&operation=edit&uid=$member[uid]\" class=\"act\">$lang[detail]</a>"
+				"<a href=\"$BASESCRIPT?action=members&operation=medal&uid=$member[uid]\" class=\"act\">$lang[medals]</a>".
+				"<a href=\"$BASESCRIPT?action=members&operation=repeat&uid=$member[uid]\" class=\"act\">$lang[members_repeat]</a>".
+				"<a href=\"$BASESCRIPT?action=members&operation=edit&uid=$member[uid]\" class=\"act\">$lang[detail]</a>"
 			), TRUE);
 		}
 
@@ -78,6 +81,108 @@ if(!$operation) {
 
 	}
 
+} elseif($operation == 'repeat') {
+
+	if(empty($uid) && empty($username) && empty($ip)) {
+
+		shownav('user', 'nav_members');
+		showsubmenu('nav_members', array(
+			array('search', 'members', 0),
+			array('clean', 'members&operation=clean', 0),
+			array('nav_repeat', 'members&operation=repeat', 1),
+		));
+
+		showformheader("members&operation=repeat");
+		showtableheader();
+		showsetting('members_search_repeatuser', 'username', '', 'text');
+		showsetting('members_search_uid', 'uid', '', 'text');
+		showsetting('members_search_repeatip', 'ip', $inputip, 'text');
+		showsubmit('submit', 'submit');
+		showtablefooter();
+		showformfooter();
+
+	} else {
+
+		if(!empty($username)) {
+			$searchmember = $db->fetch_first("SELECT username, regip, lastip FROM {$tablepre}members WHERE username='$username'");
+			unset($username);
+		} elseif(!empty($uid)) {
+			$searchmember = $db->fetch_first("SELECT username, regip, lastip FROM {$tablepre}members WHERE uid='$uid'");
+			unset($uid);
+		} elseif(!empty($ip)) {
+			$ids = $regip = $lastip = $ip;
+			$ids = "'".$ids."'";
+		}
+
+		if($searchmember) {
+			$ips = array();
+			foreach(array('regip', 'lastip') as $iptype) {
+				if($searchmember[$iptype] != '' && $searchmember[$iptype] != 'hidden') {
+					$ips[] = $searchmember[$iptype];
+				}
+			}
+			$ips = array_unique($ips);
+			$ids = implodeids($ips);
+			$repeatip = " AND (regip IN ($ids) OR lastip IN ($ids))";
+		}
+		$searchmember['username'] .= ' (IP '.htmlspecialchars($ids).')';
+		countmembers();
+
+		$usergroups = array();
+		$query = $db->query("SELECT groupid, type, grouptitle FROM {$tablepre}usergroups");
+		while($group = $db->fetch_array($query)) {
+			switch($group['type']) {
+				case 'system': $group['grouptitle'] = '<b>'.$group['grouptitle'].'</b>'; break;
+				case 'special': $group['grouptitle'] = '<i>'.$group['grouptitle'].'</i>'; break;
+			}
+			$usergroups[$group['groupid']] = $group;
+		}
+
+		$multipage = multi($membernum, $memberperpage, $page, "$BASESCRIPT?action=members&submit=yes".$urladd);
+
+		$query = $db->query("SELECT uid, username, adminid, groupid, credits, extcredits1, extcredits2,
+				extcredits3, extcredits4, extcredits5, extcredits6, extcredits7, extcredits8, posts FROM {$tablepre}members WHERE $conditions LIMIT $start_limit, $memberperpage");
+
+		while($member = $db->fetch_array($query)) {
+			$memberextcredits = array();
+			foreach($extcredits as $id => $credit) {
+				$memberextcredits[] = $extcredits[$id]['title'].': '.$member['extcredits'.$id];
+			}
+			$members .= showtablerow('', array('class="td25"', '', 'title="'.implode("\n", $memberextcredits).'"'), array(
+				"<input type=\"checkbox\" name=\"uidarray[]\" value=\"$member[uid]\"".($member['adminid'] == 1 ? 'disabled' : '')." class=\"checkbox\">",
+				"<a href=\"space.php?uid=$member[uid]\" target=\"_blank\">$member[username]</a>",
+				$member['credits'],
+				$member['posts'],
+				$usergroups[$member['adminid']]['grouptitle'],
+				$usergroups[$member['groupid']]['grouptitle'],
+				"<a href=\"$BASESCRIPT?action=members&operation=group&uid=$member[uid]\" class=\"act\">$lang[usergroup]</a><a href=\"$BASESCRIPT?action=members&operation=access&uid=$member[uid]\" class=\"act\">$lang[members_access]</a>".
+				($extcredits ? "<a href=\"$BASESCRIPT?action=members&operation=credit&uid=$member[uid]\" class=\"act\">$lang[credits]</a>" : "<span disabled>$lang[edit]</span>").
+				"<a href=\"$BASESCRIPT?action=members&operation=medal&uid=$member[uid]\" class=\"act\">$lang[medals]</a>".
+				"<a href=\"$BASESCRIPT?action=members&operation=repeat&uid=$member[uid]\" class=\"act\">$lang[members_repeat]</a>".
+				"<a href=\"$BASESCRIPT?action=members&operation=edit&uid=$member[uid]\" class=\"act\">$lang[detail]</a>"
+			), TRUE);
+		}
+
+		shownav('user', 'nav_repeat');
+		showsubmenu($lang['nav_repeat'].' - '.$searchmember['username']);
+		showformheader("members&operation=clean");
+		eval("\$lang[members_search_result] = \"".$lang['members_search_result']."\";");
+		$searchadd = '';
+		if(is_array($ips)) {
+			foreach($ips as $ip) {
+				$searchadd .= '<a href="'.$BASESCRIPT.'?action=members&operation=repeat&inputip='.rawurlencode($ip).'" class="act lightlink normal">'.lang('search').'IP '.htmlspecialchars($ip).'</a>';
+			}
+		}
+		showtableheader(lang('members_search_result').'<a href="'.$BASESCRIPT.'?action=members&operation=repeat" class="act lightlink normal">'.lang('research').'</a>'.$searchadd);
+		showsubtitle(array('', 'username', 'credits', 'posts', 'admingroup', 'usergroup', ''));
+		echo $members;
+		showtablerow('', array('class="td25"', 'class="lineheight" colspan="7"'), array('', lang('members_admin_comment')));
+		showsubmit('submit', 'submit', '<input type="checkbox" name="chkall" onclick="checkAll(\'prefix\', this.form, \'uidarray\')" class="checkbox">'.lang('del'), '', $multipage);
+		showtablefooter();
+		showformfooter();
+
+	}
+
 } elseif($operation == 'clean') {
 
 	if(!submitcheck('submit', 1)) {
@@ -86,6 +191,7 @@ if(!$operation) {
 		showsubmenu('nav_members', array(
 			array('search', 'members', 0),
 			array('clean', 'members&operation=clean', 1),
+			array('nav_repeat', 'members&operation=repeat', 0),
 		));
 
 		searchmembers('clean');
@@ -164,7 +270,7 @@ if(!$operation) {
 							dunlink($attach['attachment'], $attach['thumb'], $attach['remote']);
 						}
 
-						foreach(array('threads', 'threadsmod', 'relatedthreads', 'posts', 'polls', 'polloptions', 'trades', 'activities', 'activityapplies', 'debates', 'debateposts', 'attachments', 'favorites', 'typeoptionvars', 'forumrecommend') as $value) {
+						foreach(array('threads', 'threadsmod', 'relatedthreads', 'posts', 'polls', 'polloptions', 'trades', 'activities', 'activityapplies', 'debates', 'debateposts', 'attachments', 'favorites', 'typeoptionvars', 'forumrecommend', 'postposition') as $value) {
 							$db->query("DELETE FROM {$tablepre}$value WHERE tid IN ($tids)", 'UNBUFFERED');
 						}
 
@@ -410,8 +516,9 @@ if(!$operation) {
 	if(!submitcheck('addsubmit')) {
 
 		$groupselect = array();
-		$query = $db->query("SELECT groupid, type, grouptitle, creditshigher FROM {$tablepre}usergroups WHERE type='member' AND creditshigher='0' OR (groupid NOT IN ('5', '6', '7') AND radminid<>'1' AND type<>'member') ORDER BY (creditshigher<>'0' || creditslower<>'0'), creditslower, groupid");
+		$query = $db->query("SELECT groupid, type, grouptitle, creditshigher, radminid FROM {$tablepre}usergroups WHERE type='member' AND creditshigher='0' OR (groupid NOT IN ('5', '6', '7') AND radminid<>'1' AND type<>'member') ORDER BY (creditshigher<>'0' || creditslower<>'0'), creditslower, groupid");
 		while($group = $db->fetch_array($query)) {
+			$group['type'] = $group['type'] == 'special' && $group['radminid'] ? 'specialadmin' : $group['type'];
 			if($group['type'] == 'member' && $group['creditshigher'] == 0) {
 				$groupselect[$group['type']] .= "<option value=\"$group[groupid]\" selected>$group[grouptitle]</option>\n";
 			} else {
@@ -420,6 +527,7 @@ if(!$operation) {
 		}
 		$groupselect = '<optgroup label="'.$lang['usergroups_member'].'">'.$groupselect['member'].'</optgroup>'.
 			($groupselect['special'] ? '<optgroup label="'.$lang['usergroups_special'].'">'.$groupselect['special'].'</optgroup>' : '').
+			($groupselect['specialadmin'] ? '<optgroup label="'.$lang['usergroups_specialadmin'].'">'.$groupselect['specialadmin'].'</optgroup>' : '').
 			'<optgroup label="'.$lang['usergroups_system'].'">'.$groupselect['system'].'</optgroup>';
 		shownav('user', 'nav_members_add');
 		showsubmenu('members_add');
@@ -527,7 +635,8 @@ if(!$operation) {
 			$selecteaid = array($member['groupterms']['main']['adminid'] => 'selected');
 			$selectegid = array($member['groupterms']['main']['groupid'] => 'selected');
 		} else {
-			$expirydate = $expirydays = '';
+			$expirydays = '';
+			$expirydate = $member['groupexpiry']? gmdate('Y-n-j', $member['groupexpiry'] + $timeoffset * 3600) : '';
 			$selecteaid = array($member['adminid'] => 'selected');
 			$selectegid = array(($member['grouptype'] == 'member' ? 0 : $member['groupid']) => 'selected');
 		}
@@ -553,6 +662,7 @@ if(!$operation) {
 			$expgroups .= '<option name="expgroupidnew" value="'.$group['groupid'].'" '.$selectegid[$group['groupid']].'>'.$group['grouptitle'].'</option>';
 
 			if($group['groupid'] != 0) {
+				$group['type'] = $group['type'] == 'special' && $group['radminid'] ? 'specialadmin' : $group['type'];
 				$groups[$group['type']] .= '<option value="'.$group['groupid'].'"'.($member['groupid'] == $group['groupid'] ? 'selected="selected"' : '').' gtype="'.$group['type'].'">'.$group['grouptitle'].'</option>';
 				if($group['type'] == 'special' && !$group['radminid']) {
 					$radmingids .= ','.$group['groupid'];
@@ -572,7 +682,7 @@ if(!$operation) {
 		echo '<script src="include/js/calendar.js" type="text/javascript"></script>';
 		showformheader("members&operation=group&uid=$member[uid]");
 		showtableheader('usergroup', 'nobottom');
-		showsetting('members_group_group', '', '', '<select name="groupidnew" onchange="if(in_array(this.value, ['.$radmingids.'])) {$(\'relatedadminid\').style.display = \'\';$(\'adminidnew\').name=\'adminidnew[\' + this.value + \']\';} else {$(\'relatedadminid\').style.display = \'none\';$(\'adminidnew\').name=\'adminidnew[0]\';}"><optgroup label="'.$lang['usergroups_system'].'">'.$groups['system'].'<optgroup label="'.$lang['usergroups_special'].'">'.$groups['special'].'<optgroup label="'.$lang['usergroups_member'].'">'.$groups['member'].'</select>');
+		showsetting('members_group_group', '', '', '<select name="groupidnew" onchange="if(in_array(this.value, ['.$radmingids.'])) {$(\'relatedadminid\').style.display = \'\';$(\'adminidnew\').name=\'adminidnew[\' + this.value + \']\';} else {$(\'relatedadminid\').style.display = \'none\';$(\'adminidnew\').name=\'adminidnew[0]\';}"><optgroup label="'.$lang['usergroups_system'].'">'.$groups['system'].'<optgroup label="'.$lang['usergroups_special'].'">'.$groups['special'].'<optgroup label="'.$lang['usergroups_specialadmin'].'">'.$groups['specialadmin'].'<optgroup label="'.$lang['usergroups_member'].'">'.$groups['member'].'</select>');
 		showtagheader('tbody', 'relatedadminid', $member['grouptype'] == 'special' && !$member['radminid'], 'sub');
 		showsetting('members_group_related_adminid', '', '', '<select id="adminidnew" name="adminidnew['.$member['groupid'].']"><option value="0"'.($member['adminid'] == 0 ? ' selected' : '').'>'.$lang['none'].'</option><option value="3"'.($member['adminid'] == 3 ? ' selected' : '').'>'.$lang['usergroups_system_3'].'</option><option value="2"'.($member['adminid'] == 2 ? ' selected' : '').'>'.$lang['usergroups_system_2'].'</option><option value="1"'.($member['adminid'] == 1 ? ' selected' : '').'>'.$lang['usergroups_system_1'].'</option></select>');
 		showtagfooter('tbody');
@@ -1322,7 +1432,7 @@ EOT;
 			VALUES ('$uid', '$thismonthnew', '$totalnew')");
 
 		manyoulog('user', $uid, 'update');
-		cpmsg('members_edit_succeed', '', 'succeed');
+		cpmsg('members_edit_succeed', $BASESCRIPT.'?action=members&operation=edit&uid='.$uid, 'succeed');
 
 	}
 
@@ -1438,12 +1548,14 @@ function searchmembers($operation = '') {
 
 	$groupselect = array();
 	$usergroupid = isset($usergroupid) && is_array($usergroupid) ? $usergroupid : array();
-	$query = $db->query("SELECT type, groupid, grouptitle FROM {$tablepre}usergroups WHERE groupid NOT IN ('6', '7') ORDER BY (creditshigher<>'0' || creditslower<>'0'), creditslower, groupid");
+	$query = $db->query("SELECT type, groupid, grouptitle, radminid FROM {$tablepre}usergroups WHERE groupid NOT IN ('6', '7') ORDER BY (creditshigher<>'0' || creditslower<>'0'), creditslower, groupid");
 	while($group = $db->fetch_array($query)) {
+		$group['type'] = $group['type'] == 'special' && $group['radminid'] ? 'specialadmin' : $group['type'];
 		$groupselect[$group['type']] .= "<option value=\"$group[groupid]\" ".(in_array($group['groupid'], $usergroupid) ? 'selected' : '').">$group[grouptitle]</option>\n";
 	}
 	$groupselect = '<optgroup label="'.$lang['usergroups_member'].'">'.$groupselect['member'].'</optgroup>'.
 		($groupselect['special'] ? '<optgroup label="'.$lang['usergroups_special'].'">'.$groupselect['special'].'</optgroup>' : '').
+		($groupselect['specialadmin'] ? '<optgroup label="'.$lang['usergroups_specialadmin'].'">'.$groupselect['specialadmin'].'</optgroup>' : '').
 		'<optgroup label="'.$lang['usergroups_system'].'">'.$groupselect['system'].'</optgroup>';
 
 	$monthselect = $dayselect = '';
@@ -1546,6 +1658,7 @@ function countmembers() {
 	$conditions .= $lastvisitbefore != '' ? " AND lastvisit<'".strtotime($lastvisitbefore)."'" : '';
 	$conditions .= $lastpostafter != '' ? " AND lastpost>'".strtotime($lastpostafter)."'" : '';
 	$conditions .= $lastpostbefore != '' ? " AND lastpost<'".strtotime($lastpostbefore)."'" : '';
+	$conditions .= $repeatip != '' ? $repeatip : '';
 
 	$conditions .= $birthyear != '' || $birthmonth != '' || $birthday != '' ? " AND bday LIKE '".(($birthyear ? $birthyear : '%').'-'.($birthmonth? $birthmonth : '%').'-'.($birthday ? $birthday : '%'))."'" : '';
 

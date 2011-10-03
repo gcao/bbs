@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: recyclebin.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: recyclebin.inc.php 20917 2009-10-29 09:19:37Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -17,6 +17,69 @@ require_once DISCUZ_ROOT.'./include/discuzcode.func.php';
 cpheader();
 
 if(!$operation) {
+
+	shownav('topic', 'nav_recyclebin');
+	showsubmenu('nav_recyclebin', array(
+		array('recyclebin_list', 'recyclebin', 1),
+		array('search', 'recyclebin&operation=search', 0),
+		array('clean', 'recyclebin&operation=clean', 0)
+	));
+
+
+	if(!submitcheck('delsubmit') && !submitcheck('undelsubmit')) {
+
+		$lpp = empty($lpp) ? 10 : $lpp;
+		$page = max(1, intval($page));
+		$start = ($page - 1) * $lpp;
+		$start_limit = ($page - 1) * $lpp;
+
+		showformheader('recyclebin');
+		showtableheader('recyclebin_list');
+		showsubtitle(array('', 'thread', 'recyclebin_list_thread', 'recyclebin_list_author', 'recyclebin_list_status', 'recyclebin_list_lastpost', 'recyclebin_list_operation'));
+		$query = $db->query("SELECT f.name AS forumname,t.tid, t.fid, t.authorid, t.author, t.subject, t.views, t.replies, t.dateline, t.lastpost, t.lastposter,
+					tm.uid AS moduid, tm.username AS modusername, tm.dateline AS moddateline, tm.action AS modaction
+					FROM {$tablepre}threads t
+					LEFT JOIN {$tablepre}threadsmod tm ON tm.tid=t.tid
+					LEFT JOIN {$tablepre}forums f ON f.fid=t.fid
+					WHERE t.displayorder='-1' $sql
+					GROUP BY t.tid ORDER BY t.dateline DESC LIMIT $start_limit, $lpp");
+		while($thread = $db->fetch_array($query)) {
+			$thread['modthreadkey'] = modthreadkey($thread['tid']);
+			showtablerow('', array('class="td25"', '', '', 'class="td28"', 'class="td28"'), array(
+				"<input type=\"checkbox\" class=\"checkbox\" name=\"threadlist[]\" value=\"$thread[tid]\">",
+				'<a href="viewthread.php?tid='.$thread['tid'].'&modthreadkey='.$thread['modthreadkey'].'" target="_blank">'.$thread['subject'].'</a>',
+				'<a href="forumdisplay.php?fid='.$thread['fid'].'" target="_blank">'.$thread['forumname'].'</a>',
+				'<a href="space.php?uid='.$thread['authorid'].'" target="_blank">'.$thread['author'].'</a><br /><em style="font-size:9px;color:#999999;">'.gmdate("$dateformat", $thread['dateline'] + $timeoffset * 3600).'</em>',
+				$thread['replies'].' / '.$thread['views'],
+				$thread['lastposter'].'<br /><em style="font-size:9px;color:#999999;">'.gmdate("$dateformat", $thread['lastpost'] + $timeoffset * 3600).'</em>',
+				$thread['modusername'].'<br /><em style="font-size:9px;color:#999999;">'.gmdate("$dateformat", $thread['moddateline'] + $timeoffset * 3600).'</em>'
+			));
+		}
+
+		$threadcount = $db->result_first("SELECT count(*) FROM {$tablepre}threads t WHERE t.displayorder='-1'");
+		$multipage = multi($threadcount, $lpp, $page, "$BASESCRIPT?action=recyclebin&lpp=$lpp", 0, 3);
+
+		showsubmit('', '', '', '<input type="checkbox" name="chkall" id="chkall" class="checkbox" onclick="checkAll(\'prefix\', this.form, \'threadlist\')" /><label for="chkall">'.lang('select_all').'</label>&nbsp;&nbsp;<input type="submit" class="btn" name="delsubmit" value="'.lang('recyclebin_delete').'" />&nbsp;<input type="submit" class="btn" name="undelsubmit" value="'.lang('recyclebin_undelete').'" />', $multipage);
+		showtablefooter();
+		showformfooter();
+	} else {
+
+		if(empty($threadlist)) {
+			cpmsg('recyclebin_none_selected', $BASESCRIPT.'?action=recyclebin', 'error');
+		}
+
+		$threadsundel = $threadsdel = 0;
+		if(submitcheck('undelsubmit')) {
+			$threadsundel = undeletethreads($threadlist);
+		} elseif(submitcheck('delsubmit')) {
+			$threadsdel = deletethreads($threadlist);
+		}
+
+		cpmsg('recyclebin_succeed', $BASESCRIPT.'?action=recyclebin', 'succeed');
+
+	}
+
+} elseif($operation == 'search') {
 
 	if(!submitcheck('rbsubmit')) {
 
@@ -31,6 +94,7 @@ if(!$operation) {
 
 		shownav('topic', 'nav_recyclebin');
 		showsubmenu('nav_recyclebin', array(
+			array('recyclebin_list', 'recyclebin', 0),
 			array('search', 'recyclebin', 1),
 			array('clean', 'recyclebin&operation=clean', 0)
 		));
@@ -44,7 +108,7 @@ function page(number) {
 </script>
 EOT;
 		showtagheader('div', 'threadsearch', !$searchsubmit);
-		showformheader('recyclebin', '', 'rbsearchform');
+		showformheader('recyclebin&operation=search', '', 'rbsearchform');
 		showhiddenfields(array('page' => $page));
 		showtableheader('recyclebin_search');
 		showsetting('recyclebin_search_forum', '', '', $forumselect);
@@ -82,7 +146,7 @@ EOT;
 				FROM {$tablepre}threads t
 				LEFT JOIN {$tablepre}threadsmod tm ON tm.tid=t.tid
 				WHERE t.displayorder='-1' $sql");
-			
+
 			$pagetmp = $page;
 			do{
 				$query = $db->query("SELECT f.name AS forumname, f.allowsmilies, f.allowhtml, f.allowbbcode, f.allowimgcode,
@@ -101,9 +165,9 @@ EOT;
 			$multi = preg_replace("/href=\"$BASESCRIPT\?action=recyclebin&amp;page=(\d+)\"/", "href=\"javascript:page(\\1)\"", $multi);
 			$multi = str_replace("window.location=$BASESCRIPT.'?action=recyclebin&amp;page='+this.value", "page(this.value)", $multi);
 
-			echo '<script type="text/JavaScript">function attachimg() {}</script>';
+			echo '<script type="text/JavaScript">var replyreload;function attachimg() {}</script>';
 			showtagheader('div', 'threadlist', $searchsubmit);
-			showformheader('recyclebin&frame=no', 'target="rbframe"', 'rbform');			
+			showformheader('recyclebin&operation=search&frame=no', 'target="rbframe"', 'rbform');
 			showtableheader(lang('recyclebin_result').' '.$threadcount.' <a href="#" onclick="$(\'threadlist\').style.display=\'none\';$(\'threadsearch\').style.display=\'\';" class="act lightlink normal">'.lang('research').'</a>', 'fixpadding');
 
 			while($thread = $db->fetch_array($query)) {
@@ -148,7 +212,7 @@ EOT;
 		$threadsdel = deletethreads($moderation['delete']);
 		$threadsundel = undeletethreads($moderation['undelete']);
 
-		//cpmsg('recyclebin_succeed', $BASESCRIPT.'?action=recyclebin&operation=', 'succeed');		
+		//cpmsg('recyclebin_succeed', $BASESCRIPT.'?action=recyclebin&operation=', 'succeed');
 		eval("\$cpmsg = \"".lang('recyclebin_succeed')."\";");
 
 ?>
@@ -163,6 +227,7 @@ EOT;
 
 		shownav('topic', 'nav_recyclebin');
 		showsubmenu('nav_recyclebin', array(
+			array('recyclebin_list', 'recyclebin', 0),
 			array('search', 'recyclebin', 0),
 			array('clean', 'recyclebin&operation=clean', 1)
 		));

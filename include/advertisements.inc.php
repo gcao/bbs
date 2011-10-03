@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: advertisements.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: advertisements.inc.php 21075 2009-11-11 02:05:08Z liuqiang $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -13,7 +13,7 @@ if(!defined('IN_DISCUZ')) {
 
 $advarray = array();
 if(!empty($_DCACHE['advs'])) {
-	$advs = $_DCACHE['advs']['type'];
+	$advs = CURSCRIPT == 'index' && !empty($gid) ? (array)$_DCACHE['advs']['cat'] : $_DCACHE['advs']['type'];
 	$advitems = $_DCACHE['advs']['items'];
 	if(in_array(CURSCRIPT, array('forumdisplay', 'viewthread')) && !empty($fid)) {
 		$thisgid = $forum['type'] == 'forum' ? $forum['fup'] : $_DCACHE['forums'][$forum['fup']]['fup'];
@@ -54,6 +54,7 @@ foreach($advarray as $advtype => $advcodes) {
         } elseif($advtype == 'intercat') {
                 $advlist['intercat'] = $advcodes;
         } else {
+        	$advcodes = CURSCRIPT == 'index' && !empty($gid) ? $advcodes[$gid] : $advcodes;
         	$advcount = count($advcodes);
         	if($advtype == 'text') {
         		if($advcount > 5) {

@@ -4,7 +4,7 @@
 [Discuz!] (C)2001-2009 Comsenz Inc.
 This is NOT a freeware, use is subject to license terms
 
-$Id: members.inc.php 20207 2009-09-22 02:42:49Z monkey $
+$Id: members.inc.php 20872 2009-10-28 03:12:08Z liulanbo $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_MODCP')) {
@@ -194,7 +194,7 @@ function loadmember(&$uid, &$username, &$error) {
 
 		if(!$member = $db->fetch_array($query)) {
 			$error = 2;
-		} elseif(($member['grouptype'] == 'system' && in_array($member['groupid'], array(1, 2, 3, 6, 7, 8))) || $member['grouptype'] == 'special') {
+		} elseif(($member['grouptype'] == 'system' && in_array($member['groupid'], array(1, 2, 3, 6, 7, 8))) || in_array($member['adminid'], array(1,2,3))) {
 			$error = 3;
 		} else {
 			$member['groupterms'] = unserialize($member['groupterms']);

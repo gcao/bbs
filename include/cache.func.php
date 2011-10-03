@@ -4,15 +4,15 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: cache.func.php 20689 2009-10-14 09:42:41Z monkey $
+	$Id: cache.func.php 21311 2009-11-26 01:35:43Z liulanbo $
 */
 
-define('DISCUZ_KERNEL_VERSION', '7.1');
-define('DISCUZ_KERNEL_RELEASE', '20091001');
+define('DISCUZ_KERNEL_VERSION', '7.2');
+define('DISCUZ_KERNEL_RELEASE', '20091126');
 
 
 function updatecache($cachename = '') {
-	global $db, $bbname, $tablepre, $maxbdays, $threadplugins;
+	global $db, $bbname, $tablepre, $maxbdays;
 
 
 	static $cachescript = array
@@ -21,23 +21,25 @@ function updatecache($cachename = '') {
 		'settings'	=> array('settings'),
 		'forums'	=> array('forums'),
 		'icons'		=> array('icons'),
+		'stamps'	=> array('stamps'),
 		'ranks'		=> array('ranks'),
 		'usergroups'	=> array('usergroups'),
 		'request'	=> array('request'),
 		'medals'	=> array('medals'),
 		'magics'	=> array('magics'),
-		'topicadmin'	=> array('modreasons'),
+		'topicadmin'	=> array('modreasons', 'stamptypeid'),
 		'archiver'	=> array('advs_archiver'),
-		'register'	=> array('advs_register'),
+		'register'	=> array('advs_register', 'ipctrl'),
 		'faqs'		=> array('faqs'),
 		'secqaa'	=> array('secqaa'),
 		'censor'	=> array('censor'),
 		'ipbanned'	=> array('ipbanned'),
 		'smilies'	=> array('smilies_js'),
+		'forumstick' => array('forumstick'),
 
 		'index'		=> array('announcements', 'onlinelist', 'forumlinks', 'advs_index', 'heats'),
-		'forumdisplay'	=> array('smilies', 'announcements_forum', 'globalstick', 'forums', 'icons', 'onlinelist', 'advs_forumdisplay'),
-		'viewthread'	=> array('smilies', 'smileytypes', 'forums', 'usergroups', 'ranks', 'bbcodes', 'smilies', 'advs_viewthread', 'tags_viewthread', 'custominfo', 'groupicon', 'focus'),
+		'forumdisplay'	=> array('smilies', 'announcements_forum', 'globalstick', 'forums', 'icons', 'onlinelist', 'advs_forumdisplay', 'forumstick'),
+		'viewthread'	=> array('smilies', 'smileytypes', 'forums', 'usergroups', 'ranks', 'stamps', 'bbcodes', 'smilies', 'advs_viewthread', 'tags_viewthread', 'custominfo', 'groupicon', 'focus', 'stamps'),
 		'post'		=> array('bbcodes_display', 'bbcodes', 'smileycodes', 'smilies', 'smileytypes', 'icons', 'domainwhitelist'),
 		'profilefields'	=> array('fields_required', 'fields_optional'),
 		'viewpro'	=> array('fields_required', 'fields_optional', 'custominfo'),
@@ -131,6 +133,8 @@ function updatecache($cachename = '') {
 	}
 
 	if(!$cachename || $cachename == 'usergroups') {
+		@include_once DISCUZ_ROOT.'forumdata/cache/cache_settings.php';
+		$threadplugins = !isset($_DCACHE['settings']) ? $GLOBALS['threadplugins'] : $_DCACHE['settings'];
 		$allowthreadplugin = $threadplugins ? unserialize($db->result_first("SELECT value FROM {$tablepre}settings WHERE variable='allowthreadplugin'")) : array();
 
 		$query = $db->query("SELECT * FROM {$tablepre}usergroups u
@@ -183,7 +187,7 @@ function updatecache($cachename = '') {
 
 	if(!$cachename || $cachename == 'threadsorts') {
 		$sortlist = $templatedata = array();
-		$query = $db->query("SELECT t.typeid AS sortid, tt.optionid, tt.title, tt.type, tt.rules, tt.identifier, tt.description, tv.required, tv.unchangeable, tv.search
+		$query = $db->query("SELECT t.typeid AS sortid, tt.optionid, tt.title, tt.type, tt.unit, tt.rules, tt.identifier, tt.description, tv.required, tv.unchangeable, tv.search, tv.subjectshow
 			FROM {$tablepre}threadtypes t
 			LEFT JOIN {$tablepre}typevars tv ON t.typeid=tv.sortid
 			LEFT JOIN {$tablepre}typeoptions tt ON tv.optionid=tt.optionid
@@ -196,11 +200,13 @@ function updatecache($cachename = '') {
 			$sortlist[$sortid][$optionid] = array(
 				'title' => dhtmlspecialchars($data['title']),
 				'type' => dhtmlspecialchars($data['type']),
+				'unit' => dhtmlspecialchars($data['unit']),
 				'identifier' => dhtmlspecialchars($data['identifier']),
 				'description' => dhtmlspecialchars($data['description']),
 				'required' => intval($data['required']),
 				'unchangeable' => intval($data['unchangeable']),
-				'search' => intval($data['search'])
+				'search' => intval($data['search']),
+				'subjectshow' => intval($data['subjectshow']),
 				);
 
 			if(in_array($data['type'], array('select', 'checkbox', 'radio'))) {
@@ -224,14 +230,15 @@ function updatecache($cachename = '') {
 				$sortlist[$sortid][$optionid]['minnum'] = intval($data['rules']['minnum']);
 			}
 		}
-		$query = $db->query("SELECT typeid, description, template FROM {$tablepre}threadtypes WHERE special='1'");
+		$query = $db->query("SELECT typeid, description, template, stemplate FROM {$tablepre}threadtypes WHERE special='1'");
 		while($data = $db->fetch_array($query)) {
 			$templatedata[$data['typeid']] = $data['template'];
+			$stemplatedata[$data['typeid']] = $data['stemplate'];
 			$threaddesc[$data['typeid']] = dhtmlspecialchars($data['description']);
 		}
 
 		foreach($sortlist as $sortid => $option) {
-			writetocache($sortid, '', "\$_DTYPE = ".arrayeval($option).";\n\n\$_DTYPETEMPLATE = \"".str_replace('"', '\"', $templatedata[$sortid])."\";\n", 'threadsort_');
+			writetocache($sortid, '', "\$_DTYPE = ".arrayeval($option).";\n\n\$_DTYPETEMPLATE = \"".str_replace('"', '\"', $templatedata[$sortid])."\";\n\n\$_DSTYPETEMPLATE = \"".str_replace('"', '\"', $stemplatedata[$sortid])."\";\n", 'threadsort_');
 		}
 	}
 
@@ -365,7 +372,11 @@ function getcachearray($cachename, $script = '') {
 	switch($cachename) {
 		case 'settings':
 			$table = 'settings';
-			$conditions = "WHERE variable NOT IN ('siteuniqueid', 'mastermobile', 'bbrules', 'bbrulestxt', 'closedreason', 'creditsnotify', 'backupdir', 'custombackup', 'jswizard', 'maxonlines', 'modreasons', 'newsletter', 'welcomemsg', 'welcomemsgtxt', 'postno', 'postnocustom', 'customauthorinfo', 'focus', 'domainwhitelist')";
+			$conditions = "WHERE variable NOT IN ('siteuniqueid', 'mastermobile', 'bbrules', 'bbrulestxt', 'closedreason', 'creditsnotify', 'backupdir', 'custombackup', 'jswizard', 'maxonlines', 'modreasons', 'newsletter', 'welcomemsg', 'welcomemsgtxt', 'postno', 'postnocustom', 'customauthorinfo', 'focus', 'domainwhitelist', 'ipregctrl', 'ipverifywhite')";
+			break;
+		case 'ipctrl':
+			$table = 'settings';
+			$conditions = "WHERE variable IN ('ipregctrl', 'ipverifywhite')";
 			break;
 		case 'custominfo':
 			$table = 'settings';
@@ -377,7 +388,7 @@ function getcachearray($cachename, $script = '') {
 			break;
 		case 'usergroups':
 			$table = 'usergroups';
-			$cols = 'groupid, type, grouptitle, creditshigher, creditslower, stars, color, groupavatar, readaccess, allowcusbbcode, allowgetattach';
+			$cols = 'groupid, type, grouptitle, creditshigher, creditslower, stars, color, groupavatar, readaccess, allowcusbbcode, allowgetattach, edittimelimit';
 			$conditions = "ORDER BY creditslower";
 			break;
 		case 'ranks':
@@ -400,9 +411,14 @@ function getcachearray($cachename, $script = '') {
 			$cols = 'fid, type, fup';
 			$conditions = "WHERE status='1' AND type IN ('forum', 'sub') ORDER BY type";
 			break;
+		case 'forumstick':
+			$table = 'settings';
+			$cols = 'variable, value';
+			$conditions = "WHERE variable='forumstickthreads'";
+			break;
 		case 'forums':
 			$table = 'forums f';
-			$cols = 'f.fid, f.type, f.name, f.fup, f.simple, f.status, ff.viewperm, ff.formulaperm, ff.viewperm, ff.postperm, ff.replyperm, ff.getattachperm, ff.postattachperm, a.uid';
+			$cols = 'f.fid, f.type, f.name, f.fup, f.simple, f.status, ff.viewperm, ff.formulaperm, ff.viewperm, ff.postperm, ff.replyperm, ff.getattachperm, ff.postattachperm, ff.extra, a.uid';
 			$conditions = "LEFT JOIN {$tablepre}forumfields ff ON ff.fid=f.fid LEFT JOIN {$tablepre}access a ON a.fid=f.fid AND a.allowview>'0' ORDER BY f.type, f.displayorder";
 			break;
 		case 'onlinelist':
@@ -416,9 +432,6 @@ function getcachearray($cachename, $script = '') {
 		case 'forumlinks':
 			$table = 'forumlinks';
 			$conditions = "ORDER BY displayorder";
-			break;
-		case 'heats':
-			$table = 'threads';
 			break;
 		case 'bbcodes':
 			$table = 'bbcodes';
@@ -453,6 +466,16 @@ function getcachearray($cachename, $script = '') {
 			$table = 'smilies';
 			$cols = 'id, url';
 			$conditions = "WHERE type='icon' ORDER BY displayorder";
+			break;
+		case 'stamps':
+			$table = 'smilies';
+			$cols = 'id, url, displayorder';
+			$conditions = "WHERE type='stamp' ORDER BY displayorder";
+			break;
+		case 'stamptypeid':
+			$table = 'smilies';
+			$cols = 'displayorder, typeid';
+			$conditions = "WHERE type='stamp' AND typeid>'0'";
 			break;
 		case 'fields_required':
 			$table = 'profilefields';
@@ -517,7 +540,7 @@ function getcachearray($cachename, $script = '') {
 	}
 
 	$data = array();
-	if(!in_array($cachename, array('focus', 'secqaa')) && substr($cachename, 0, 5) != 'advs_') {
+	if(!in_array($cachename, array('focus', 'secqaa', 'heats')) && substr($cachename, 0, 5) != 'advs_') {
 		if(empty($table) || empty($cols)) return '';
 		$query = $db->query("SELECT $cols FROM {$tablepre}$table $conditions");
 	}
@@ -556,10 +579,8 @@ function getcachearray($cachename, $script = '') {
 						$setting['value'] = dhtmlspecialchars(explode("\n", $setting['value']));
 						$setting['value'] = array_map('trim', $setting['value']);
 					}
-				} elseif(in_array($setting['variable'], array('creditspolicy', 'ftp', 'secqaa', 'ec_credit', 'qihoo', 'spacedata', 'infosidestatus', 'uc', 'outextcredits', 'relatedtag', 'sitemessage', 'msn', 'uchome', 'heatthread', 'recommendthread', 'disallowfloat', 'indexhot'))) {
-					$setting['value'] = unserialize($setting['value']);
-				} elseif($setting['variable'] == 'dzfeed_limit') {
-					$setting['value'] = unserialize($setting['value']);
+				} elseif(in_array($setting['variable'], array('creditspolicy', 'ftp', 'secqaa', 'ec_credit', 'qihoo', 'spacedata', 'infosidestatus', 'uc', 'outextcredits', 'relatedtag', 'sitemessage', 'msn', 'uchome', 'heatthread', 'recommendthread', 'disallowfloat', 'indexhot', 'dzfeed_limit', 'binddomains', 'forumdomains', 'allowviewuserthread'))) {
+					$setting['value'] = @unserialize($setting['value']);
 				}
 				$GLOBALS[$setting['variable']] = $data[$setting['variable']] = $setting['value'];
 			}
@@ -581,6 +602,7 @@ function getcachearray($cachename, $script = '') {
 				$data['recommendthread'] = array('allow' => 0);
 			}
 
+			$data['allowviewuserthread'] = $data['allowviewuserthread']['allow'] && is_array($data['allowviewuserthread']['fids']) && $data['allowviewuserthread']['fids'] ? implodeids($data['allowviewuserthread']['fids']) : '';
 			$data['sitemessage']['time'] = !empty($data['sitemessage']['time']) ? $data['sitemessage']['time'] * 1000 : 0;
 			$data['sitemessage']['register'] = !empty($data['sitemessage']['register']) ? explode("\n", $data['sitemessage']['register']) : '';
 			$data['sitemessage']['login'] = !empty($data['sitemessage']['login']) ? explode("\n", $data['sitemessage']['login']) : '';
@@ -727,7 +749,7 @@ function getcachearray($cachename, $script = '') {
 			$data['transferstatus'] = isset($data['extcredits'][$data['creditstrans']]);
 
 			list($data['zoomstatus'], $data['imagemaxwidth']) = explode("\t", $data['zoomstatus']);
-			$data['imagemaxwidth'] = substr(trim($data['imagemaxwidth']), -1, 1) != '%' && $data['imagemaxwidth'] <= 600 ? $data['imagemaxwidth'] : '';
+			$data['imagemaxwidth'] = substr(trim($data['imagemaxwidth']), -1, 1) != '%' && $data['imagemaxwidth'] <= 1920 ? $data['imagemaxwidth'] : '';
 
 			$data['msn']['on'] = $data['msn']['on'] && $data['msn']['domain'] ? 1 : 0;
 			$data['msn']['domain'] = $data['msn']['on'] ? $data['msn']['domain'] : 'discuz.org';
@@ -893,6 +915,7 @@ function getcachearray($cachename, $script = '') {
 					$adminmenu[] = array('url' => "plugins&operation=config&pluginid=$plugin[pluginid]", 'name' => $plugin['name']);
 				}
 			}
+			$data['my_status'] = $data['plugins']['available'] && in_array('manyou', $data['plugins']['available']) ? $data['my_status'] : 0;
 			writetocache('scriptlang', '', getcachevars(array('scriptlang' => $scriptlang)));
 			if($threadpluginicons) {
 				$existicons = array();
@@ -1079,6 +1102,11 @@ function getcachearray($cachename, $script = '') {
 				@unlink(DISCUZ_ROOT.'./forumdata/cache/cache_alipaycontract.php');
 			}
 
+			break;
+		case 'ipctrl':
+			while($setting = $db->fetch_array($query)) {
+				$data[$setting['variable']] = $setting['value'];
+			}
 			break;
 		case 'custominfo':
 			while($setting = $db->fetch_array($query)) {
@@ -1275,6 +1303,16 @@ function getcachearray($cachename, $script = '') {
 				'count'	=> intval(@count($threadarray['global']))
 			);
 			break;
+		case 'forumstick':
+			$forumstickthreads = $db->fetch_array($query);
+			$forumstickthreads = $forumstickthreads['value'];
+			$forumstickthreads = isset($forumstickthreads) ? unserialize($forumstickthreads) : array();
+			foreach($forumstickthreads as $k => $v) {
+				foreach($v['forums'] as $forumstick_fid) {
+					$data[$forumstick_fid][] = $v;
+				}
+			}
+			break;
 		case 'censor':
 			$banned = $mod = array();
 			$data = array('filter' => array(), 'banned' => '', 'mod' => '');
@@ -1351,6 +1389,11 @@ function getcachearray($cachename, $script = '') {
 
 				$forum['orderby'] = bindec((($forum['simple'] & 128) ? 1 : 0).(($forum['simple'] & 64) ? 1 : 0));
 				$forum['ascdesc'] = ($forum['simple'] & 32) ? 'ASC' : 'DESC';
+				$forum['extra'] = unserialize($forum['extra']);
+				if(!is_array($forum['extra'])) {
+					$forum['extra'] = array();
+				}
+
 				if(!isset($forumlist[$forum['fid']])) {
 					$forum['name'] = strip_tags($forum['name']);
 					if($forum['uid']) {
@@ -1381,6 +1424,7 @@ function getcachearray($cachename, $script = '') {
 						$data[$fid1]['orderby'] = $orderbyary[$forum1['orderby']];
 						$data[$fid1]['ascdesc'] = $forum1['ascdesc'];
 						$data[$fid1]['status'] = $forum1['status'];
+						$data[$fid1]['extra'] = $forum1['extra'];
 						foreach($forumlist as $fid2 => $forum2) {
 							if($forum2['fup'] == $fid1 && $forum2['type'] == 'forum') {
 								$data[$fid2]['fid'] = $forum2['fid'];
@@ -1392,6 +1436,7 @@ function getcachearray($cachename, $script = '') {
 								$data[$fid2]['ascdesc'] = $forum2['ascdesc'];
 								$data[$fid2]['users'] = $forum2['users'];
 								$data[$fid2]['status'] = $forum2['status'];
+								$data[$fid2]['extra'] = $forum2['extra'];
 								foreach($forumlist as $fid3 => $forum3) {
 									if($forum3['fup'] == $fid2 && $forum3['type'] == 'sub') {
 										$data[$fid3]['fid'] = $forum3['fid'];
@@ -1403,6 +1448,7 @@ function getcachearray($cachename, $script = '') {
 										$data[$fid3]['ascdesc'] = $forum3['ascdesc'];
 										$data[$fid3]['users'] = $forum3['users'];
 										$data[$fid3]['status'] = $forum3['status'];
+										$data[$fid3]['extra'] = $forum3['extra'];
 									}
 								}
 							}
@@ -1641,6 +1687,34 @@ function getcachearray($cachename, $script = '') {
 				$data[$icon['id']] = $icon['url'];
 			}
 			break;
+		case 'stamps':
+			$fillarray = range(0, 99);
+			$count = 0;
+			$repeats = array();
+			while($stamp = $db->fetch_array($query)) {
+				if(isset($fillarray[$stamp['displayorder']])) {
+					unset($fillarray[$stamp['displayorder']]);
+				} else {
+					$repeats[] = $stamp['id'];
+				}
+				$count++;
+			}
+			foreach($repeats as $id) {
+				reset($fillarray);
+				$displayorder = current($fillarray);
+				unset($fillarray[$displayorder]);
+				$db->query("UPDATE {$tablepre}smilies SET displayorder='$displayorder' WHERE id='$id'");
+			}
+			$query = $db->query("SELECT * FROM {$tablepre}smilies WHERE type='stamp' ORDER BY displayorder");
+			while($stamp = $db->fetch_array($query)) {
+				$data[$stamp['displayorder']] = array('url' => $stamp['url'], 'text' => $stamp['code']);
+			}
+			break;
+		case 'stamptypeid':
+			while($stamp = $db->fetch_array($query)) {
+				$data[$stamp['typeid']] = $stamp['displayorder'];
+			}
+			break;
 		case (in_array($cachename, array('fields_required', 'fields_optional'))):
 			while($field = $db->fetch_array($query)) {
 				$choices = array();
@@ -1801,6 +1875,10 @@ function advertisement($range) {
 			}
 			$adv['targets'] = in_array($adv['targets'], array('', 'all')) ? ($type == 'text' ? 'forum' : (substr($type, 0, 6) == 'thread' ? 'forum' : 'all')) : $adv['targets'];
 			foreach(explode("\t", $adv['targets']) as $target) {
+				if($range == 'index' && substr($target, 0, 3) == 'gid') {
+					$advs['cat'][$type][substr($target, 3)][] = $adv['advid'];
+					$advs['items'][$adv['advid']] = $adv['code'];
+				}
 				$target = $target == '0' || $type == 'intercat' ? 'index' : (in_array($target, array('all', 'index', 'forumdisplay', 'viewthread', 'register', 'redirect', 'archiver')) ? $target : ($target == 'forum' ? 'forum_all' : 'forum_'.$target));
 				if((($range == 'forumdisplay' && !in_array($adv['type'], array('thread', 'interthread'))) || $range == 'viewthread') &&  substr($target, 0, 6) == 'forum_') {
 					if($adv['type'] == 'thread') {

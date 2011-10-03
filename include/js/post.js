@@ -2,7 +2,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: post.js 20516 2009-09-30 01:23:33Z monkey $
+	$Id: post.js 21297 2009-11-25 09:40:15Z monkey $
 */
 
 var postSubmited = false;
@@ -95,6 +95,9 @@ function validate(theform) {
 				return false;
 			}
 		}
+	}
+	if(isfirstpost && sortid && typeof checkallsort == 'function') {
+		if(!checkallsort()) return false;
 	}
 
 	if(!disablepostctrl && !sortid && !special && ((postminchars != 0 && mb_strlen(message) < postminchars) || (postmaxchars != 0 && mb_strlen(message) > postmaxchars))) {
@@ -838,7 +841,14 @@ function showEditorMenu(tag, params) {
 			case 'video':
 				var mediaUrl = $(ctrlid + '_param_1').value;
 				var ext = mediaUrl.lastIndexOf('.') == -1 ? '' : mediaUrl.substr(mediaUrl.lastIndexOf('.') + 1, mb_strlen(mediaUrl)).toLowerCase();
-				ext = in_array(ext, ['mp3', 'wma', 'ra', 'rm', 'ram', 'mid', 'wmv', 'avi', 'mpg', 'mpeg', 'rmvb', 'asf', 'mov', 'flv', 'swf']) ? ext : 'x';
+				ext = in_array(ext, ['mp3', 'wma', 'ra', 'rm', 'ram', 'mid', 'asx', 'wmv', 'avi', 'mpg', 'mpeg', 'rmvb', 'asf', 'mov', 'flv', 'swf']) ? ext : 'x';
+				if(ext == 'x') {
+					if(/^mms:\/\//.test(mediaUrl)) {
+						ext = 'mms';
+					} else if(/^(rtsp|pnm):\/\//.test(mediaUrl)) {
+						ext = 'rtsp';
+					}
+				}
 				var str = '[media=' + ext + ',' + $(ctrlid + '_param_2').value + ',' + $(ctrlid + '_param_3').value + ']' + mediaUrl + '[/media]';
 				insertText(str, str.length - pos[1], 0, false, sel);
 				break;
@@ -856,7 +866,7 @@ function showEditorMenu(tag, params) {
 					insertText(str, str.length - pos[1], 0, false, sel);
 				} else {
 					style += width || height ? '=' + width + ',' + height : '';
-					insertText('[img' + style + ']' + src + '[/img]');
+					insertText('[img' + style + ']' + src + '[/img]', 0, 0, false, sel);
 				}
 				$(ctrlid + '_param_1').value = '';
 			default:
@@ -1366,16 +1376,20 @@ function reAddAttach(prefix, id) {
 	$('localimgpreview_' + id) ? document.body.removeChild($('localimgpreview_' + id)) : null;
 }
 
-function delAttach(id) {
+function delAttach(id, type) {
 	appendAttachDel(id);
 	$('attach_' + id).style.display = 'none';
+	ATTACHNUM['attach' + (type ? 'un' : '') + 'used']--;
+	updateattachnum('attach');
 }
 
-function delImgAttach(id) {
+function delImgAttach(id, type) {
 	appendAttachDel(id);
 	$('image_td_' + id).className = 'imgdeleted';
 	$('image_' + id).onclick = null;
 	$('image_desc_' + id).disabled = true;
+	ATTACHNUM['image' + (type ? 'un' : '') + 'used']--;
+	updateattachnum('image');
 }
 
 function appendAttachDel(id) {
@@ -1398,6 +1412,19 @@ function updateAttach(aid) {
 	}
 }
 
+function updateattachnum(type) {
+	ATTACHNUM[type + 'used'] = ATTACHNUM[type + 'used'] >= 0 ? ATTACHNUM[type + 'used'] : 0;
+	ATTACHNUM[type + 'unused'] = ATTACHNUM[type + 'unused'] >= 0 ? ATTACHNUM[type + 'unused'] : 0;
+	var num = ATTACHNUM[type + 'used'] + ATTACHNUM[type + 'unused'];
+	if(num) {
+		$(editorid + '_cmd_' + type).title = '包含 ' + num + (type == 'image' ? ' 个图片附件' : ' 个附件');
+		$(editorid + '_cmd_' + type + '_notice').style.display = '';
+	} else {
+		$(editorid + '_cmd_' + type).title = type == 'image' ? '图片' : '附件';
+		$(editorid + '_cmd_' + type + '_notice').style.display = 'none';
+	}
+}
+
 function swfHandler(action, type) {
 	if(type == 'image') {
 		updateImageList(action);
@@ -1407,21 +1434,27 @@ function swfHandler(action, type) {
 }
 
 function updateAttachList(action) {
-	if(action != 2) ajaxget('ajax.php?action=attachlist', 'attachlist');
+	if(action != 2) ajaxget('ajax.php?action=attachlist&posttime=' + $('posttime').value, 'attachlist');
 	if(action != 1) switchAttachbutton('attachlist');$('attach_tblheader').style.display = $('attach_notice').style.display = '';
 }
 
 function updateImageList(action) {
-	if(action != 2) ajaxget('ajax.php?action=imagelist&pid=' + pid, 'imgattachlist');
+	if(action != 2) ajaxget('ajax.php?action=imagelist&pid=' + pid + '&posttime=' + $('posttime').value, 'imgattachlist');
 	if(action != 1) switchImagebutton('imgattachlist');$('imgattach_notice').style.display = '';
 }
 
 function switchButton(btn, btns) {
+	if(!$(editorid + '_btn_' + btn) || !$(editorid + '_' + btn)) {
+		return;
+	}
 	$(editorid + '_btn_' + btn).style.display = '';
 	$(editorid + '_' + btn).style.display = '';
 	$(editorid + '_btn_' + btn).className = 'current';
 	for(i = 0;i < btns.length;i++) {
 		if(btns[i] != btn) {
+			if(!$(editorid + '_' + btns[i]) || !$(editorid + '_btn_' + btns[i])) {
+				continue;
+			}
 			$(editorid + '_' + btns[i]).style.display = 'none';
 			$(editorid + '_btn_' + btns[i]).className = '';
 		}

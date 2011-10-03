@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: post.func.php 20585 2009-10-10 05:43:24Z monkey $
+	$Id: post.func.php 21337 2010-01-06 08:09:58Z tiger $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -308,29 +308,33 @@ function ftpupload($source, $attach) {
 }
 
 function ftpupload_error($source, $attach) {
+	global $db, $tablepre;
 	@unlink($source);
 	if($attach['thumb']) {
 		@unlink($source.'.thumb.jpg');
 	}
+	$db->query("DELETE FROM {$tablepre}attachments WHERE aid='$attach[aid]'", 'SILENT');
 	showmessage('post_attachment_remote_save_error');
 }
 
-function getattach() {
+function getattach($posttime = 0) {
 	global $db, $tablepre, $discuz_uid, $dateformat, $timeformat, $timeoffset, $pid, $ftp, $attachurl;
 
 	require_once DISCUZ_ROOT.'./include/attachment.func.php';
 	$attachs = $imgattachs = array();
-	$sqladd = $pid > 0 ? "OR a.pid='$pid'" : '';
+	$sqladd1 = $posttime > 0 ? "AND a.dateline>'$posttime'" : '';
+	$sqladd2 = $pid > 0 ? "OR a.pid='$pid'" : '';
 	$query = $db->query("SELECT a.*, af.description
 		FROM {$tablepre}attachments a
 		LEFT JOIN {$tablepre}attachmentfields af ON a.aid=af.aid
-		WHERE (a.uid='$discuz_uid' AND a.tid='0') $sqladd ORDER BY dateline");
+		WHERE (a.uid='$discuz_uid' AND a.tid='0' $sqladd1) $sqladd2 ORDER BY dateline");
 	while($attach = $db->fetch_array($query)) {
 		$attach['filenametitle'] = $attach['filename'];
+		$attach['ext'] = fileext($attach['filename']);
 		$attach['filename'] = cutstr($attach['filename'], 30);
 		$attach['attachsize'] = sizecount($attach['filesize']);
 		$attach['dateline'] = gmdate("$dateformat $timeformat", $attach['dateline'] + $timeoffset * 3600);
-		$attach['filetype'] = attachtype(fileext($attach['attachment'])."\t".$attach['filetype']);
+		$attach['filetype'] = attachtype($attach['ext']."\t".$attach['filetype']);
 		if($attach['isimage'] < 1) {
 			if($attach['isimage']) {
 				$attach['url'] = $attach['remote'] ? $ftp['attachurl'] : $attachurl;
@@ -352,6 +356,32 @@ function getattach() {
 		}
 	}
 	return array('attachs' => $attachs, 'imgattachs' => $imgattachs);
+}
+
+function parseattachmedia($attach) {
+	$attachurl = 'attach://'.$attach['aid'].'.'.$attach['ext'];
+	switch(strtolower($attach['ext'])) {
+		case 'mp3':
+		case 'wma':
+		case 'ra':
+		case 'ram':
+		case 'wav':
+		case 'mid':
+			return '[audio]'.$attachurl.'[/audio]';
+		case 'wmv':
+		case 'rm':
+		case 'rmvb':
+		case 'avi':
+		case 'asf':
+		case 'mpg':
+		case 'mpeg':
+		case 'mov':
+		case 'flv':
+		case 'swf':
+			return '[media='.$attach['ext'].',400,300]'.$attachurl.'[/media]';
+		default:
+			return;
+	}
 }
 
 function updateattach() {
@@ -379,6 +409,9 @@ function updateattach() {
 				continue;
 			}
 			$anew = $attachnew[$attach['aid']];
+			$anew['aid'] = $attach['aid'];
+			$anew['ext'] = $extension;
+			$anew['size'] = $attach['filesize'];
 			if($attach['pid'] == 0) {
 				$attach_basename = basename($attach['attachment']);
 				$attach_src = $attachdir.'/'.$attach['attachment'];
@@ -528,9 +561,11 @@ function updatepostcredits($operator, $uidarray, $creditsarray) {
 			$cookiecredits = !empty($_COOKIE['discuz_creditnotice']) ? explode('D', $_COOKIE['discuz_creditnotice']) : array_fill(0, 9, 0);
 		}
 		foreach($creditsarray as $id => $addcredits) {
-			$creditsadd1 .= ", extcredits$id=extcredits$id$operator($addcredits)*\$posts";
-			if($self) {
-				eval("\$cookiecredits[$id] += $operator($addcredits)*\$posts;");
+			if(($operator == '-' && $addcredits > 0) || $operator == '+') {
+				$creditsadd1 .= ", extcredits$id=extcredits$id$operator($addcredits)*\$posts";
+				if($self) {
+					eval("\$cookiecredits[$id] += $operator($addcredits)*\$posts;");
+				}
 			}
 		}
 		if($self) {
@@ -595,7 +630,7 @@ function updatethreadcount($tid, $updateattach = 0) {
 	$db->query("UPDATE {$tablepre}threads SET replies='$replycount', lastposter='$lastpost[author]', lastpost='$lastpost[dateline]' $attachadd WHERE tid='$tid'", 'UNBUFFERED');
 }
 
-function updatemodlog($tids, $action, $expiration = 0, $iscron = 0) {
+function updatemodlog($tids, $action, $expiration = 0, $iscron = 0, $stamp = 0) {
 	global $db, $tablepre, $timestamp;
 
 	$uid = empty($iscron) ? $GLOBALS['discuz_uid'] : 0;
@@ -603,14 +638,19 @@ function updatemodlog($tids, $action, $expiration = 0, $iscron = 0) {
 	$expiration = empty($expiration) ? 0 : intval($expiration);
 
 	$data = $comma = '';
+	$stampadd = $stampaddvalue = '';
+	if($stamp) {
+		$stampadd = ', stamp';
+		$stampaddvalue = ", '$stamp'";
+	}
 	foreach(explode(',', str_replace(array('\'', ' '), array('', ''), $tids)) as $tid) {
 		if($tid) {
-			$data .= "{$comma} ('$tid', '$uid', '$username', '$timestamp', '$action', '$expiration', '1')";
+			$data .= "{$comma} ('$tid', '$uid', '$username', '$timestamp', '$action', '$expiration', '1'$stampaddvalue)";
 			$comma = ',';
 		}
 	}
 
-	!empty($data) && $db->query("INSERT INTO {$tablepre}threadsmod (tid, uid, username, dateline, action, expiration, status) VALUES $data", 'UNBUFFERED');
+	!empty($data) && $db->query("INSERT INTO {$tablepre}threadsmod (tid, uid, username, dateline, action, expiration, status$stampadd) VALUES $data", 'UNBUFFERED');
 
 }
 
@@ -747,16 +787,18 @@ function postfeed($feed) {
 
 function messagecutstr($str, $length) {
 	global $language, $_DCACHE;
-	include_once language('misc');
+	if(empty($language['post_edit_regexp']) || empty($language['post_hidden'])) {
+		include language('misc');
+	}
 	include_once DISCUZ_ROOT.'./forumdata/cache/cache_post.php';
 	$bbcodes = 'b|i|u|p|color|size|font|align|list|indent|float';
-	$bbcodesclear = 'url|email|code|free|table|tr|td|img|swf|flash|attach|media|payto'.($_DCACHE['bbcodes_display'] ? '|'.implode('|', array_keys($_DCACHE['bbcodes_display'])) : '');
+	$bbcodesclear = 'url|email|code|free|table|tr|td|img|swf|flash|attach|media|audio|payto'.($_DCACHE['bbcodes_display'] ? '|'.implode('|', array_keys($_DCACHE['bbcodes_display'])) : '');
 	$str = cutstr(strip_tags(preg_replace(array(
 			"/\[hide=?\d*\](.+?)\[\/hide\]/is",
-			"/\[quote](.*)\[\/quote]/siU",
+			"/\[quote](.*?)\[\/quote]/si",
 			$language['post_edit_regexp'],
-			"/\[($bbcodesclear)=?.*\].+?\[\/($bbcodesclear)\]/siU",
-			"/\[($bbcodes)=?.*\]/iU",
+			"/\[($bbcodesclear)=?.*?\].+?\[\/\\1\]/si",
+			"/\[($bbcodes)=?.*?\]/i",
 			"/\[\/($bbcodes)\]/i",
 		), array(
 			"[b]$language[post_hidden][/b]",
@@ -813,6 +855,24 @@ function iswhitelist($host) {
 		$iswhitelist[$host] = $host == $_SERVER['HTTP_HOST'];
 	}
 	return $iswhitelist[$host];
+}
+
+
+function savepostposition($tid, $pid, $position = 0) {
+	global $db, $tablepre;
+	if(!$position) {
+		$pos = $db->result_first("SELECT max(position) FROM {$tablepre}postposition WHERE tid='$tid'");
+		$pos ++;
+	} else {
+		$pos = $position;
+	}
+	$res = $db->query("INSERT INTO {$tablepre}postposition SET tid='$tid', position='$pos', pid='$pid'");
+	return $res;
+}
+
+function deletepostposition($tid) {
+	global $db, $tablepre;
+	$db->query("DELETE FROM {$tablepre}postposition WHERE tid='$tid'");
 }
 
 ?>

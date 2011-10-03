@@ -204,6 +204,41 @@
 						<!--{/loop}-->
 					</tbody>
 				</table>
+
+				<div id="list_usergroups_specialadmin_c" class="c_header">
+					<h3 onclick="toggle_collapse('list_usergroups_specialadmin', 1, 1);">{lang permission_specialadmin_group}</h3>
+					<div class="c_header_action">
+						<p class="c_header_ctrlbtn" onclick="toggle_collapse('list_usergroups_specialadmin', 1, 1);">[ {lang open} ]</p>
+					</div>
+				</div>
+				<table id="list_usergroups_specialadmin" cellspacing="0" cellpadding="0" class="datatable" style="margin-bottom:30px;">
+					<thead class="colplural">
+						<tr>
+							<td width="13%"></td>
+							<td width="11%">{lang permission_member_level}</td>
+							<td width="20%">{lang permission_group_credit}</td>
+							<td>{lang permission_basic_read}</td>
+							<td>{lang memcp_usergroups_join_other}</td>
+							<td></td>
+							<td>{lang action}</td>
+						</tr>
+					</thead>
+					<tbody>
+						<!--{loop $grouplist[specialadmin] $gp}-->
+						<tr>
+							<td><strong>$gp[grouptitle]<strong></td>
+							<td>{eval showstars($gp[stars]);}</td>
+							<td>-</td>
+							<td>$gp[readaccess]</td>
+							<td><!--{if $gp['allowmultigroups'] == 1}--><img src="{IMGDIR}/data_valid.gif" /><!--{else}--><img src="{IMGDIR}/data_invalid.gif" /><!--{/if}--></td>
+							<td></td>
+							<td>
+								<a href="faq.php?action=grouppermission&searchgroupid=$gp[groupid]" class="lightlink" target="_blank">{lang permission_group_detail}</a>
+							</td>
+						</tr>
+						<!--{/loop}-->
+					</tbody>
+				</table>
 			</div>
 		</div>
 	</div>

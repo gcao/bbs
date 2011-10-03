@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: space.php 19606 2009-09-07 06:39:51Z liulanbo $
+	$Id: space.php 21055 2009-11-10 00:33:11Z monkey $
 */
 
 if(!defined('CURSCRIPT')) {
@@ -46,6 +46,7 @@ $member = $db->fetch_first("SELECT m.*, mf.*, u.grouptitle, u.type, u.creditshig
 		WHERE ".($uid ? "m.uid='$uid'" : "m.username='$username'")."ORDER BY r.postshigher DESC LIMIT 1");
 
 if(!$member) {
+	header("HTTP/1.0 404 Not Found");
 	showmessage('member_nonexistence');
 }
 
@@ -61,7 +62,7 @@ if($magicstatus) {
 }
 
 $profileuid = $member['uid'];
-$member['online'] = $db->result_first("SELECT lastactivity FROM {$tablepre}sessions WHERE uid='$uid' AND invisible='0'");
+$member['online'] = $db->result_first("SELECT lastactivity FROM {$tablepre}sessions WHERE uid='$member[uid]' AND invisible='0'");
 
 if($member['groupid'] != ($member['groupidnew'] = getgroupid($member['uid'], $member, $member))) {
 	$member = array_merge($member, $db->fetch_first("SELECT groupid, grouptitle, type, creditshigher, creditslower, color AS groupcolor,
@@ -96,22 +97,6 @@ $postperday = $timestamp - $member['regdate'] > 86400 ? round(86400 * $member['p
 
 $member['grouptitle'] = $member['groupcolor'] ? '<font color="'.$member['groupcolor'].'">'.$member['grouptitle'].'</font>' : $member['grouptitle'];
 $member['ranktitle'] = $member['rankcolor'] ? '<font color="'.$member['rankcolor'].'">'.$member['ranktitle'].'</font>' : $member['ranktitle'];
-
-if($inajax) {
-	$member['userstatusby'] = $member['stars'] = '';
-	if($userstatusby == 1) {
-		$member['userstatusby'] = $member['grouptitle'];
-		$member['stars'] = $member['groupstars'];
-	} elseif($userstatusby == 2) {
-		if($member['type'] != 'member') {
-			$member['userstatusby'] = $member['grouptitle'];
-			$member['stars'] = $member['groupstars'];
-		} else {
-			$member['userstatusby'] = $member['ranktitle'];
-			$member['stars'] = $member['rankstars'];
-		}
-	}
-}
 
 if($oltimespan) {
 	$member['totalol'] = round($member['totalol'] / 60, 2);

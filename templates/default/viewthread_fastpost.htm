@@ -5,7 +5,7 @@ var disablepostctrl = parseInt('$disablepostctrl');
 </script>
 
 <div id="f_post" class="mainbox viewthread">
-<form method="post" id="fastpostform" action="post.php?action=reply&amp;fid=$fid&amp;tid=$tid&amp;extra=$extra&amp;replysubmit=yes&infloat=yes&handlekey=fastpost" onSubmit="return fastpostvalidate(this)">
+<form method="post" id="fastpostform" action="post.php?action=reply&amp;fid=$fid&amp;tid=$tid&amp;extra=$extra&amp;replysubmit=yes<!--{if $ordertype != 1}-->&infloat=yes&handlekey=fastpost<!--{/if}-->" <!--{if $ordertype != 1}-->onSubmit="return fastpostvalidate(this)"<!--{/if}-->>
 	<table cellspacing="0" cellpadding="0">
 		<tr>
 			<td class="postauthor">
@@ -44,10 +44,12 @@ var disablepostctrl = parseInt('$disablepostctrl');
 					{eval $seditor = array('fastpost', array('bold', 'color', 'img', 'link', 'quote', 'code', 'smilies'));}
 					{subtemplate seditor}
 				</div>
-				<textarea rows="5" cols="80" name="message" id="fastpostmessage" onKeyDown="seditor_ctlent(event, 'fastpostvalidate($(\'fastpostform\'))');" tabindex="4" class="txtarea"></textarea>
+				<textarea rows="5" cols="80" name="message" id="fastpostmessage" onKeyDown="seditor_ctlent(event, <!--{if $ordertype != 1}-->'fastpostvalidate($(\'fastpostform\'))'<!--{else}-->'$(\'fastpostform\').submit()'<!--{/if}-->);" tabindex="4" class="txtarea"></textarea>
 				<!--{if $secqaacheck || $seccodecheck}--><div class="fastcheck">{template seccheck}</div><!--{/if}-->
 				<p><button type="submit" name="replysubmit" id="fastpostsubmit" value="replysubmit" tabindex="5">{lang post_newreply}</button>
+				<!--{if $ordertype != 1}-->
 				<input id="fastpostrefresh" type="checkbox" /> <label for="fastpostrefresh">{lang post_fastreply_gotolast}</label></p><script type="text/javascript">if(getcookie('discuz_fastpostrefresh') == 1) {$('fastpostrefresh').checked=true;}</script>
+				<!--{/if}-->
 				</p>
 			</td>
 		</tr>

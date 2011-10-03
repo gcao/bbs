@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: checktools.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: checktools.inc.php 20755 2009-10-19 01:36:56Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -105,7 +105,7 @@ if($operation == 'filecheck') {
 			$result .= '</tbody>';
 			$resultjs .= '$(\'status_'.$status.'\').style.display=\'none\';';
 		}
-		
+
 		$modifiedfiles = count($modifylist);
 		$deletedfiles = count($dellist);
 		$unknownfiles = count($addlist);
@@ -211,6 +211,9 @@ if($operation == 'filecheck') {
 
 } elseif($operation == 'mailcheck') {
 
+	$oldmail = unserialize($mail);
+	$passwordmask = $oldmail['auth_password'] ? $oldmail['auth_password']{0}.'********'.substr($oldmail['auth_password'], -2) : '';
+	$settingsnew['mail']['auth_password'] = $settingsnew['mail']['auth_password'] == $passwordmask ? $oldmail['auth_password'] : $settingsnew['mail']['auth_password'];
 	$mail = serialize($settingsnew['mail']);
 	$test_tos = explode(',', $test_to);
 	$date = date('Y-m-d H:i:s');

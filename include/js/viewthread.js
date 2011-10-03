@@ -2,7 +2,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: viewthread.js 20434 2009-09-27 07:34:35Z monkey $
+	$Id: viewthread.js 21279 2009-11-24 09:59:28Z monkey $
 */
 
 var replyreload = '';
@@ -167,7 +167,7 @@ function zoom(obj, zimg) {
 }
 
 function parsetag(pid) {
-	if(!$('postmessage_'+pid)) {
+	if(!$('postmessage_'+pid) || $('postmessage_'+pid).innerHTML.match(/<script[^\>]*?>/i)) {
 		return;
 	}
 	var havetag = false;

@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: adv.inc.php 20693 2009-10-15 02:30:16Z monkey $
+	$Id: adv.inc.php 20881 2009-10-28 09:07:58Z liuqiang $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -200,10 +200,11 @@ if(empty($operation)) {
 				(in_array($type, array('headerbanner', 'footerbanner')) ? '</option><option value="register">&nbsp;&nbsp;> '.$lang['adv_register'].'</option>'.
 				'</option><option value="redirect">&nbsp;&nbsp;> '.$lang['adv_jump'].'</option>'.
 				'</option><option value="archiver">&nbsp;&nbsp;> Archiver</option>' : '').
-				'</option>'.forumselect(FALSE, 0, 0, TRUE).'</select>';
+				'</option>'.forumselect(in_array($type, array('headerbanner', 'footerbanner', 'text', 'float', 'couplebanner')) ? TRUE : FALSE, 0, 0, TRUE).'</select>';
 
 			foreach($adv['targets'] as $target) {
-				$targetsselect = preg_replace("/(\<option value=\"$target\")(\>)/", "\\1 selected=\"selected\" \\2", $targetsselect);
+				$target = substr($target, 0, 3) == 'gid' ? substr($target, 3) : $target;
+				$targetsselect = preg_replace("/(\<option value=\"$target\")([^\>]*)(\>)/", "\\1 \\2 selected=\"selected\" \\3", $targetsselect);
 			}
 		}
 		if($type == 'thread') {
@@ -213,7 +214,6 @@ if(empty($operation)) {
 			}
 			$dispselect .= '</select>';
 		} elseif($type == 'intercat') {
-			require_once DISCUZ_ROOT.'./forumdata/cache/cache_forums.php';
 			$positionselect = '<select name="advnew[position][]" size="10" multiple="multiple"><option value="0"'.$positionchecked[0].'>&nbsp;&nbsp;> '.$lang['all'].'</option><option value="">&nbsp;</option>';
 			foreach($_DCACHE['forums'] as $fid => $forum) {
 				if($forum['type'] == 'group') {
@@ -328,8 +328,16 @@ if(empty($operation)) {
 
 		$targetsarray = array();
 		if(is_array($advnew['targets'])) {
+			$gids = array();
+			foreach($_DCACHE['forums'] as $fid => $forum) {
+				if($forum['type'] == 'group') {
+					$gids[] = $fid;
+				}
+			}
 			foreach($advnew['targets'] as $target) {
-				if($target == 'all') {
+				if(in_array($type, array('headerbanner', 'footerbanner', 'text', 'float', 'couplebanner')) && in_array($target, $gids)) {
+					$targetsarray[] = 'gid'.$target;
+				} elseif($target == 'all') {
 					$targetsarray = in_array($type, array('thread', 'interthread')) ? array('forum') : array();
 					break;
 				} elseif(in_array($target, array('register', 'redirect', 'archiver')) || preg_match("/^\d+$/", $target) && ($target == 0 || in_array($_DCACHE['forums'][$target]['type'], array('forum', 'sub')))) {
@@ -437,11 +445,12 @@ function showtargets($adv) {
 }
 
 function showtargetlink($target) {
-	global $_DCACHE;
-	return $target == 'register' ? '<a href="'.$regname.'" target="_blank">'.lang('adv_register').'</a>' :
+	global $_DCACHE, $indexname, $regname;
+	return substr($target, 0, 3) == 'gid' ? '<a href="'.$indexname.'?gid='.substr($target, 3).'" target="_blank">'.$_DCACHE['forums'][substr($target, 3)]['name'].'</a>' :
+		($target == 'register' ? '<a href="'.$regname.'" target="_blank">'.lang('adv_register').'</a>' :
 		($target == 'redirect' ? lang('adv_jump') :
 		($target == 'archiver' ? '<a href="archiver/" target="_blank">Archiver</a>' :
-		($target ? '<a href="forumdisplay.php?fid='.$target.'" target="_blank">'.$_DCACHE['forums'][$target]['name'].'</a>' : '<a href="'.$indexname.'" target="_blank">'.lang('home').'</a>')));
+		($target ? '<a href="forumdisplay.php?fid='.$target.'" target="_blank">'.$_DCACHE['forums'][$target]['name'].'</a>' : '<a href="'.$indexname.'" target="_blank">'.lang('home').'</a>'))));
 }
 
 ?>

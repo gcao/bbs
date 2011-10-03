@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: forumtree.inc.php 19605 2009-09-07 06:18:45Z monkey $
+	$Id: forumtree.inc.php 20763 2009-10-19 02:35:45Z monkey $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -18,6 +18,9 @@ if($requestrun) {
 		include_once DISCUZ_ROOT.'./forumdata/cache/cache_forums.php';
 	}
 	foreach($_DCACHE['forums'] as $forum) {
+		if(!$forum['status']) {
+			continue;
+		}
 		if(!$forum['viewperm'] || ($forum['viewperm'] && forumperm($forum['viewperm'])) || strstr($forum['users'], "\t$GLOBALS[discuz_uid]\t")) {
 			$forum['name'] = addslashes($forum['name']);
 			$forum['type'] != 'group' && $haschild[$forum['fup']] = true;

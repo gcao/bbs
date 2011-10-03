@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: db_mysql.class.php 20297 2009-09-23 06:29:26Z monkey $
+	$Id: db_mysql.class.php 20294 2009-09-23 06:00:37Z zhaoxiongfei $
 */
 
 if(!defined('IN_DISCUZ')) {

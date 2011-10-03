@@ -23,7 +23,7 @@ $menulang = array
 	'header_bbs' => '论坛首页',
 
 
-	'menu_home' => '系统设置首页',
+	'menu_home' => '管理中心首页',
 	'menu_home_clearhistorymenus' => '清空历史操作',
 
 	'menu_settings_basic' => '站点信息',
@@ -38,7 +38,7 @@ $menulang = array
 	'menu_settings_datetime' => '时间设置',
 	'menu_settings_attachments' => '附件设置',
 	'menu_settings_dzfeed' => '论坛动态设置',
-	'menu_settings_wap' => 'WAP 设置',	
+	'menu_settings_wap' => 'WAP 设置',
 	'menu_settings_uc' => 'UCenter 设置',
 	'menu_settings_uchome' => 'UCHome 设置',
 	'menu_settings_msn' => '企业邮局',
@@ -67,6 +67,8 @@ $menulang = array
 	'menu_maint_attaches' => '附件管理',
 	'menu_posting_tags' => '标签管理',
 	'menu_posting_censors' => '词语过滤',
+	'menu_threads_forumstick' => '多版块主题置顶',
+	'menu_post_position_index' => '帖子优化',
 
 	'menu_posting_attachtypes' => '附件类型尺寸',
 	'menu_moderate_recyclebin' => '主题回收站',
@@ -85,6 +87,7 @@ $menulang = array
 	'menu_styles_templates' => '模板管理',
 	'menu_posting_smilies' => '表情管理',
 	'menu_thread_icon' => '主题图标',
+	'menu_thread_stamp' => '主题鉴定图章',
 	'menu_posting_editor' => '编辑器设置',
 	'menu_misc_onlinelist' => '在线列表图标',
 
@@ -95,6 +98,7 @@ $menulang = array
 	'menu_members_newsletter' => '论坛通知',
 	'menu_misc_announce' => '论坛公告',
 	'menu_tools_updatecaches' => '更新缓存',
+	'menu_tools_postposition' => '高楼贴优化',
 	'menu_tools_updatecounters' => '更新论坛统计',
 	'menu_tools_javascript' => '数据调用',
 	'menu_tools_relatedtag' => ' 标签聚合',

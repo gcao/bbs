@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: newthread.inc.php 20371 2009-09-25 00:46:14Z monkey $
+	$Id: newthread.inc.php 21084 2009-11-11 07:30:21Z tiger $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -118,7 +118,7 @@ if(!submitcheck('topicsubmit', 0, $seccodecheck, $secqaacheck)) {
 	if(checkflood()) {
 		showmessage('post_flood_ctrl');
 	}
-	
+
 	if($discuz_uid) {
 		$attentionon = empty($attention_add) ? 0 : 1;
 	}
@@ -258,7 +258,7 @@ if(!submitcheck('topicsubmit', 0, $seccodecheck, $secqaacheck)) {
 		$stand = intval($stand);
 
 	} elseif($specialextra) {
-		
+
 		@include_once DISCUZ_ROOT.'./plugins/'.$threadplugins[$specialextra]['module'].'.class.php';
 		$classname = 'threadplugin_'.$specialextra;
 		if(method_exists($classname, 'newthread_submit')) {
@@ -285,10 +285,21 @@ if(!submitcheck('topicsubmit', 0, $seccodecheck, $secqaacheck)) {
 
 	$moderated = $digest || $displayorder > 0 ? 1 : 0;
 
-	$db->query("INSERT INTO {$tablepre}threads (fid, readperm, price, iconid, typeid, sortid, author, authorid, subject, dateline, lastpost, lastposter, displayorder, digest, special, attachment, moderated)
-		VALUES ('$fid', '$readperm', '$price', '$iconid', '$typeid', '$sortid', '$author', '$discuz_uid', '$subject', '$timestamp', '$timestamp', '$author', '$displayorder', '$digest', '$special', '0', '$moderated')");
+	$thread['status'] = 0;
+
+	$ordertype && $thread['status'] = setstatus(4, 1, $thread['status']);
+
+	$hiddenreplies && $thread['status'] = setstatus(2, 1, $thread['status']);
+
+	if($allowpostrushreply && $rushreply) {
+		$thread['status'] = setstatus(3, 1, $thread['status']);
+		$thread['status'] = setstatus(1, 1, $thread['status']);
+	}
+
+	$db->query("INSERT INTO {$tablepre}threads (fid, readperm, price, iconid, typeid, sortid, author, authorid, subject, dateline, lastpost, lastposter, displayorder, digest, special, attachment, moderated, status)
+		VALUES ('$fid', '$readperm', '$price', '$iconid', '$typeid', '$sortid', '$author', '$discuz_uid', '$subject', '$timestamp', '$timestamp', '$author', '$displayorder', '$digest', '$special', '0', '$moderated', '$thread[status]')");
 	$tid = $db->insert_id();
-	
+
 	if($discuz_uid) {
 		$stataction = '';
 		if($attentionon) {
@@ -296,13 +307,7 @@ if(!submitcheck('topicsubmit', 0, $seccodecheck, $secqaacheck)) {
 			$db->query("REPLACE INTO {$tablepre}favoritethreads (tid, uid, dateline) VALUES ('$tid', '$discuz_uid', '$timestamp')", 'UNBUFFERED');
 		}
 		if($stataction) {
-			//统计各类通知条数
-			$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log';
-			if($fp = @fopen($statlogfile, 'a')) {
-				@flock($fp, 2);
-				fwrite($fp, stat_query('', 'item=attention&action=newthread_'.$stataction, '', '', 'my.php')."\n");
-				fclose($fp);
-			}			
+			write_statlog('', 'item=attention&action=newthread_'.$stataction, '', '', 'my.php');
 		}
 		$db->query("UPDATE {$tablepre}favoriteforums SET newthreads=newthreads+1 WHERE fid='$fid' AND uid<>'$discuz_uid'", 'UNBUFFERED');
 	}
@@ -340,9 +345,19 @@ if(!submitcheck('topicsubmit', 0, $seccodecheck, $secqaacheck)) {
 	}
 
 	if($forum['threadsorts']['types'][$sortid] && !empty($optiondata) && is_array($optiondata)) {
+		$filedname = $valuelist = $separator = '';
 		foreach($optiondata as $optionid => $value) {
+			if(($_DTYPE[$optionid]['search'] || in_array($_DTYPE[$optionid]['type'], array('radio', 'select', 'number'))) && $value) {
+				$filedname .= $separator.$_DTYPE[$optionid]['identifier'];
+				$valuelist .= $separator."'$value'";
+				$separator = ' ,';
+			}
 			$db->query("INSERT INTO {$tablepre}typeoptionvars (sortid, tid, optionid, value, expiration)
 				VALUES ('$sortid', '$tid', '$optionid', '$value', '".($typeexpiration ? $timestamp + $typeexpiration : 0)."')");
+		}
+		
+		if($filedname && $valuelist) {
+			$db->query("INSERT INTO {$tablepre}optionvalue$sortid ($filedname, tid, fid) VALUES ($valuelist, '$tid', '$fid')");
 		}
 	}
 
@@ -356,6 +371,10 @@ if(!submitcheck('topicsubmit', 0, $seccodecheck, $secqaacheck)) {
 	$db->query("INSERT INTO {$tablepre}posts (fid, tid, first, author, authorid, subject, dateline, message, useip, invisible, anonymous, usesig, htmlon, bbcodeoff, smileyoff, parseurloff, attachment)
 		VALUES ('$fid', '$tid', '1', '$discuz_user', '$discuz_uid', '$subject', '$timestamp', '$message', '$onlineip', '$pinvisible', '$isanonymous', '$usesig', '$htmlon', '$bbcodeoff', '$smileyoff', '$parseurloff', '0')");
 	$pid = $db->insert_id();
+
+	if($pid && getstatus($thread['status'], 1)) {
+		savepostposition($tid, $pid);
+	}
 
 	if($tagstatus && $tags != '') {
 		$tags = str_replace(array(chr(0xa3).chr(0xac), chr(0xa1).chr(0x41), chr(0xef).chr(0xbc).chr(0x8c)), ',', censor($tags));
@@ -465,13 +484,13 @@ if(!submitcheck('topicsubmit', 0, $seccodecheck, $secqaacheck)) {
 		}
 
 		if($specialextra) {
-		
+
 			$classname = 'threadplugin_'.$specialextra;
 			if(method_exists($classname, 'newthread_submit_end')) {
 				$threadpluginclass = new $classname;
 				$threadpluginclass->newthread_submit_end($fid);
 			}
-	
+
 		}
 		if($digest) {
 			foreach($digestcredits as $id => $addcredits) {

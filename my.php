@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: my.php 20689 2009-10-14 09:42:41Z monkey $
+	$Id: my.php 21055 2009-11-10 00:33:11Z monkey $
 */
 
 define('NOROBOT', TRUE);
@@ -25,7 +25,7 @@ $page = max(1, intval($page));
 $start_limit = ($page - 1) * $tpp;
 
 $threadlist = $postlist = array();
-$tids = $comma = $threadadd = $postadd = $forumname = $extrafid = $extra = $multipage = '';
+$tids = $comma = $threadadd = $postadd = $forumname =$uidadd =  $extrafid = $extra = $multipage = '';
 
 if($srchfid = empty($srchfid) ? 0 : intval($srchfid)) {
 	$threadadd = "AND t.fid='$srchfid'";
@@ -33,12 +33,32 @@ if($srchfid = empty($srchfid) ? 0 : intval($srchfid)) {
 	$forumname = $_DCACHE['forums'][$srchfid]['name'];
 	$extrafid = '&amp;srchfid='.$srchfid;
 }
-$forumselect = forumselect(1, 0, $srchfid);
+$forumselect = forumselect(FALSE, 0, $srchfid);
 
 $item = isset($item) ? trim($item) : '';
 
+$uid = !empty($uid) && $uid != $discuz_uid && $allowviewuserthread ? $uid : 0;
+if($uid) {
+	if(!$allowviewpro) {
+		showmessage('group_nopermission', NULL, 'NOPERM');
+	}
+	$member = $db->fetch_first("SELECT username FROM {$tablepre}members WHERE uid='$uid'");
+	if(!$member) {
+		header("HTTP/1.0 404 Not Found");
+		showmessage('member_nonexistence');
+	}
+	$uidadd = '&amp;uid='.$uid;
+}
+
 if(empty($item) || $item == 'threads') {
 
+	if($uid) {
+		$threadadd .= " AND fid IN ($allowviewuserthread)";
+		$srchuid = $uid;
+		$filter = '';
+	} else {
+		$srchuid = $discuz_uid;
+	}
 	if($filter == 'recyclebin') {
 		$threadadd .= " AND displayorder='-1'";
 	} elseif($filter == 'aduit') {
@@ -50,17 +70,24 @@ if(empty($item) || $item == 'threads') {
 	}
 	$fidadd = $srchfid ? "&amp;srchfid=$srchfid" : '';
 
-	$num = $db->result_first("SELECT COUNT(*) FROM {$tablepre}threads t WHERE authorid='$discuz_uid' $threadadd");
-	$multipage = multi($num, $tpp, $page, 'my.php?item=threads'.$fidadd.$extrafid);
+	$num = $db->result_first("SELECT COUNT(*) FROM {$tablepre}threads t WHERE authorid='$srchuid' $threadadd");
+	$multipage = multi($num, $tpp, $page, 'my.php?item=threads'.$uidadd.$fidadd.$extrafid);
 
-	$query = $db->query("SELECT * FROM {$tablepre}threads t WHERE authorid='$discuz_uid' $threadadd ORDER BY dateline DESC LIMIT $start_limit, $tpp");
-	require_once DISCUZ_ROOT.'./include/misc.func.php';	
+	$query = $db->query("SELECT * FROM {$tablepre}threads t WHERE authorid='$srchuid' $threadadd ORDER BY dateline DESC LIMIT $start_limit, $tpp");
+	require_once DISCUZ_ROOT.'./include/misc.func.php';
 	while($thread = $db->fetch_array($query)) {
 		$threadlist[] = procthread($thread);
 	}
 
 } elseif($item == 'posts') {
 
+	if($uid) {
+		$threadadd .= " AND t.fid IN ($allowviewuserthread)";
+		$srchuid = $uid;
+		$filter = '';
+	} else {
+		$srchuid = $discuz_uid;
+	}
 	if($filter == 'recyclebin') {
 		$postadd .= " AND p.invisible='-1'";
 	} elseif($filter == 'aduit') {
@@ -72,21 +99,23 @@ if(empty($item) || $item == 'threads') {
 		$threadadd .= " AND t.displayorder>='0' AND t.closed='0'";
 	}
 	$fidadd = $srchfid ? "&amp;srchfid=$srchfid" : '';
+
 	require_once DISCUZ_ROOT.'./include/post.func.php';
 
 	$num = $db->result_first("SELECT COUNT(*) FROM {$tablepre}posts p
 		INNER JOIN {$tablepre}threads t ON t.tid=p.tid $threadadd
-		WHERE p.authorid='$discuz_uid' $postadd");
-	$multipage = multi($num, $tpp, $page, 'my.php?item=posts'.$fidadd.$extrafid);
+		WHERE p.authorid='$srchuid' $postadd");
+	$multipage = multi($num, $tpp, $page, 'my.php?item=posts'.$uidadd.$fidadd.$extrafid);
 
-	$query = $db->query("SELECT p.authorid, p.tid, p.pid, p.fid, p.invisible, p.dateline, p.message FROM {$tablepre}posts p
+	$query = $db->query("SELECT p.authorid, p.tid, p.pid, p.fid, p.invisible, p.dateline, p.message, t.status FROM {$tablepre}posts p
 		INNER JOIN {$tablepre}threads t ON t.tid=p.tid $threadadd
-		WHERE p.authorid='$discuz_uid' $postadd ORDER BY p.dateline DESC LIMIT $start_limit, $tpp");
+		WHERE p.authorid='$srchuid' $postadd ORDER BY p.dateline DESC LIMIT $start_limit, $tpp");
 	$tids = $threads = array();
 	while($post = $db->fetch_array($query)) {
+		$hiddenreplies = $srchuid == $discuz_uid ? 0 : getstatus($post['status'], 2);
 		$post['dateline'] = dgmdate("$dateformat $timeformat", $post['dateline'] + $timeoffset * 3600);
 		$post['forumname'] = $_DCACHE['forums'][$post['fid']]['name'];
-		$post['message'] = messagecutstr($post['message'], 100);
+		$post['message'] = !$hiddenreplies ? messagecutstr($post['message'], 100) : '';
 		$postlist[] = $post;
 		$tids[$post['tid']] = $post['tid'];
 	}
@@ -95,7 +124,7 @@ if(empty($item) || $item == 'threads') {
 		require_once DISCUZ_ROOT.'./include/misc.func.php';
 		$query = $db->query("SELECT * FROM {$tablepre}threads WHERE tid IN (".implodeids($tids).")");
 		while($thread = $db->fetch_array($query)) {
-			$threads[$thread['tid']] = procthread($thread);			
+			$threads[$thread['tid']] = procthread($thread);
 		}
 	}
 
@@ -121,7 +150,7 @@ if(empty($item) || $item == 'threads') {
 		} else {
 			$db->query("DELETE FROM {$tablepre}favorites WHERE uid='$discuz_uid' AND fid='$fid'", 'UNBUFFERED');
 			showmessage('favorite_remove_forum_succeed', dreferer());
-		}			
+		}
 	} elseif(($fid || $tid) && !submitcheck('favsubmit')) {
 
 		if($db->result_first("SELECT $ftid FROM {$tablepre}favorites WHERE uid='$discuz_uid' AND $ftid='${$ftid}' LIMIT 1")) {
@@ -130,7 +159,7 @@ if(empty($item) || $item == 'threads') {
 			} else {
 				showmessage('favorite_forum_exists');
 			}
-			
+
 		} else {
 			$db->query("INSERT INTO {$tablepre}favorites (uid, $ftid) VALUES ('$discuz_uid', '${$ftid}')");
 			if($tid) {
@@ -180,13 +209,7 @@ if(empty($item) || $item == 'threads') {
 
 			if($ids = implodeids($delete)) {
 				$db->query("DELETE FROM {$tablepre}favorites WHERE uid='$discuz_uid' AND $ftid IN ($ids)", 'UNBUFFERED');
-				//统计收藏中删除的使用
-				$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log';
-				if($fp = @fopen($statlogfile, 'a')) {
-					@flock($fp, 2);
-					fwrite($fp, stat_query('', 'item=favorites&action=deletefav', '', '', 'my.php')."\n");
-					fclose($fp);
-				}
+				write_statlog('', 'item=favorites&action=deletefav', '', '', 'my.php');
 			}
 			showmessage('favorite_update_succeed', dreferer());
 		}
@@ -487,7 +510,7 @@ if(empty($item) || $item == 'threads') {
 			FROM {$tablepre}threads t
 			WHERE t.authorid='$discuz_uid' AND t.special='5' $threadadd
 			ORDER BY t.dateline DESC LIMIT $start_limit, $tpp");
-		while($debate = $db->fetch_array($query)) {			
+		while($debate = $db->fetch_array($query)) {
 			$debate['lastposterenc'] = rawurlencode($debate['lastposter']);
 			$debate['forumname'] = $_DCACHE['forums'][$debate['fid']]['name'];
 			$debatelist[] = procthread($debate);
@@ -505,7 +528,7 @@ if(empty($item) || $item == 'threads') {
 			FROM {$tablepre}posts p, {$tablepre}threads t
 			WHERE p.authorid='$discuz_uid' AND p.first='0' AND p.tid=t.tid AND t.special='5' $threadadd
 			ORDER BY p.dateline DESC LIMIT $start_limit, $tpp");
-		while($debate = $db->fetch_array($query)) {			
+		while($debate = $db->fetch_array($query)) {
 			$debate['message'] = messagecutstr($debate['message'], 100);
 			$debate['forumname'] = $_DCACHE['forums'][$debate['fid']]['name'];
 			$debatelist[] = procthread($debate);
@@ -518,13 +541,15 @@ if(empty($item) || $item == 'threads') {
 	include_once DISCUZ_ROOT.'./uc_client/client.php';
 
 	$buddynum = 999;
+	$extratype = empty($type) ? '' : '&type=fans';
 
 	if(!submitcheck('buddysubmit', 1)) {
 
 		$buddylist = array();
-		$buddynum = uc_friend_totalnum($discuz_uid, 3);
-		$buddies = $buddynum ? uc_friend_ls($discuz_uid, $page, $tpp, $buddynum, 3) : array();
-		$multipage = multi($buddynum, $tpp, $page, "my.php?item=buddylist");
+		$friendtype = empty($type) ? 3 : 1;
+		$buddynum = uc_friend_totalnum($discuz_uid, $friendtype);
+		$buddies = $buddynum ? uc_friend_ls($discuz_uid, $page, $tpp, $buddynum, $friendtype) : array();
+		$multipage = multi($buddynum, $tpp, $page, "my.php?item=buddylist$extratype");
 
 		if($buddies) {
 			foreach($buddies as $key => $buddy) {
@@ -536,14 +561,13 @@ if(empty($item) || $item == 'threads') {
 				LEFT JOIN {$tablepre}memberfields mf ON mf.uid=m.uid
 				WHERE m.uid IN (".implodeids(array_keys($buddylist)).")");
 			while($member = $db->fetch_array($query)) {
-				$uid = $member['uid'];
-				if(isset($buddylist[$uid])) {
-					$buddylist[$uid]['avatar'] = discuz_uc_avatar($uid, 'small');
-					$buddylist[$uid]['gender'] = $member['gender'];
-					$buddylist[$uid]['online'] = $member['online'];
-					$buddylist[$uid]['msn'] = explode("\t", $member['msn']);
+				if(isset($buddylist[$member['uid']])) {
+					$buddylist[$member['uid']]['avatar'] = discuz_uc_avatar($member['uid'], 'small');
+					$buddylist[$member['uid']]['gender'] = $member['gender'];
+					$buddylist[$member['uid']]['online'] = $member['online'];
+					$buddylist[$member['uid']]['msn'] = explode("\t", $member['msn']);
 				} else {
-					unset($buddylist[$uid]);
+					unset($buddylist[$member['uid']]);
 				}
 			}
 		}
@@ -616,15 +640,15 @@ if(empty($item) || $item == 'threads') {
 			}
 		}
 
-		showmessage('buddy_update_succeed', 'my.php?item=buddylist');
+		showmessage('buddy_update_succeed', 'my.php?item=buddylist'.$extratype);
 
 	}
 
 } elseif($item == 'attention') {
 	if(!submitcheck('attentionsubmit')) {
-		
+
 		$type = !$type ? 'thread' : $type;
-		
+
 		if($type == 'forum') {
 			if($action == 'add') {
 				if($db->result_first("SELECT COUNT(*) FROM {$tablepre}favoriteforums WHERE fid='$fid' AND uid='$discuz_uid'")) {
@@ -732,6 +756,10 @@ if(empty($item) || $item == 'threads') {
 
 }
 
-include template('my');
+if(!$uid) {
+	include template('my');
+} else {
+	include template('viewpro_data');
+}
 
 ?>

@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: misc.php 20612 2009-10-12 05:44:25Z monkey $
+	$Id: misc.php 21333 2010-01-06 06:47:34Z cnteacher $
 */
 
 define('NOROBOT', TRUE);
@@ -90,7 +90,7 @@ if($action == 'maxpages') {
 	checklowerlimit($getattachcredits, -1);
 	updatecredits($discuz_uid, $getattachcredits, -1);
 
-	$policymsgs = $p = '';
+	$policymsg = $p = '';
 	foreach($getattachcredits as $id => $policy) {
 		$policymsg .= $p.($extcredits[$id]['img'] ? $extcredits[$id]['img'].' ' : '').$extcredits[$id]['title'].' '.$policy.' '.$extcredits[$id]['unit'];
 		$p = ', ';
@@ -127,7 +127,7 @@ if($action == 'maxpages') {
 
 	$sidauth = rawurlencode(authcode($sid, 'ENCODE', $authkey));
 
-	if($db->result_first("SELECT COUNT(*) FROM {$tablepre}attachpaymentlog WHERE aid='$aid' AND uid='$discuz_uid'")) {		
+	if($db->result_first("SELECT COUNT(*) FROM {$tablepre}attachpaymentlog WHERE aid='$aid' AND uid='$discuz_uid'")) {
 		showmessage('attachment_yetpay', "attachment.php?aid=$aidencode", '', 1);
 	}
 
@@ -228,17 +228,11 @@ if($action == 'maxpages') {
 						VALUES ('0', '0', '$timestamp', '0', '0', '$attach[name]', '$attach[type]', '$attach[size]', '$attach[attachment]', '0', '$isimage', '$uid', '$attach[thumb]', '$attach[remote]', '$attach[width]')");
 					$aid = $db->insert_id();
 					$statusid = 0;
-					//统计上传附件完成次数
-					$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log';
 					$uploadtag = 'upload';
 					if(!$attachid) {
 						$uploadtag = 'swfupload';
 					}
-					if($fp = @fopen($statlogfile, 'a')) {
-						@flock($fp, 2);
-						fwrite($fp, stat_query('', 'action='.$uploadtag, '', '', 'forumstat.php')."\n");
-						fclose($fp);
-					}
+					write_statlog('', 'action='.$uploadtag, '', '', 'forumstat.php');
 				} else {
 					$statusid = $attachments;
 				}
@@ -252,6 +246,8 @@ if($action == 'maxpages') {
 			echo "DISCUZUPLOAD|$statusid|$aid|$isimage";
 		} elseif($simple == 2) {
 			echo "DISCUZUPLOAD|".($type == 'image' ? '1' : '0')."|$statusid|$aid|$isimage|$attach[attachment]";
+		} else {
+			echo $aid;
 		}
 	}
 	exit;
@@ -287,7 +283,7 @@ if($action == 'maxpages') {
 		if($result == 'Declined') {
 			dheader("Location: memcp.php");
 		} else {
-			showmessage($response['result']);
+			showmessage('Binding Failed. Visit <a href="http://im.live.cn/imme/index.htm" target="_blank">MSN IMME</a> Q&A, please.');
 		}
 	}
 
@@ -338,18 +334,18 @@ if($action == 'votepoll' && submitcheck('pollsubmit', 1)) {
 	if(!$allowvote) {
 		showmessage('group_nopermission', NULL, 'NOPERM');
 	} elseif(!empty($thread['closed'])) {
-		showmessage('thread_poll_closed');
+		showmessage('thread_poll_closed', NULL, 'NOPERM');
 	} elseif(empty($pollanswers)) {
-		showmessage('thread_poll_invalid');
+		showmessage('thread_poll_invalid', NULL, 'NOPERM');
 	}
 
 	$pollarray = $db->fetch_first("SELECT maxchoices, expiration FROM {$tablepre}polls WHERE tid='$tid'");
 	if(!$pollarray) {
 		showmessage('undefined_action', NULL, 'HALTED');
 	} elseif($pollarray['expiration'] && $pollarray['expiration'] < $timestamp) {
-		showmessage('poll_overdue');
+		showmessage('poll_overdue', NULL, 'NOPERM');
 	} elseif($pollarray['maxchoices'] && $pollarray['maxchoices'] < count($pollanswers)) {
-		showmessage('poll_choose_most');
+		showmessage('poll_choose_most', NULL, 'NOPERM');
 	}
 
 	$voterids = $discuz_uid ? $discuz_uid : $onlineip;
@@ -358,7 +354,7 @@ if($action == 'votepoll' && submitcheck('pollsubmit', 1)) {
 	$query = $db->query("SELECT polloptionid, voterids FROM {$tablepre}polloptions WHERE tid='$tid'");
 	while($pollarray = $db->fetch_array($query)) {
 		if(strexists("\t".$pollarray['voterids']."\t", "\t".$voterids."\t")) {
-			showmessage('thread_poll_voted');
+			showmessage('thread_poll_voted', NULL, 'NOPERM');
 		}
 		$polloptionid[] = $pollarray['polloptionid'];
 	}
@@ -792,7 +788,6 @@ if($action == 'votepoll' && submitcheck('pollsubmit', 1)) {
 		}
 		if($updateauthor) {
 			updatecredits($thread['authorid'], array($creditstransextra[1] => $thread['netprice']));
-			$db->query("UPDATE {$tablepre}members SET extcredits$creditstransextra[1]=extcredits$creditstransextra[1]+$thread[netprice] WHERE uid='$thread[authorid]'");
 		}
 		updatecredits($discuz_uid, array($creditstransextra[1] => $thread['price']), -1);
 		$db->query("INSERT INTO {$tablepre}paymentlog (uid, tid, authorid, dateline, amount, netamount)
@@ -863,14 +858,26 @@ if($action == 'votepoll' && submitcheck('pollsubmit', 1)) {
 
 } elseif($action == 'viewthreadmod' && $tid) {
 
+	include_once language('modactions');
 	$loglist = array();
 	$query = $db->query("SELECT * FROM {$tablepre}threadsmod WHERE tid='$tid' ORDER BY dateline DESC");
+
 	while($log = $db->fetch_array($query)) {
 		$log['dateline'] = dgmdate("$dateformat $timeformat", $log['dateline'] + $timeoffset * 3600);
 		$log['expiration'] = !empty($log['expiration']) ? gmdate("$dateformat", $log['expiration'] + $timeoffset * 3600) : '';
 		$log['status'] = empty($log['status']) ? 'style="text-decoration: line-through" disabled' : '';
+		if(!$modactioncode[$log['action']] && preg_match('/S(\d\d)/', $log['action'], $a) || $log['action'] == 'SPA') {
+			@include_once DISCUZ_ROOT.'./forumdata/cache/cache_stamps.php';
+			if($log['action'] == 'SPA') {
+				$log['action'] = 'SPA'.$log['stamp'];
+				$stampid = $log['stamp'];
+			} else {
+				$stampid = intval($a[1]);
+			}
+			$modactioncode[$log['action']] = $modactioncode['SPA'].' '.$_DCACHE['stamps'][$stampid]['text'];
+		}
 		if($log['magicid']) {
-			require_once DISCUZ_ROOT.'./forumdata/cache/cache_magics.php';
+			@include_once DISCUZ_ROOT.'./forumdata/cache/cache_magics.php';
 			$log['magicname'] = $_DCACHE['magics'][$log['magicid']]['name'];
 		}
 		$loglist[] = $log;
@@ -878,8 +885,6 @@ if($action == 'votepoll' && submitcheck('pollsubmit', 1)) {
 
 	if(empty($loglist)) {
 		showmessage('threadmod_nonexistence');
-	} else {
-		include_once language('modactions');
 	}
 
 	include template('viewthread_mod');
@@ -922,12 +927,12 @@ if($action == 'votepoll' && submitcheck('pollsubmit', 1)) {
 	if(submitcheck('activitysubmit')) {
 		$expiration = $db->result_first("SELECT expiration FROM {$tablepre}activities WHERE tid='$tid'");
 		if($expiration && $expiration < $timestamp) {
-			showmessage('activity_stop');
+			showmessage('activity_stop', NULL, 'NOPERM');
 		}
 
 		$query = $db->query("SELECT applyid FROM {$tablepre}activityapplies WHERE tid='$tid' and username='$discuz_user'");
 		if($db->num_rows($query)) {
-			showmessage('activity_repeat_apply', "viewthread.php?tid=$tid&amp;extra=$extra");
+			showmessage('activity_repeat_apply', NULL, 'NOPERM');
 		}
 		$payvalue = intval($payvalue);
 		$payment = $payment ? $payvalue : -1;
@@ -951,15 +956,16 @@ if($action == 'votepoll' && submitcheck('pollsubmit', 1)) {
 
 } elseif($action == 'activityapplylist') {
 
+	$isactivitymaster = $thread['authorid'] == $discuz_uid || $alloweditactivity;
 	$activity = $db->fetch_first("SELECT * FROM {$tablepre}activities WHERE tid='$tid'");
-	if(!$activity || $thread['special'] != 4 || $thread['authorid'] != $discuz_uid) {
+	if(!$activity || $thread['special'] != 4 || !$isactivitymaster) {
 		showmessage('undefined_action');
 	}
 
 	if(!submitcheck('applylistsubmit')) {
-		$sqlverified = $thread['authorid'] == $discuz_uid ? '' : 'AND verified=1';
+		$sqlverified = $isactivitymaster ? '' : 'AND verified=1';
 
-		if(!empty($uid) && $thread['authorid'] == $discuz_uid) {
+		if(!empty($uid) && $isactivitymaster) {
 			$sqlverified .= " AND uid='$uid'";
 		}
 
@@ -1002,12 +1008,45 @@ if($action == 'votepoll' && submitcheck('pollsubmit', 1)) {
 		}
 	}
 
+} elseif($action == 'activityexport') {
+
+	$activity = $db->fetch_first("SELECT a.*, p.message FROM {$tablepre}activities a LEFT JOIN {$tablepre}posts p ON p.tid=a.tid AND p.first='1' WHERE a.tid='$tid'");
+	if(!$activity || $thread['special'] != 4 || $thread['authorid'] != $discuz_uid && !$alloweditactivity) {
+		showmessage('undefined_action');
+	}
+
+	$activity['starttimefrom'] = dgmdate("$dateformat $timeformat", $activity['starttimefrom'] + $timeoffset * 3600, 0);
+	$activity['starttimeto'] = $activity['starttimeto'] ? dgmdate("$dateformat $timeformat", $activity['starttimeto'] + $timeoffset * 3600, 0) : 0;
+	$activity['expiration'] = $activity['expiration'] ? dgmdate("$dateformat $timeformat", $activity['expiration'] + $timeoffset * 3600, 0) : 0;
+
+	$applynumbers = $db->result_first("SELECT COUNT(*) FROM {$tablepre}activityapplies WHERE tid='$tid' AND verified=1");
+
+	$applylist = array();
+	$query = $db->query("SELECT applyid, username, uid, message, verified, dateline, payment, contact FROM {$tablepre}activityapplies WHERE tid='$tid' ORDER BY dateline DESC");
+	while($apply = $db->fetch_array($query)) {
+		$apply['dateline'] = dgmdate("$dateformat $timeformat", $apply['dateline'] + $timeoffset *3600, 0);
+		$applylist[] = $apply;
+	}
+
+	$filename = "activity_{$tid}.csv";
+
+	ob_end_clean();
+	header('Content-Encoding: none');
+	header('Content-Type: '.('application/octet-stream'));
+	header('Content-Disposition: '.('attachment; ').'filename='.$filename);
+	header('Pragma: no-cache');
+	header('Expires: 0');
+	if(strtoupper($charset) == 'UTF-8') {
+		echo chr(0xEF).chr(0xBB).chr(0xBF);
+	}
+	include template('activity_export');
+
 } elseif($action == 'tradeorder') {
 
 	$trades = array();
 	$query=$db->query("SELECT * FROM {$tablepre}trades WHERE tid='$tid' ORDER BY displayorder");
 
-	if($thread['authorid'] != $discuz_uid) {
+	if($thread['authorid'] != $discuz_uid && !$allowedittrade) {
 		showmessage('undefined_action', NULL, 'HALTED');
 	}
 

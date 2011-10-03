@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: forums.inc.php 20693 2009-10-15 02:30:16Z monkey $
+	$Id: forums.inc.php 21337 2010-01-06 08:09:58Z tiger $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -117,7 +117,7 @@ var rowtypedata = [
 			}
 		}
 
-		$table_forum_columns = array('fup', 'type', 'name', 'status', 'displayorder', 'styleid', 'allowsmilies', 'allowhtml', 'allowbbcode', 'allowimgcode', 'allowanonymous', 'allowshare', 'allowpostspecial', 'alloweditrules', 'alloweditpost', 'modnewposts', 'recyclebin', 'jammer', 'forumcolumns', 'threadcaches', 'disablewatermark', 'autoclose', 'simple');
+		$table_forum_columns = array('fup', 'type', 'name', 'status', 'displayorder', 'styleid', 'allowsmilies', 'allowhtml', 'allowbbcode', 'allowimgcode', 'allowmediacodenew', 'allowanonymous', 'allowshare', 'allowpostspecial', 'alloweditrules', 'alloweditpost', 'modnewposts', 'recyclebin', 'jammer', 'forumcolumns', 'threadcaches', 'disablewatermark', 'autoclose', 'simple');
 		$table_forumfield_columns = array('fid', 'attachextensions', 'threadtypes', 'postcredits', 'replycredits', 'digestcredits', 'postattachcredits', 'getattachcredits', 'viewperm', 'postperm', 'replyperm', 'getattachperm', 'postattachperm');
 		$projectdata = array();
 
@@ -221,14 +221,29 @@ var rowtypedata = [
 		showtips('forums_moderators_tips');
 		showformheader("forums&operation=moderators&fid=$fid&");
 		showtableheader('', 'fixpadding');
-		showsubtitle(array('', 'display_order', 'username', 'forums_moderators_inherited'));
+		showsubtitle(array('', 'display_order', 'username', 'usergroups', 'forums_moderators_inherited'));
 
-		$query = $db->query("SELECT m.username, mo.* FROM {$tablepre}members m, {$tablepre}moderators mo WHERE mo.fid='$fid' AND m.uid=mo.uid ORDER BY mo.inherited, mo.displayorder");
+		$query = $db->query("SELECT a.admingid, u.radminid, u.grouptitle FROM {$tablepre}admingroups a
+			INNER JOIN {$tablepre}usergroups u ON u.groupid=a.admingid
+			WHERE u.radminid>'0'
+			ORDER BY u.type, a.admingid");
+		$modgroups = array();
+		$groupselect = '<select name="newgroup">';
+		while($modgroup = $db->fetch_array($query)) {
+			if($modgroup['radminid'] == 3) {
+				$groupselect .= '<option value="'.$modgroup['admingid'].'">'.$modgroup['grouptitle'].'</option>';
+			}
+			$modgroups[$modgroup['admingid']] = $modgroup['grouptitle'];
+		}
+		$groupselect .= '</select>';
+
+		$query = $db->query("SELECT m.username, m.groupid, mo.* FROM {$tablepre}members m, {$tablepre}moderators mo WHERE mo.fid='$fid' AND m.uid=mo.uid ORDER BY mo.inherited, mo.displayorder");
 		while($mod = $db->fetch_array($query)) {
 			showtablerow('', array('class="td25"', 'class="td28"'), array(
 				'<input type="checkbox" class="checkbox" name="delete[]" value="'.$mod[uid].'"'.($mod['inherited'] ? ' disabled' : '').' />',
 				'<input type="text" class="txt" name="displayordernew['.$mod[uid].']" value="'.$mod[displayorder].'" size="2" />',
-				"<a href=\"space.php?uid=$mod[uid]\" target=\"_blank\">$mod[username]</a>",
+				"<a href=\"$BASESCRIPT?action=members&operation=group&uid=$mod[uid]\" target=\"_blank\">$mod[username]</a>",
+				$modgroups[$mod['groupid']],
 				lang($mod['inherited'] ? 'yes' : 'no'),
 			));
 		}
@@ -245,6 +260,7 @@ var rowtypedata = [
 			lang('add_new'),
 			'<input type="text" class="txt" name="newdisplayorder" value="0" size="2" />',
 			'<input type="text" class="txt" name="newmoderator" value="" size="20" />',
+			$groupselect,
 			''
 		));
 
@@ -335,7 +351,7 @@ var rowtypedata = [
 					cpmsg('members_edit_nonexistence', '', 'error');
 				} else {
 					$newmodarray[] = $member['uid'];
-					$db->query("UPDATE {$tablepre}members SET groupid='3' WHERE uid='$member[uid]' AND adminid NOT IN (1,2,3,4,5,6,7,8,-1)");
+					$db->query("UPDATE {$tablepre}members SET groupid='$newgroup' WHERE uid='$member[uid]' AND adminid NOT IN (1,2,3,4,5,6,7,8,-1)");
 					$db->query("UPDATE {$tablepre}members SET adminid='3' WHERE uid='$member[uid]' AND adminid NOT IN (1,2)");
 					$db->query("REPLACE INTO {$tablepre}moderators (uid, fid, displayorder, inherited)
 						VALUES ('$member[uid]', '$fid', '$newdisplayorder', '0')");
@@ -456,6 +472,9 @@ var rowtypedata = [
 		$forum = @array_merge($forum, unserialize($db->result($query, 0)));
 	}
 
+	$forumdomains = array();
+	$query = $db->query("SELECT value FROM {$tablepre}settings WHERE variable='forumdomains'");
+	$forumdomains = @unserialize($db->result($query, 0));
 	if(!submitcheck('detailsubmit') && !submitcheck('saveconfigsubmit')) {
 		$anchor = in_array($anchor, array('basic', 'extend', 'posts', 'credits', 'threadtypes', 'threadsorts', 'perm')) ? $anchor : 'basic';
 		shownav('forum', 'forums_edit');
@@ -510,9 +529,10 @@ var rowtypedata = [
 		}
 
 		if($forum['type'] == 'group') {
-
+			$forum['extra'] = unserialize($forum['extra']);
 			showtableheader();
 			showsetting('forums_edit_basic_cat_name', 'namenew', $forum['name'], 'text');
+			showsetting('forums_edit_basic_cat_name_color', 'extra[namecolor]', $forum['extra']['namecolor'], 'color');
 			showsetting('forums_edit_extend_sub_horizontal', 'forumcolumnsnew', $forum['forumcolumns'], 'text');
 			showsetting('forums_cat_display', 'statusnew', $forum['status'], 'radio');
 			if($sideselect) {
@@ -560,9 +580,10 @@ var rowtypedata = [
 			$fupselect .= '</select>';
 
 			$groups = array();
-			$query = $db->query("SELECT groupid, grouptitle FROM {$tablepre}usergroups");
+			$query = $db->query("SELECT type, groupid, grouptitle, radminid FROM {$tablepre}usergroups ORDER BY (creditshigher<>'0' || creditslower<>'0'), creditslower, groupid");
 			while($group = $db->fetch_array($query)) {
-				$groups[] = $group;
+				$group['type'] = $group['type'] == 'special' && $group['radminid'] ? 'specialadmin' : $group['type'];
+				$groups[$group['type']][] = $group;
 			}
 
 			$styleselect = "<select name=\"styleidnew\"><option value=\"0\">$lang[use_default]</option>";
@@ -605,7 +626,7 @@ var rowtypedata = [
 				$forum['threadsorts'] = unserialize($forum['threadsorts']);
 				$forum['threadsorts']['status'] = 1;
 			} else {
-				$forum['threadsorts'] = array('status' => 0, 'required' => 0, 'listable' => 0, 'prefix' => 0, 'options' => array());
+				$forum['threadsorts'] = array('status' => 0, 'required' => 0, 'prefix' => 0, 'options' => array());
 			}
 
 			if($forum['threadplugin']) {
@@ -650,7 +671,8 @@ var rowtypedata = [
 						$type['name'],
 						$type['description'],
 						"<select name=\"threadsortsnew[options][{$type[typeid]}]\"><option value=\"1\" $typeselected[1]>$lang[forums_edit_threadtypes_use_cols]</option><option value=\"2\" $typeselected[2]>$lang[forums_edit_threadtypes_use_choice]</option></select>",
-						"<input class=\"checkbox\" type=\"checkbox\" name=\"threadsortsnew[options][show][{$type[typeid]}]\" value=\"3\" $typeselected[3] />"
+						"<input class=\"checkbox\" type=\"checkbox\" name=\"threadsortsnew[options][show][{$type[typeid]}]\" value=\"3\" $typeselected[3] />",
+						"<input class=\"radio\" type=\"radio\" name=\"threadsortsnew[defaultshow]\" value=\"$type[typeid]\" ".($forum['threadsorts']['defaultshow'] == $type['typeid'] ? 'checked' : '')." />"
 					), TRUE) : '';
 				}
 			}
@@ -686,19 +708,29 @@ var rowtypedata = [
 			$forum['modrecommend'] = $forum['modrecommend'] ? unserialize($forum['modrecommend']) : '';
 			$forum['formulaperm'] = unserialize($forum['formulaperm']);
 			$forum['medal'] = $forum['formulaperm']['medal'];
+			$forum['formulapermmessage'] = $forum['formulaperm']['message'];
+			$forum['formulapermusers'] = $forum['formulaperm']['users'];
 			$forum['formulaperm'] = $forum['formulaperm'][0];
+			$forum['extra'] = unserialize($forum['extra']);
+			$forum['threadsorts']['default'] = $forum['threadsorts']['defaultshow'] ? 1 : 0;
 
 			showtagheader('div', 'basic', $anchor == 'basic');
 			showtableheader('forums_edit_basic', 'nobottom');
 			showsetting('forums_edit_basic_name', 'namenew', $forum['name'], 'text');
+			showsetting('forums_edit_base_name_color', 'extra[namecolor]', $forum['extra']['namecolor'], 'color');
 			showsetting('forums_edit_basic_scheme', '', '', $projectselect);
-			showsetting('forums_edit_basic_display', 'statusnew', $forum['status'], 'radio');
+			showsetting('forums_edit_basic_display', array('statusnew', array(
+					array(1, $lang['forums_edit_basic_display_yes']),
+					array(0, $lang['forums_edit_basic_display_no']),
+					array(2, $lang['forums_edit_basic_display_select'])
+			)), $forum['status'], 'mradio');
 			showsetting('forums_edit_basic_up', '', '', $fupselect);
 			showsetting('forums_edit_basic_redirect', 'redirectnew', $forum['redirect'], 'text');
 			showsetting('forums_edit_basic_icon', 'iconnew', $forum['icon'], 'text');
 			showsetting('forums_edit_basic_description', 'descriptionnew', html2bbcode($forum['description']), 'textarea');
 			showsetting('forums_edit_basic_rules', 'rulesnew', html2bbcode($forum['rules']), 'textarea');
 			showsetting('forums_edit_basic_keyword', 'keywordsnew', $forum['keywords'], 'text');
+			showsetting('forums_edit_basic_binddomain', 'binddomainnew', $forumdomains[$fid], 'text');
 			showtablefooter();
 			showtagfooter('div');
 
@@ -889,8 +921,8 @@ EOT;
 				), TRUE), $forum['threadsorts']['status'], 'mradio');
 				showtagheader('tbody', 'threadsorts_config', $forum['threadsorts']['status']);
 				showsetting('forums_edit_threadtypes_required', 'threadsortsnew[required]', $forum['threadsorts']['required'], 'radio');
-				showsetting('forums_edit_threadtypes_listable', 'threadsortsnew[listable]', $forum['threadsorts']['listable'], 'radio');
 				showsetting('forums_edit_threadtypes_prefix', 'threadsortsnew[prefix]', $forum['threadsorts']['prefix'], 'radio');
+				showsetting('forums_edit_threadsorts_default', 'threadsortsnew[default]', $forum['threadsorts']['default'], 'radio');
 				if($typemodelshow) {
 					showsetting('forums_edit_threadsorts_typemodel', '', '', $typemodelselect);
 				}
@@ -899,7 +931,7 @@ EOT;
 
 				showtagheader('div', 'threadsorts_manage', $forum['threadsorts']['status']);
 				showtableheader('', 'noborder fixpadding');
-				showsubtitle(array('enable', 'forums_edit_threadtypes_name', 'forums_edit_threadtypes_note', 'forums_edit_threadtypes_showtype', 'forums_edit_threadtypes_show'));
+				showsubtitle(array('enable', 'forums_edit_threadtypes_name', 'forums_edit_threadtypes_note', 'forums_edit_threadtypes_showtype', 'forums_edit_threadtypes_show', 'forums_edit_threadtypes_defaultshow'));
 				echo $sortselect;
 				showtablefooter();
 				showtagfooter('div');
@@ -910,6 +942,7 @@ EOT;
 			showtagheader('div', 'perm', $anchor == 'perm');
 			showtableheader('forums_edit_perm_forum', 'nobottom');
 			showsetting('forums_edit_perm_passwd', 'passwordnew', $forum['password'], 'text');
+			showsetting('forums_edit_perm_users', 'formulapermusersnew', stripslashes($forum['formulapermusers']), 'textarea');
 			$colums = array();
 			@include_once DISCUZ_ROOT.'./forumdata/cache/cache_medals.php';
 			foreach($_DCACHE['medals'] as $medalid => $medal) {
@@ -930,13 +963,17 @@ EOT;
 
 			));
 
-			foreach($groups as $group) {
-				$colums = array('<input class="checkbox" title="'.$lang['select_all'].'" type="checkbox" name="chkallv'.$group['groupid'].'" onclick="checkAll(\'value\', this.form, '.$group['groupid'].', \'chkallv'.$group['groupid'].'\')" id="chkallv_'.$group['groupid'].'" /><label for="chkallv_'.$group['groupid'].'"> '.$group[grouptitle].'</label>');
-				foreach($perms as $perm) {
-					$checked = strstr($forum[$perm], "\t$group[groupid]\t") ? 'checked="checked"' : NULL;
-					$colums[] = '<input class="checkbox" type="checkbox" name="'.$perm.'[]" value="'.$group['groupid'].'" chkvalue="'.$group['groupid'].'" '.$checked.'>';
+			foreach(array('member', 'special', 'specialadmin', 'system') as $type) {
+				$tgroups = is_array($groups[$type]) ? $groups[$type] : array();
+				showtablerow('', '', array('<b>'.$lang['usergroups_'.$type].'</b>'));
+				foreach($tgroups as $group) {
+					$colums = array('<input class="checkbox" title="'.$lang['select_all'].'" type="checkbox" name="chkallv'.$group['groupid'].'" onclick="checkAll(\'value\', this.form, '.$group['groupid'].', \'chkallv'.$group['groupid'].'\')" id="chkallv_'.$group['groupid'].'" /><label for="chkallv_'.$group['groupid'].'"> '.$group['grouptitle'].'</label>');
+					foreach($perms as $perm) {
+						$checked = strstr($forum[$perm], "\t$group[groupid]\t") ? 'checked="checked"' : NULL;
+						$colums[] = '<input class="checkbox" type="checkbox" name="'.$perm.'[]" value="'.$group['groupid'].'" chkvalue="'.$group['groupid'].'" '.$checked.'>';
+					}
+					showtablerow('', '', $colums);
 				}
-				showtablerow('', '', $colums);
 			}
 			showtablerow('', 'class="lineheight" colspan="6"', $lang['forums_edit_perm_forum_comment']);
 			showtablefooter();
@@ -986,27 +1023,47 @@ EOT;
 		$extcreditsbtn .= '<a href="###" onclick="insertunit(\'extcredits'.$i.'\')">'.$extcredittitle.'</a> &nbsp;';
 	}
 
+	$profilefields = '';
+	$query = $db->query("SELECT * FROM {$tablepre}profilefields WHERE available='1' AND unchangeable='1'");
+	while($profilefield = $db->fetch_array($query)) {
+		echo 'result = result.replace(/field_'.$profilefield['fieldid'].'/g, \'<u>'.str_replace("'", "\'", $profilefield['title']).'</u>\');';
+		$profilefields .= '<a href="###" onclick="insertunit(\' field_'.$profilefield['fieldid'].' \')">&nbsp;'.$profilefield['title'].'&nbsp;</a>&nbsp;';
+	}
+
+	echo 'result = result.replace(/regdate/g, \'<u>'.$lang['forums_edit_perm_formula_regdate'].'</u>\');';
+	echo 'result = result.replace(/regday/g, \'<u>'.$lang['forums_edit_perm_formula_regday'].'</u>\');';
+	echo 'result = result.replace(/regip/g, \'<u>'.$lang['forums_edit_perm_formula_regip'].'</u>\');';
+	echo 'result = result.replace(/lastip/g, \'<u>'.$lang['forums_edit_perm_formula_lastip'].'</u>\');';
+	echo 'result = result.replace(/buyercredit/g, \'<u>'.$lang['forums_edit_perm_formula_buyercredit'].'</u>\');';
+	echo 'result = result.replace(/sellercredit/g, \'<u>'.$lang['forums_edit_perm_formula_sellercredit'].'</u>\');';
 	echo 'result = result.replace(/digestposts/g, \'<u>'.$lang['settings_credits_formula_digestposts'].'</u>\');';
 	echo 'result = result.replace(/posts/g, \'<u>'.$lang['settings_credits_formula_posts'].'</u>\');';
 	echo 'result = result.replace(/threads/g, \'<u>'.$lang['settings_credits_formula_threads'].'</u>\');';
 	echo 'result = result.replace(/oltime/g, \'<u>'.$lang['settings_credits_formula_oltime'].'</u>\');';
 	echo 'result = result.replace(/pageviews/g, \'<u>'.$lang['settings_credits_formula_pageviews'].'</u>\');';
-	echo 'result = result.replace(/and/g, \'&nbsp;&nbsp;'.$lang['forums_edit_perm_formula_and'].'&nbsp;&nbsp;\');';
-	echo 'result = result.replace(/or/g, \'&nbsp;&nbsp;'.$lang['forums_edit_perm_formula_or'].'&nbsp;&nbsp;\');';
+	echo 'result = result.replace(/and/g, \'&nbsp;&nbsp;<b>'.$lang['forums_edit_perm_formula_and'].'</b>&nbsp;&nbsp;\');';
+	echo 'result = result.replace(/or/g, \'&nbsp;&nbsp;<b>'.$lang['forums_edit_perm_formula_or'].'</b>&nbsp;&nbsp;\');';
 	echo 'result = result.replace(/>=/g, \'&ge;\');';
 	echo 'result = result.replace(/<=/g, \'&le;\');';
+	echo 'result = result.replace(/==/g, \'=\');';
 
 ?>
 		$('formulapermexp').innerHTML = result;
 	}
 </script>
 <tr><td colspan="2"><div class="extcredits">
-<?php echo $extcreditsbtn?><br />
+<?php echo $extcreditsbtn?>
+<a href="###" onclick="insertunit(' regdate ')">&nbsp;<?php echo lang('forums_edit_perm_formula_regdate')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' regday ')">&nbsp;<?php echo lang('forums_edit_perm_formula_regday')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' regip ')">&nbsp;<?php echo lang('forums_edit_perm_formula_regip')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' lastip ')">&nbsp;<?php echo lang('forums_edit_perm_formula_lastip')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' buyercredit ')">&nbsp;<?php echo lang('forums_edit_perm_formula_buyercredit')?>&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' sellercredit ')">&nbsp;<?php echo lang('forums_edit_perm_formula_sellercredit')?>&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' digestposts ')"><?php echo lang('forums_edit_perm_formula_digestposts')?></a>&nbsp;
 <a href="###" onclick="insertunit(' posts ')"><?php echo lang('forums_edit_perm_formula_posts')?></a>&nbsp;
 <a href="###" onclick="insertunit(' threads ')"><?php echo lang('forums_edit_perm_formula_threads')?></a>&nbsp;
 <a href="###" onclick="insertunit(' oltime ')"><?php echo lang('forums_edit_perm_formula_oltime')?></a>&nbsp;
-<a href="###" onclick="insertunit(' pageviews ')"><?php echo lang('forums_edit_perm_formula_pageviews')?></a>&nbsp;
+<a href="###" onclick="insertunit(' pageviews ')"><?php echo lang('forums_edit_perm_formula_pageviews')?></a><?php echo $profilefields;?><br />
 <a href="###" onclick="insertunit(' + ')">&nbsp;+&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' - ')">&nbsp;-&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' * ')">&nbsp;*&nbsp;</a>&nbsp;
@@ -1015,10 +1072,14 @@ EOT;
 <a href="###" onclick="insertunit(' >= ')">&nbsp;>=&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' < ')">&nbsp;<&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' <= ')">&nbsp;<=&nbsp;</a>&nbsp;
-<a href="###" onclick="insertunit(' = ')">&nbsp;=&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' == ')">&nbsp;=&nbsp;</a>&nbsp;
+<a href="###" onclick="insertunit(' != ')">&nbsp;!=&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' (', ') ')">&nbsp;(&nbsp;)&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' and ')">&nbsp;<?php echo lang('forums_edit_perm_formula_and')?>&nbsp;</a>&nbsp;
 <a href="###" onclick="insertunit(' or ')">&nbsp;<?php echo lang('forums_edit_perm_formula_or')?>&nbsp;</a>&nbsp;<br />
+
+
+
 <div id="formulapermexp" class="margintop marginbot diffcolor2"><?php echo $formulapermexp?></div>
 </div>
 <textarea name="formulapermnew" id="formulapermnew" class="marginbot" style="width:80%" rows="3" onkeyup="formulaexp()"><?php echo dhtmlspecialchars($forum['formulaperm'])?></textarea>
@@ -1028,6 +1089,9 @@ EOT;
 </td></tr>
 <?php
 
+			showtablefooter();
+			showtableheader('', 'noborder fixpadding');
+			showsetting('forums_edit_perm_formulapermmessage', 'formulapermmessagenew', $forum['formulapermmessage'], 'textarea');
 			showtablefooter();
 			showtagfooter('div');
 
@@ -1045,13 +1109,21 @@ EOT;
 			cpmsg('forums_name_toolong', '', 'error');
 		}
 
-		if($formulapermnew && !preg_match("/^(\+|\-|\*|\/|\.|>|<|=|\d|\s|extcredits[1-8]|digestposts|posts|threads|pageviews|oltime|and|or)+$/", $formulapermnew) || !is_null(@eval(preg_replace("/(digestposts|posts|threads|pageviews|oltime|extcredits[1-8])/", "\$\\1", $formulapermnew).';'))) {
+		if($formulapermnew && !preg_match("/^(\{|\}|\+|\-|\*|\/|\.|>|<|=|!|\d|\s|\(|\)|extcredits[1-8]|regdate|regday|regip|lastip|buyercredit|sellercredit|field\_\d+|digestposts|posts|threads|pageviews|oltime|and|or)+$/", $formulapermnew) ||
+			!is_null(@eval(preg_replace(
+				array("/(regdate|regday|regip|lastip|buyercredit|sellercredit|field\_\d+|digestposts|posts|threads|pageviews|oltime|extcredits[1-8])/", "/\{([\d\.\-]+?)\}/"),
+				array("\$\\1", "'\\1'"), $formulapermnew).';'))) {
 			cpmsg('forums_formulaperm_error', '', 'error');
 		}
 
 		$formulapermary[0] = $formulapermnew;
-		$formulapermary[1] = preg_replace("/(digestposts|posts|threads|pageviews|oltime|extcredits[1-8])/", "\$_DSESSION['\\1']", $formulapermnew);
+		$formulapermary[1] = preg_replace(
+			array("/(digestposts|posts|threads|pageviews|oltime|extcredits[1-8])/", "/(regdate|regday|regip|lastip|buyercredit|sellercredit|field\_\d+)/"),
+			array("\$_DSESSION['\\1']", "\$memberformula['\\1']"),
+			$formulapermnew);
 		$formulapermary['medal'] = $medalnew;
+		$formulapermary['message'] = $formulapermmessagenew;
+		$formulapermary['users'] = $formulapermusersnew;
 		$formulapermnew = addslashes(serialize($formulapermary));
 
 		if($type == 'group') {
@@ -1071,6 +1143,10 @@ EOT;
 				$forumcolumnsnew = $forumcolumnsnew > 1 ? intval($forumcolumnsnew) : 0;
 
 				$db->query("UPDATE {$tablepre}forums SET name='$namenew',forumcolumns='".$forumcolumnsnew."',status='".intval($statusnew)."' WHERE fid='$fid'");
+
+				$extranew = is_array($_POST['extra']) ? $_POST['extra'] : array();
+				$extranew = serialize($extranew);
+				$db->query("UPDATE {$tablepre}forumfields SET extra='$extranew' WHERE fid='$fid'");
 				updatecache('forums');
 
 				cpmsg('forums_edit_succeed', $BASESCRIPT.'?action=forums', 'succeed');
@@ -1219,7 +1295,6 @@ EOT;
 				$threadtypesadd = "threadtypes='$threadtypesnew',";
 
 				if($threadsortsnew['status']) {
-
 					if(is_array($threadsortsnew['options']) && $threadsortsnew['options']) {
 						$sortids = '0';
 						foreach($threadsortsnew['options'] as $key => $val) {
@@ -1240,10 +1315,14 @@ EOT;
 							$threadsortsnew['typemodelid'][$sort['typeid']] = $sort['modelid'];
 						}
 					}
+					
+					if($threadsortsnew['default'] && !$threadsortsnew['defaultshow']) {
+						cpmsg('forums_edit_threadsort_nonexistence', '', 'error');
+					}
+					
 					$threadsortsnew = $threadsortsnew['types'] ? addslashes(serialize(array
 						(
 						'required' => (bool)$threadsortsnew['required'],
-						'listable' => (bool)$threadsortsnew['listable'],
 						'prefix' => (bool)$threadsortsnew['prefix'],
 						'types' => $threadsortsnew['types'],
 						'selectbox' => $threadsortsnew['selectbox'],
@@ -1251,13 +1330,13 @@ EOT;
 						'show' => $threadsortsnew['show'],
 						'expiration' => $threadsortsnew['expiration'],
 						'modelid' => $threadsortsnew['typemodelid'],
+						'defaultshow' => $threadsortsnew['default'] ? $threadsortsnew['defaultshow'] : '',
 						))) : '';
 				} else {
 					$threadsortsnew = '';
 				}
 
 				$threadsortsadd = "threadsorts='$threadsortsnew',";
-
 				if($typemodel) {
 					$query = $db->query("SELECT id, name FROM {$tablepre}typemodels WHERE id IN (".implodeids($typemodel).") ORDER BY displayorder");
 					while($model = $db->fetch_array($query)) {
@@ -1291,10 +1370,13 @@ EOT;
 			$modrecommendnew = $modrecommendnew && is_array($modrecommendnew) ? addslashes(serialize($modrecommendnew)) : '';
 			$descriptionnew = addslashes(preg_replace('/on(mousewheel|mouseover|click|load|onload|submit|focus|blur)="[^"]*"/i', '', discuzcode(stripslashes($descriptionnew), 1, 0, 0, 0, 1, 1, 0, 0, 1)));
 			$rulesnew = addslashes(preg_replace('/on(mousewheel|mouseover|click|load|onload|submit|focus|blur)="[^"]*"/i', '', discuzcode(stripslashes($rulesnew), 1, 0, 0, 0, 1, 1, 0, 0, 1)));
+			$extranew = is_array($_POST['extra']) ? $_POST['extra'] : array();
+			$extranew = serialize($extranew);
+
 			$db->query("UPDATE {$tablepre}forumfields SET description='$descriptionnew', icon='$iconnew', password='$passwordnew', redirect='$redirectnew', rules='$rulesnew',
 				attachextensions='$attachextensionsnew', $threadtypesadd $threadsortsadd postcredits='$postcreditsnew', replycredits='$replycreditsnew', digestcredits='$digestcreditsnew',
 				postattachcredits='$postattachcreditsnew', getattachcredits='$getattachcreditsnew', viewperm='$viewpermnew', postperm='$postpermnew', replyperm='$replypermnew', tradetypes='$tradetypesnew', typemodels='$threadtypemodeladd',
-				getattachperm='$getattachpermnew', postattachperm='$postattachpermnew', formulaperm='$formulapermnew', modrecommend='$modrecommendnew', keywords='$keywordsnew', threadplugin='$threadpluginnew' WHERE fid='$fid'");
+				getattachperm='$getattachpermnew', postattachperm='$postattachpermnew', formulaperm='$formulapermnew', modrecommend='$modrecommendnew', keywords='$keywordsnew', threadplugin='$threadpluginnew', extra='$extranew' WHERE fid='$fid'");
 
 			if($modrecommendnew && !$modrecommendnew['sort']) {
 				require_once DISCUZ_ROOT.'./include/forum.func.php';
@@ -1303,6 +1385,28 @@ EOT;
 
 			updatecache('forums');
 
+			$update_setting_cache = false;
+			if($binddomainnew) {
+				$binddomainnew = preg_replace('/^https?:\/\//is', '', trim($binddomainnew));
+			} else {
+				$binddomainnew = '';
+			}
+			if(!isset($forumdomains[$fid]) || $forumdomains[$fid] != $binddomainnew) {
+				if(empty($binddomainnew)) {
+					unset($forumdomains[$fid]);
+				} else {
+					$forumdomains[$fid] = $binddomainnew;
+				}
+				if($forumdomains) {
+					$binddomains = array_flip($forumdomains);
+				} else {
+					$binddomains = array();
+				}
+				$db->query("REPLACE INTO {$tablepre}settings (variable, value) VALUES ('forumdomains', '".(addslashes(serialize($forumdomains)))."')");
+				$db->query("REPLACE INTO {$tablepre}settings (variable, value) VALUES ('binddomains', '".(addslashes(serialize($binddomains)))."')");
+				$update_setting_cache = true;
+			}
+
 			if($foruminfosidestatus) {
 				$infosidestatusnew = $infosidestatus;
 				unset($infosidestatusnew['f'.$fid]);
@@ -1310,8 +1414,12 @@ EOT;
 				$foruminfosidestatus['posts'] != $infosidestatus['posts'] && $foruminfosidestatus['posts'] != '' && $infosidestatusnew['f'.$fid]['posts'] = $foruminfosidestatus['posts'];
 				if($infosidestatus != $infosidestatusnew) {
 					$db->query("REPLACE INTO {$tablepre}settings (variable, value) VALUES ('infosidestatus', '".(addslashes(serialize($infosidestatusnew)))."')");
-					updatecache('settings');
+					$update_setting_cache = true;
 				}
+			}
+
+			if($update_setting_cache) {
+				updatecache('settings');
 			}
 
 			if(submitcheck('saveconfigsubmit') && $type != 'group') {
@@ -1436,7 +1544,7 @@ EOT;
 
 	$delfields = array(
 		'forums'	=> array('fid', 'fup', 'type', 'name', 'status', 'displayorder', 'threads', 'posts', 'todayposts', 'lastpost', 'modworks', 'icon'),
-		'forumfields'	=> array('description', 'password', 'redirect', 'moderators', 'rules', 'threadtypes', 'threadsorts', 'typemodels', 'tradetypes', 'threadplugin'),
+		'forumfields'	=> array('description', 'password', 'redirect', 'moderators', 'rules', 'threadsorts', 'typemodels', 'tradetypes', 'threadplugin'),
 	);
 	$fields = array(
 		'forums' 	=> fetch_table_struct('forums'),

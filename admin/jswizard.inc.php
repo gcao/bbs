@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: jswizard.inc.php 20693 2009-10-15 02:30:16Z monkey $
+	$Id: jswizard.inc.php 20835 2009-10-27 02:59:05Z monkey $
 */
 
 if(!defined('IN_DISCUZ') || !defined('IN_ADMINCP')) {
@@ -330,6 +330,7 @@ if(!$operation) {
 			<li'.($tcheckorderby['replies'] ? ' class="checked"' : '').'><input class="radio" type="radio" name="parameter[orderby]" value="replies" '.$tcheckorderby['replies'].'> '.$lang['jswizard_threads_orderby_replies'].'</li>
 			<li'.($tcheckorderby['views'] ? ' class="checked"' : '').'><input class="radio" type="radio" name="parameter[orderby]" value="views" '.$tcheckorderby['views'].'> '.$lang['jswizard_threads_orderby_views'].'</li>
 			<li'.($tcheckorderby['heats'] ? ' class="checked"' : '').'><input class="radio" type="radio" name="parameter[orderby]" value="heats" '.$tcheckorderby['heats'].'> '.$lang['jswizard_threads_orderby_heats'].'</li>
+			<li'.($tcheckorderby['recommends'] ? ' class="checked"' : '').'><input class="radio" type="radio" name="parameter[orderby]" value="recommends" '.$tcheckorderby['recommends'].'> '.$lang['jswizard_threads_orderby_recommends'].'</li>
 			<li'.($tcheckorderby['hourviews'] ? ' class="checked"' : '').'><input class="radio" type="radio" name="parameter[orderby]" value="hourviews" '.$tcheckorderby['hourviews'].'> <input type="text" class="txt" name="parameter[hours]" value="'.$parameter['hours'].'" style="width: 50px;" size="6"> '.$lang['jswizard_threads_orderby_hourviews'].'</li>
 			<li'.($tcheckorderby['todayviews'] ? ' class="checked"' : '').'><input class="radio" type="radio" name="parameter[orderby]" value="todayviews" '.$tcheckorderby['todayviews'].'> '.$lang['jswizard_threads_orderby_todayviews'].'</li>
 			<li'.($tcheckorderby['weekviews'] ? ' class="checked"' : '').'><input class="radio" type="radio" name="parameter[orderby]" value="weekviews" '.$tcheckorderby['weekviews'].'> '.$lang['jswizard_threads_orderby_weekviews'].'</li>

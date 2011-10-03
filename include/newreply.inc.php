@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: newreply.inc.php 20631 2009-10-13 02:48:29Z monkey $
+	$Id: newreply.inc.php 21053 2009-11-09 10:29:02Z wangjinbo $
 */
 
 if(!defined('IN_DISCUZ')) {
@@ -64,6 +64,10 @@ if(!submitcheck('replysubmit', 0, $seccodecheck, $secqaacheck)) {
 
 		$thaquote = $db->fetch_first("SELECT tid, fid, author, authorid, first, message, useip, dateline, anonymous, status FROM {$tablepre}posts WHERE pid='$repquote' AND invisible='0'");
 		if($thaquote['tid'] != $tid) {
+			showmessage('undefined_action', NULL, 'HALTED');
+		}
+
+		if(getstatus($thread['status'], 2) && $thaquote['authorid'] != $discuz_uid && $discuz_uid != $thread['authorid'] && $thaquote['first'] != 1 && !$forum['ismoderator']) {
 			showmessage('undefined_action', NULL, 'HALTED');
 		}
 
@@ -246,9 +250,13 @@ if(!submitcheck('replysubmit', 0, $seccodecheck, $secqaacheck)) {
 	$db->query("INSERT INTO {$tablepre}posts (fid, tid, first, author, authorid, subject, dateline, message, useip, invisible, anonymous, usesig, htmlon, bbcodeoff, smileyoff, parseurloff, attachment)
 			VALUES ('$fid', '$tid', '0', '$discuz_user', '$discuz_uid', '$subject', '$timestamp', '$message', '$onlineip', '$pinvisible', '$isanonymous', '$usesig', '$htmlon', '$bbcodeoff', '$smileyoff', '$parseurloff', '0')");
 	$pid = $db->insert_id();
+	$cacheposition = getstatus($thread['status'], 1);
+	if($pid && $cacheposition) {
+		savepostposition($tid, $pid);
+	}
 
 	$nauthorid = 0;
-	if(!empty($noticeauthor)) {
+	if(!empty($noticeauthor) && !$isanonymous) {
 		list($ac, $nauthorid, $nauthor) = explode('|', $noticeauthor);
 		if($nauthorid != $discuz_uid) {
 			$postmsg = messagecutstr(str_replace($noticetrimstr, '', $message), 100);
@@ -268,7 +276,7 @@ if(!submitcheck('replysubmit', 0, $seccodecheck, $secqaacheck)) {
 		}
 	}
 	if($discuz_uid && !empty($uidarray)) {
-		sendnotice(implode(',', $uidarray), 'favoritethreads_notice', 'threads', $tid, array('user' => $discuz_userss, 'maxusers' => 5));
+		sendnotice(implode(',', $uidarray), 'favoritethreads_notice', 'threads', $tid, array('user' => (!$isanonymous ? $discuz_userss : '<i>Anonymous</i>'), 'maxusers' => 5));
 		$db->query("UPDATE {$tablepre}favoritethreads SET newreplies=newreplies+1, dateline='$timestamp' WHERE uid IN (".implodeids($uidarray).") AND tid='$tid'", 'UNBUFFERED');
 	}
 	if($discuz_uid) {
@@ -282,13 +290,7 @@ if(!submitcheck('replysubmit', 0, $seccodecheck, $secqaacheck)) {
 			$db->query("DELETE FROM {$tablepre}favoritethreads WHERE tid='$tid' AND uid='$discuz_uid'", 'UNBUFFERED');
 		}
 		if($stataction) {
-			//统计各类通知条数
-			$statlogfile = DISCUZ_ROOT.'./forumdata/stat.log';
-			if($fp = @fopen($statlogfile, 'a')) {
-				@flock($fp, 2);
-				fwrite($fp, stat_query('', 'item=attention&action=newreply_'.$stataction, '', '', 'my.php')."\n");
-				fclose($fp);
-			}			
+			write_statlog('', 'item=attention&action=newreply_'.$stataction, '', '', 'my.php');
 		}
 	}
 
@@ -450,8 +452,9 @@ if(!submitcheck('replysubmit', 0, $seccodecheck, $secqaacheck)) {
 			$data['title']['count'] = $posts + 1;
 			add_feed($arg, $data);
 		}
-
-		showmessage($replymessage, "viewthread.php?tid=$tid&pid=$pid&page=".(@ceil(($thread['special'] ? $thread['replies'] + 1 : $thread['replies'] + 2) / $ppp))."&extra=$extra#pid$pid");
+		
+		$page = getstatus($thread['status'], 4) ? 1 : @ceil(($thread['special'] ? $thread['replies'] + 1 : $thread['replies'] + 2) / $ppp);
+		showmessage($replymessage, "viewthread.php?tid=$tid&pid=$pid&page=$page&extra=$extra#pid$pid");
 	}
 
 }

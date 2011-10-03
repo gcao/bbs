@@ -5,8 +5,8 @@
 		<th>{lang activity_already}:</th>
 		<td class="actnum">$applynumbers {lang activity_member_unit}</td>
 		<td class="actctrl">
-		<!--{if $thread['authorid'] == $discuz_uid}-->
-			<a href="misc.php?action=activityapplylist&tid=$tid&pid=$post[pid]" onclick="showWindow('activity', this.href);return false" title="{lang show}">{lang show}</a>
+		<!--{if $thread['authorid'] == $discuz_uid || $alloweditactivity}-->
+			<a href="misc.php?action=activityapplylist&tid=$tid&pid=$post[pid]" onclick="showWindow('activity', this.href);return false" title="{lang show}">{lang show}</a> &nbsp; <a href="misc.php?action=activityexport&tid=$tid" title="{lang pm_archive}">{lang pm_archive}</a>
 		<!--{/if}-->
 		</td>
 		<td rowspan="2">
@@ -21,7 +21,7 @@
 		<tr>
 			<th>{lang activity_about_member}</th>
 			<td class="actnum">$aboutmembers {lang activity_member_unit}</td>
-			<td class="actctrl"><!--{if $thread['authorid'] == $discuz_uid}--><a href="misc.php?action=activityapplylist&tid=$tid&pid=$post[pid]" onclick="showWindow('activity', this.href);return false" title="{lang activity_apply_confirm}">{lang activity_apply_confirm}</a><!--{/if}--></td>
+			<td class="actctrl"><!--{if $thread['authorid'] == $discuz_uid || $alloweditactivity}--><a href="misc.php?action=activityapplylist&tid=$tid&pid=$post[pid]" onclick="showWindow('activity', this.href);return false" title="{lang activity_apply_confirm}">{lang activity_apply_confirm}</a><!--{/if}--></td>
 		</tr>
 	<!--{/if}-->
 </table>
@@ -54,7 +54,7 @@
 	</form>
 <!--{/if}-->
 
-<!--{if $thread['authorid'] == $discuz_uid && $applylistverified}-->
+<!--{if ($thread['authorid'] == $discuz_uid || $alloweditactivity) && $applylistverified}-->
 	<hr class="dashline"/>
 	<h4 class="avt_title">{lang activity_new_signup}</h4>
 	<ul class="avt_list s_clear">

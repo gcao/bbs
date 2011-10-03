@@ -4,7 +4,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: attachment.php 20452 2009-09-28 02:25:59Z monkey $
+	$Id: attachment.php 21262 2009-11-24 02:05:34Z liulanbo $
 */
 
 define('CURSCRIPT', 'attachment');
@@ -77,8 +77,9 @@ if($allowgetattach && ($attach['readperm'] && $attach['readperm'] > $readaccess)
 
 $ispaid = FALSE;
 if(!$thread['special'] && $thread['price'] > 0 && (!$discuz_uid || ($discuz_uid && $discuz_uid != $attach['uid'] && $adminid <=0))) {
+	$exemptattachpay = $discuz_uid && ($exempt & 8) ? 1 : 0;
 	$ispaid = $discuz_uid ? $db->result_first("SELECT uid FROM {$tablepre}paymentlog WHERE uid='$discuz_uid' AND tid='$attach[tid]'") : FALSE;
-	!$ispaid && showmessage('attachment_payto', 'viewthread.php?tid='.$attach['tid']);
+	!$ispaid && !$exemptattachpay && showmessage('attachment_payto', 'viewthread.php?tid='.$attach['tid']);
 }
 
 $ismoderator = in_array($adminid, array(1, 2)) ? 1 : ($adminid == 3 ? $db->result_first("SELECT uid FROM {$tablepre}moderators m INNER JOIN {$tablepre}threads t ON t.tid='$attach[tid]' AND t.fid=m.fid WHERE m.uid='$discuz_uid'") : 0);
@@ -124,7 +125,14 @@ if($readmod == 4 && !empty($_SERVER['HTTP_RANGE'])) {
 $exemptvalue = $ismoderator ? 32 : 4;
 if(!$isimage && !($exempt & $exemptvalue)) {
 	$getattachcredits = $forum['getattachcredits'] ? unserialize($forum['getattachcredits']) : $creditspolicy['getattach'];
-	if($getattachcredits) {
+	$redirectcredit = FALSE;
+	foreach($getattachcredits as $creditid => $v) {
+		if($v) {
+			$redirectcredit = TRUE;
+			break;
+		}
+	}
+	if($redirectcredit) {
 		$k = $_GET['ck'];
 		$t = $_GET['t'];
 		if(empty($k) || empty($t) || $k != substr(md5($aid.$t.md5($authkey)), 0, 8) || $timestamp - $t > 3600) {
@@ -155,6 +163,9 @@ if(empty($noupdate)) {
 
 $db->close(); ob_end_clean();
 
+//dheader('Cache-control: max-age=31536000');
+//dheader('Expires: '.gmdate('D, d M Y H:i:s', $timestamp + 31536000).' GMT');
+
 if($attach['remote'] && !$ftp['hideurl']) {
 	dheader('location:'.$ftp['attachurl'].'/'.$attach['attachment']);
 }
@@ -162,26 +173,28 @@ if($attach['remote'] && !$ftp['hideurl']) {
 $filesize = !$attach['remote'] ? filesize($filename) : $attach['filesize'];
 $attach['filename'] = '"'.(strtolower($charset) == 'utf-8' && strexists($_SERVER['HTTP_USER_AGENT'], 'MSIE') ? urlencode($attach['filename']) : $attach['filename']).'"';
 
-$issgf = strstr(strtolower($attach['filename']), '.sgf') !== FALSE;
-$default_encoding = 'gb2312';
-$encoding = !empty($_GET['encoding']) ? $_GET['encoding'] : $default_encoding;
-if (!$issgf || $encoding == $default_encoding) {
-	dheader('Date: '.gmdate('D, d M Y H:i:s', $attach['dateline']).' GMT');
-	dheader('Last-Modified: '.gmdate('D, d M Y H:i:s', $attach['dateline']).' GMT');
-}
+dheader('Date: '.gmdate('D, d M Y H:i:s', $attach['dateline']).' GMT');
+dheader('Last-Modified: '.gmdate('D, d M Y H:i:s', $attach['dateline']).' GMT');
 dheader('Content-Encoding: none');
 
-if(($isimage || $issgf) && !empty($noupdate)) {
-	dheader('Content-Disposition: inline; filename='.$attach['filename']);
-} else {
-	dheader('Content-Disposition: attachment; filename='.$attach['filename']);
-}
+  $issgf = strstr(strtolower($attach['filename']), '.sgf') !== FALSE;
+  $default_encoding = 'gb2312';
+  $encoding = !empty($_GET['encoding']) ? $_GET['encoding'] : $default_encoding;
 
-if ($issgf) {
-	dheader('Content-Type: text/plain; charset=' . $encoding);
-} else {
-	dheader('Content-Type: '.$attach['filetype']);
-}
+  if($isimage && !empty($noupdate) || !empty($request)) {
+  	dheader('Content-Disposition: inline; filename='.$attach['filename']);
+  } elseif($issgf) {
+  	dheader('Content-Disposition: inline; filename='.$attach['filename']);
+  } else {
+  	dheader('Content-Disposition: attachment; filename='.$attach['filename']);
+  }
+
+  if ($issgf) {
+  	dheader('Content-Type: text/plain; charset=' . $encoding);
+  } else {
+  	dheader('Content-Type: '.$attach['filetype']);
+  }
+
 dheader('Content-Length: '.$filesize);
 
 if($readmod == 4) {

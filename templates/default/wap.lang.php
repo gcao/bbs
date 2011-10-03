@@ -200,6 +200,7 @@ $lang = array
 	'post_hide_reply_hidden' => '本内容隐藏',
 	'register_invite' => '论坛开启邀请码注册，请通过WWW方式注册',
 
+	'message_ishidden_hiddenreplies' => '此帖仅作者可见',
 
 );
 

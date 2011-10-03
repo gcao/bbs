@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <root>
  <item id="Title"><![CDATA[Discuz! Style]]></item>
- <item id="Version"><![CDATA[7.1]]></item>
+ <item id="Version"><![CDATA[7.2]]></item>
  <item id="Time"><![CDATA[]]></item>
  <item id="From"><![CDATA[Discuz! Board]]></item>
  <item id="Data">
@@ -59,6 +59,6 @@
  <item id="lighttext"><![CDATA[#999]]></item>
  <item id="highlightlink"><![CDATA[#009B97]]></item>
  </item>
- <item id="version"><![CDATA[7.1]]></item>
+ <item id="version"><![CDATA[7.2]]></item>
  </item>
 </root>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <root>
 	<item id="Title"><![CDATA[Discuz! Style]]></item>
-	<item id="Version"><![CDATA[7.1]]></item>
+	<item id="Version"><![CDATA[7.2]]></item>
 	<item id="Time"><![CDATA[2009-09-17 10:49]]></item>
 	<item id="From"><![CDATA[Discuz! Board (http://d.mixfog.com/discuz/trunk/)]]></item>
 	<item id="Data">
@@ -59,6 +59,6 @@
 			<item id="interleavecolor"><![CDATA[#FFEAC1]]></item>
 			<item id="noticetext"><![CDATA[#F60]]></item>
 		</item>
-		<item id="version"><![CDATA[7.1]]></item>
+		<item id="version"><![CDATA[7.2]]></item>
 	</item>
 </root>

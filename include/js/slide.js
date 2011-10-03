@@ -2,7 +2,7 @@
 	[Discuz!] (C)2001-2009 Comsenz Inc.
 	This is NOT a freeware, use is subject to license terms
 
-	$Id: slide.js 20639 2009-10-13 06:04:24Z monkey $
+	$Id: slide.js 20766 2009-10-19 03:22:19Z monkey $
 */
 
 /*
@@ -80,6 +80,7 @@ if(isUndefined(sliderun)) {
 				$('switch_'+s.slideId).appendChild(switchdiv);
 				s.imgLoad[i] = new Image();
 				s.imgLoad[i].src = s.imgs[i];
+				s.imgLoad[i].onerror = function () { s.imgLoaded++; };
 			}
 			s.loadCheck();
 		};
