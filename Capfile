@@ -1,3 +1,5 @@
+load 'deploy' if respond_to?(:namespace) # cap2 differentiator
+
 set :application, "bbs"
 set :deploy_to, "/data/apps/#{application}"
 
@@ -20,21 +22,12 @@ else
   server 'vagrant', :app, :web, :db, :primary => true
 end
 
-namespace :deploy do
-  task :start do
-  end
-  
-  task :stop do
-  end
-  
-  task :restart, :roles => :app, :except => { :no_release => true } do
-    #try_runner "touch #{current_path}/tmp/restart.txt"
-  end
+after "deploy:update_code" do
+  copy_over_config_files
+  run "chmod a+w #{release_path}/forumdata #{release_path}/forumdata/cache"
 end
 
-after "deploy:update_code", :copy_over_config_files
-
 task :copy_over_config_files do
-  run "cp -rf #{deploy_to}/#{shared_dir}/config/* #{release_path}/config/"
+  run "cp -rf #{deploy_to}/#{shared_dir}/config/* #{release_path}/"
 end
 
