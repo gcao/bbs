@@ -6,6 +6,8 @@ set :deploy_to, "/data/apps/#{application}"
 set :scm, :git
 set :repository, "git://github.com/gcao/#{application}.git"
 
+set :normalize_asset_timestamps, false
+
 if ENV['DEPLOYMENT_TARGET'] == 'production'
   set :user, "root"
   set :use_sudo, false
