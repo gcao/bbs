@@ -1,10 +1,10 @@
 <? if(!defined('IN_DISCUZ')) exit('Access Denied'); hookscriptoutput('discuz');
 0
-|| checktplrefresh('/data/apps/bbs/releases/7.2_20100331/././templates/default/discuz.htm', '/data/apps/bbs/releases/7.2_20100331/././templates/default/header.htm', 1309576877, '1', './templates/default')
-|| checktplrefresh('/data/apps/bbs/releases/7.2_20100331/././templates/default/discuz.htm', '/data/apps/bbs/releases/7.2_20100331/././templates/default/index_heats.htm', 1309576877, '1', './templates/default')
-|| checktplrefresh('/data/apps/bbs/releases/7.2_20100331/././templates/default/discuz.htm', '/data/apps/bbs/releases/7.2_20100331/././templates/default/index_navbar.htm', 1309576877, '1', './templates/default')
-|| checktplrefresh('/data/apps/bbs/releases/7.2_20100331/././templates/default/discuz.htm', '/data/apps/bbs/releases/7.2_20100331/././templates/default/footer.htm', 1309576877, '1', './templates/default')
-|| checktplrefresh('/data/apps/bbs/releases/7.2_20100331/././templates/default/discuz.htm', '/data/apps/bbs/releases/7.2_20100331/././templates/default/jsmenu.htm', 1309576877, '1', './templates/default')
+|| checktplrefresh('/Users/gcao/proj/bbs/././templates/default/discuz.htm', '/Users/gcao/proj/bbs/././templates/default/header.htm', 1318627974, '1', './templates/default')
+|| checktplrefresh('/Users/gcao/proj/bbs/././templates/default/discuz.htm', '/Users/gcao/proj/bbs/././templates/default/index_heats.htm', 1318627974, '1', './templates/default')
+|| checktplrefresh('/Users/gcao/proj/bbs/././templates/default/discuz.htm', '/Users/gcao/proj/bbs/././templates/default/index_navbar.htm', 1318627974, '1', './templates/default')
+|| checktplrefresh('/Users/gcao/proj/bbs/././templates/default/discuz.htm', '/Users/gcao/proj/bbs/././templates/default/footer.htm', 1318627974, '1', './templates/default')
+|| checktplrefresh('/Users/gcao/proj/bbs/././templates/default/discuz.htm', '/Users/gcao/proj/bbs/././templates/default/jsmenu.htm', 1318627974, '1', './templates/default')
 ;?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -25,7 +25,7 @@
 <?=$rsshead?>
 <?=$extrahead?><link rel="stylesheet" type="text/css" href="forumdata/cache/style_<?=STYLEID?>_common.css?<?=VERHASH?>" /><link rel="stylesheet" type="text/css" href="forumdata/cache/scriptstyle_<?=STYLEID?>_<?=CURSCRIPT?>.css?<?=VERHASH?>" />
 <? if($forum['ismoderator']) { ?>
-<link href="forumdata/cache/style_1_moderator.css?oXZ" rel="stylesheet" type="text/css" />
+<link href="forumdata/cache/style_1_moderator.css?eQu" rel="stylesheet" type="text/css" />
 <? } ?><script type="text/javascript">var STYLEID = '<?=STYLEID?>', IMGDIR = '<?=IMGDIR?>', VERHASH = '<?=VERHASH?>', charset = '<?=$charset?>', discuz_uid = <?=$discuz_uid?>, cookiedomain = '<?=$cookiedomain?>', cookiepath = '<?=$cookiepath?>', attackevasive = '<?=$attackevasive?>', disallowfloat = '<?=$disallowfloat?>', creditnotice = '<? if($creditnotice) { ?><?=$creditnames?><? } ?>', <? if(in_array(CURSCRIPT, array('viewthread', 'forumdisplay'))) { ?>gid = parseInt('<?=$thisgid?>')<? } elseif(CURSCRIPT == 'index') { ?>gid = parseInt('<?=$gid?>')<? } else { ?>gid = 0<? } ?>, fid = parseInt('<?=$fid?>'), tid = parseInt('<?=$tid?>')</script>
 <script src="<?=$jspath?>common.js?<?=VERHASH?>" type="text/javascript"></script>
 </head>

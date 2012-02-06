@@ -1,6 +1,6 @@
 <? if(!defined('IN_DISCUZ')) exit('Access Denied'); hookscriptoutput('login');
 0
-|| checktplrefresh('/data/apps/bbs/releases/7.2_20100331/././templates/default/login.htm', '/data/apps/bbs/releases/7.2_20100331/././templates/default/seccheck.htm', 1309576888, '1', './templates/default')
+|| checktplrefresh('/Users/gcao/proj/bbs/././templates/default/login.htm', '/Users/gcao/proj/bbs/././templates/default/seccheck.htm', 1318628419, '1', './templates/default')
 ;?><? include template('header', '0', ''); if(!empty($message)) { ?>
 <?=$ucsynlogin?>
 <script type="text/javascript" reload="1">

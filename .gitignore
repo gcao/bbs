@@ -1,2 +1,8 @@
 TEMP*
 config.inc.php
+forumdata/cache
+forumdata/templates/1_1_discuz.tpl.php
+forumdata/templates/1_1_login.tpl.php
+forumdata/threadcaches
+forumdata/*.lock
+
